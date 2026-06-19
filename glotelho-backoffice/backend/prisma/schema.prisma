@@ -1,0 +1,411 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model bordereaux {
+  id                      Int                @id @default(autoincrement())
+  deliveryorder_id        Int
+  generated_by_manager_id Int
+  pdf_path                String?            @db.VarChar(255)
+  status                  bordereaux_status? @default(G_n_r_)
+  generated_at            DateTime           @default(now()) @db.Timestamp(0)
+  deliveryorders          deliveryorders     @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "bordereaux_ibfk_1")
+  managers                managers           @relation(fields: [generated_by_manager_id], references: [id], onUpdate: Restrict, map: "bordereaux_ibfk_2")
+
+  @@index([deliveryorder_id], map: "deliveryorder_id")
+  @@index([generated_by_manager_id], map: "generated_by_manager_id")
+  @@index([status], map: "idx_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model confirmations {
+  id                 Int                   @id @default(autoincrement())
+  deliveryorder_id   Int
+  customer_id        Int
+  delivery_person_id Int
+  methode            confirmations_methode
+  otp_code           String?               @db.VarChar(10)
+  signature_path     String?               @db.VarChar(255)
+  confirmed_at       DateTime?             @db.DateTime(0)
+  created_at         DateTime              @default(now()) @db.Timestamp(0)
+  deliveryorders     deliveryorders        @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "confirmations_ibfk_1")
+  customers          customers             @relation(fields: [customer_id], references: [id], onUpdate: Restrict, map: "confirmations_ibfk_2")
+  delivery_persons   delivery_persons      @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "confirmations_ibfk_3")
+
+  @@index([customer_id], map: "customer_id")
+  @@index([delivery_person_id], map: "delivery_person_id")
+  @@index([deliveryorder_id], map: "idx_confirmations_delivery")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model customers {
+  id             Int              @id @default(autoincrement())
+  user_id        Int              @unique(map: "user_id")
+  address        String?          @db.VarChar(255)
+  latitude       Decimal?         @db.Decimal(10, 8)
+  longitude      Decimal?         @db.Decimal(11, 8)
+  created_at     DateTime         @default(now()) @db.Timestamp(0)
+  confirmations  confirmations[]
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "customers_ibfk_1")
+  deliveryorders deliveryorders[]
+  orders         orders[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model delivery_items {
+  id                    Int            @id @default(autoincrement())
+  deliveryorder_id      Int
+  order_id              Int
+  product_name          String         @db.VarChar(255)
+  delivery_instructions String?        @db.Text
+  route_info            String?        @db.Text
+  status                String?        @default("En_attente") @db.VarChar(50)
+  created_at            DateTime       @default(now()) @db.Timestamp(0)
+  deliveryorders        deliveryorders @relation(fields: [deliveryorder_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_items_ibfk_1")
+  orders                orders         @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_items_ibfk_2")
+
+  @@index([deliveryorder_id], map: "deliveryorder_id")
+  @@index([order_id], map: "order_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model delivery_persons {
+  id                Int                      @id @default(autoincrement())
+  user_id           Int                      @unique(map: "user_id")
+  vehicle_id        Int?
+  status            delivery_persons_status? @default(Disponible)
+  zone_affectee     String?                  @db.VarChar(100)
+  available         Boolean?                 @default(true)
+  created_at        DateTime                 @default(now()) @db.Timestamp(0)
+  confirmations     confirmations[]
+  users             users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_persons_ibfk_1")
+  vehicules         vehicules?               @relation(fields: [vehicle_id], references: [id], onUpdate: Restrict, map: "delivery_persons_ibfk_2")
+  deliveryorders    deliveryorders[]
+  photos            photos[]
+  position_tracking position_tracking[]
+  races             races[]
+  rapports          rapports[]
+  recouvrement      recouvrement[]
+
+  @@index([status], map: "idx_status")
+  @@index([vehicle_id], map: "vehicle_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model deliveryorders {
+  id                      Int                    @id @default(autoincrement())
+  manager_id              Int
+  delivery_person_id      Int?
+  customer_id             Int
+  status                  deliveryorders_status? @default(En_attente)
+  delivery_address        String                 @db.VarChar(255)
+  delivery_latitude       Decimal?               @db.Decimal(10, 8)
+  delivery_longitude      Decimal?               @db.Decimal(11, 8)
+  zone_bloc               String?                @db.VarChar(100)
+  amount_to_collect       Decimal?               @default(0.00) @db.Decimal(10, 2)
+  collected_amount        Decimal?               @default(0.00) @db.Decimal(10, 2)
+  estimated_delivery_time DateTime?              @db.DateTime(0)
+  creation_date           DateTime               @default(now()) @db.Timestamp(0)
+  delivery_date           DateTime?              @db.DateTime(0)
+  suspension_reason       String?                @db.Text
+  tracking_blocked        Boolean?               @default(false)
+  created_at              DateTime               @default(now()) @db.Timestamp(0)
+  updated_at              DateTime               @default(now()) @db.Timestamp(0)
+  bordereaux              bordereaux[]
+  confirmations           confirmations[]
+  delivery_items          delivery_items[]
+  managers                managers               @relation(fields: [manager_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_1")
+  delivery_persons        delivery_persons?      @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_2")
+  customers               customers              @relation(fields: [customer_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_3")
+  photos                  photos[]
+  race_deliveryorders     race_deliveryorders[]
+  rapports                rapports[]
+  recouvrement            recouvrement[]
+
+  @@index([creation_date], map: "idx_created")
+  @@index([customer_id], map: "idx_customer")
+  @@index([delivery_person_id], map: "idx_delivery_person")
+  @@index([zone_bloc], map: "idx_deliveryorders_zone")
+  @@index([status], map: "idx_status")
+  @@index([manager_id], map: "manager_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model managers {
+  id                    Int                     @id @default(autoincrement())
+  user_id               Int                     @unique(map: "user_id")
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  bordereaux            bordereaux[]
+  deliveryorders        deliveryorders[]
+  users                 users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "managers_ibfk_1")
+  remises_compensations remises_compensations[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notifications {
+  id           Int                 @id @default(autoincrement())
+  recipient_id Int
+  message      String              @db.Text
+  type         notifications_type? @default(FCM)
+  is_read      Boolean?            @default(false)
+  sent_at      DateTime            @default(now()) @db.Timestamp(0)
+  users        users               @relation(fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "notifications_ibfk_1")
+
+  @@index([is_read], map: "idx_read")
+  @@index([recipient_id], map: "idx_recipient")
+  @@index([sent_at], map: "idx_sent")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model orders {
+  id                    Int                     @id @default(autoincrement())
+  customer_id           Int
+  status                String?                 @default("En_cours") @db.VarChar(50)
+  total_amount          Decimal                 @db.Decimal(10, 2)
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @default(now()) @db.Timestamp(0)
+  delivery_items        delivery_items[]
+  customers             customers               @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "orders_ibfk_1")
+  remises_compensations remises_compensations[]
+
+  @@index([created_at], map: "idx_created")
+  @@index([customer_id], map: "idx_customer")
+  @@index([status], map: "idx_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model photos {
+  id                 Int              @id @default(autoincrement())
+  deliveryorder_id   Int
+  delivery_person_id Int
+  path               String           @db.VarChar(255)
+  taken_at           DateTime         @default(now()) @db.Timestamp(0)
+  deliveryorders     deliveryorders   @relation(fields: [deliveryorder_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "photos_ibfk_1")
+  delivery_persons   delivery_persons @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "photos_ibfk_2")
+
+  @@index([delivery_person_id], map: "delivery_person_id")
+  @@index([deliveryorder_id], map: "idx_photos_delivery")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model position_tracking {
+  id                 Int              @id @default(autoincrement())
+  race_id            Int
+  delivery_person_id Int
+  latitude           Decimal          @db.Decimal(10, 8)
+  longitude          Decimal          @db.Decimal(11, 8)
+  speed              Float?           @db.Float
+  recorded_at        DateTime         @default(now()) @db.Timestamp(0)
+  races              races            @relation(fields: [race_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "position_tracking_ibfk_1")
+  delivery_persons   delivery_persons @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "position_tracking_ibfk_2")
+
+  @@index([delivery_person_id], map: "idx_delivery_person")
+  @@index([delivery_person_id], map: "idx_position_delivery_person")
+  @@index([race_id], map: "idx_race")
+  @@index([recorded_at], map: "idx_recorded")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model race_deliveryorders {
+  id               Int            @id @default(autoincrement())
+  race_id          Int
+  deliveryorder_id Int
+  sequence_order   Int?
+  created_at       DateTime       @default(now()) @db.Timestamp(0)
+  races            races          @relation(fields: [race_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "race_deliveryorders_ibfk_1")
+  deliveryorders   deliveryorders @relation(fields: [deliveryorder_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "race_deliveryorders_ibfk_2")
+
+  @@index([deliveryorder_id], map: "deliveryorder_id")
+  @@index([race_id], map: "idx_race")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model races {
+  id                  Int                   @id @default(autoincrement())
+  delivery_person_id  Int
+  vehicle_id          Int?
+  departure_time      DateTime?             @db.DateTime(0)
+  return_time         DateTime?             @db.DateTime(0)
+  status              races_status?         @default(En_attente)
+  report              String?               @db.Text
+  created_at          DateTime              @default(now()) @db.Timestamp(0)
+  updated_at          DateTime              @default(now()) @db.Timestamp(0)
+  position_tracking   position_tracking[]
+  race_deliveryorders race_deliveryorders[]
+  delivery_persons    delivery_persons      @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "races_ibfk_1")
+  vehicules           vehicules?            @relation(fields: [vehicle_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "races_ibfk_2")
+
+  @@index([created_at], map: "idx_created")
+  @@index([delivery_person_id], map: "idx_delivery_person")
+  @@index([status], map: "idx_status")
+  @@index([vehicle_id], map: "vehicle_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model rapports {
+  id                 Int              @id @default(autoincrement())
+  deliveryorder_id   Int
+  delivery_person_id Int
+  observations       String?          @db.Text
+  photo_url          String?          @db.VarChar(255)
+  status_report      String?          @default("Soumis") @db.VarChar(50)
+  created_at         DateTime         @default(now()) @db.Timestamp(0)
+  updated_at         DateTime         @default(now()) @db.Timestamp(0)
+  deliveryorders     deliveryorders   @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "rapports_ibfk_1")
+  delivery_persons   delivery_persons @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "rapports_ibfk_2")
+
+  @@index([delivery_person_id], map: "delivery_person_id")
+  @@index([deliveryorder_id], map: "idx_rapports_delivery")
+  @@index([status_report], map: "idx_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model recouvrement {
+  id                 Int                         @id @default(autoincrement())
+  deliveryorder_id   Int
+  delivery_person_id Int
+  amount_to_collect  Decimal                     @db.Decimal(10, 2)
+  amount_collected   Decimal                     @db.Decimal(10, 2)
+  payment_method     recouvrement_payment_method
+  reference_number   String?                     @db.VarChar(100)
+  collected_at       DateTime?                   @db.DateTime(0)
+  created_at         DateTime                    @default(now()) @db.Timestamp(0)
+  deliveryorders     deliveryorders              @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "recouvrement_ibfk_1")
+  delivery_persons   delivery_persons            @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "recouvrement_ibfk_2")
+
+  @@index([delivery_person_id], map: "delivery_person_id")
+  @@index([collected_at], map: "idx_collected")
+  @@index([deliveryorder_id], map: "idx_recouvrement_delivery")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model remises_compensations {
+  id                     Int                           @id @default(autoincrement())
+  order_id               Int
+  type                   remises_compensations_type
+  reason                 String                        @db.Text
+  amount                 Decimal?                      @db.Decimal(10, 2)
+  approved_by_manager_id Int
+  status                 remises_compensations_status? @default(En_attente)
+  created_at             DateTime                      @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                      @default(now()) @db.Timestamp(0)
+  orders                 orders                        @relation(fields: [order_id], references: [id], onUpdate: Restrict, map: "remises_compensations_ibfk_1")
+  managers               managers                      @relation(fields: [approved_by_manager_id], references: [id], onUpdate: Restrict, map: "remises_compensations_ibfk_2")
+
+  @@index([approved_by_manager_id], map: "approved_by_manager_id")
+  @@index([status], map: "idx_status")
+  @@index([order_id], map: "order_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id               Int               @id @default(autoincrement())
+  last_name        String            @db.VarChar(100)
+  first_name       String            @db.VarChar(100)
+  email            String            @unique(map: "email") @db.VarChar(150)
+  password         String            @db.VarChar(255)
+  phone            String            @db.VarChar(20)
+  role             users_role
+  fcm_token        String?           @db.VarChar(255)
+  created_at       DateTime          @default(now()) @db.Timestamp(0)
+  updated_at       DateTime          @default(now()) @db.Timestamp(0)
+  customers        customers?
+  delivery_persons delivery_persons?
+  managers         managers?
+  notifications    notifications[]
+
+  @@index([email], map: "idx_email")
+  @@index([role], map: "idx_role")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model vehicules {
+  id               Int                @id @default(autoincrement())
+  type             String             @db.VarChar(50)
+  plate_number     String             @unique(map: "plate_number") @db.VarChar(30)
+  brand            String?            @db.VarChar(50)
+  status           vehicules_status?  @default(Disponible)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  updated_at       DateTime           @default(now()) @db.Timestamp(0)
+  delivery_persons delivery_persons[]
+  races            races[]
+}
+
+enum remises_compensations_type {
+  Retour_produit
+  Rabais
+  Livraison_gratuite
+  Autre
+}
+
+enum delivery_persons_status {
+  Disponible
+  En_livraison
+  Indisponible
+  Suspendu
+  Hors_service
+}
+
+enum notifications_type {
+  FCM
+  SMS
+  Interne
+}
+
+enum bordereaux_status {
+  G_n_r_    @map("Généré")
+  Imprim_   @map("Imprimé")
+  Distribu_ @map("Distribué")
+}
+
+enum confirmations_methode {
+  OTP
+  Signature
+}
+
+enum deliveryorders_status {
+  En_attente
+  Assign_    @map("Assigné")
+  En_cours
+  Livr_      @map("Livré")
+  Suspendu
+  Annul_     @map("Annulé")
+}
+
+enum vehicules_status {
+  Disponible
+  En_cours_dutilisation
+  En_maintenance
+}
+
+enum races_status {
+  En_attente
+  En_cours
+  Termin_e   @map("Terminée")
+}
+
+enum recouvrement_payment_method {
+  Esp_ces @map("Espèces")
+  OM
+  MoMo
+  Carte
+  Autre
+}
+
+enum remises_compensations_status {
+  Approuv_e  @map("Approuvée")
+  En_attente
+  Rejet_e    @map("Rejetée")
+}
+
+enum users_role {
+  manager
+  delivery_person
+  customer
+}
