@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@theme {
+    --color-primary: #E8580A;
+    --color-primary-light: #FF8A4C;
+    --color-primary-soft: #FFF1E8;
+    --color-primary-glow: #FFB088;
+    --color-dark: #0F0F1A;
+    --color-dark-soft: #1C1C2E;
+    --color-dark-card: #181826;
+    --color-surface: #FAFAFC;
+    --color-ink: #1C1C2E;
+    --color-muted: #8A8AA3;
+    --color-border: #ECECF2;
+    --font-display: "Cabinet Grotesk", "Poppins", sans-serif;
+    --font-body: "Poppins", sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    margin: 0;
+}
+
+.font-display {
+    font-family: var(--font-display);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D8D8E4;
+    border-radius: 8px;
+}

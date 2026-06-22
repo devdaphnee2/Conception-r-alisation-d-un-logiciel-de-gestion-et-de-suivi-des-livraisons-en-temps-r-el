@@ -13,13 +13,13 @@ model bordereaux {
   deliveryorder_id        Int
   generated_by_manager_id Int
   pdf_path                String?            @db.VarChar(255)
-  status                  bordereaux_status? @default(G_n_r_)
+  status                  bordereaux_status? @default(Genere)
   generated_at            DateTime           @default(now()) @db.Timestamp(0)
   deliveryorders          deliveryorders     @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "bordereaux_ibfk_1")
   managers                managers           @relation(fields: [generated_by_manager_id], references: [id], onUpdate: Restrict, map: "bordereaux_ibfk_2")
 
-  @@index([deliveryorder_id], map: "deliveryorder_id")
   @@index([generated_by_manager_id], map: "generated_by_manager_id")
+  @@index([deliveryorder_id], map: "deliveryorder_id")
   @@index([status], map: "idx_status")
 }
 
@@ -358,12 +358,6 @@ enum notifications_type {
   Interne
 }
 
-enum bordereaux_status {
-  G_n_r_    @map("Généré")
-  Imprim_   @map("Imprimé")
-  Distribu_ @map("Distribué")
-}
-
 enum confirmations_methode {
   OTP
   Signature
@@ -408,4 +402,10 @@ enum users_role {
   manager
   delivery_person
   customer
+}
+
+enum bordereaux_status {
+  Genere
+  Imprime
+  Distribue
 }
