@@ -326,3 +326,7 @@ CREATE INDEX idx_recouvrement_delivery ON recouvrement(deliveryorder_id);
 -- ═══════════════════════════════════════════════════════════════
 -- FIN DU SCRIPT
 -- ═══════════════════════════════════════════════════════════════
+
+
+ALTER TABLE bordereaux 
+MODIFY COLUMN status ENUM('Genere','Imprime','Distribue') DEFAULT 'Genere';
