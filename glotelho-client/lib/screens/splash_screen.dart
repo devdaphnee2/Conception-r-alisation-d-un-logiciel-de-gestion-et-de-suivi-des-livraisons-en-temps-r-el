@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:glotelho_client/screens/login_screen.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +19,12 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
+    // Dans le timer
     Timer(const Duration(seconds: 3), () {
+      if(mounted){
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+        );
+      }
       // Navigator.pushReplacement(...)
     });
   }
