@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../middlewares/authMiddleware');
+const managerOnly = require('../middlewares/managerOnly');
+const { index, show, store, prendreEnCharge, resoudre, rejeter } = require('../controllers/litigeController');
 
-router.get('/', (req, res) => {
-    res.json({ message: 'Route litiges - à construire' });
-});
+router.use(authMiddleware, managerOnly);
+
+router.get('/', index);
+router.post('/', store);
+router.get('/:id', show);
+router.post('/:id/prendre-en-charge', prendreEnCharge);
+router.post('/:id/resoudre', resoudre);
+router.post('/:id/rejeter', rejeter);
 
 module.exports = router;

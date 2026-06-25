@@ -6,7 +6,9 @@ const livraisonRoutes = require('./routes/livraisonRoutes');
 const livreurRoutes = require('./routes/livreurRoutes');
 const litigeRoutes = require('./routes/litigeRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const vehiculeRoutes = require('./routes/vehiculeRoutes');
 const bordereauRoutes = require('./routes/bordereauRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 
@@ -21,10 +23,12 @@ app.use('/api/livraisons', livraisonRoutes);
 app.use('/api/livreurs', livreurRoutes);
 app.use('/api/litiges', litigeRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/vehicules', vehiculeRoutes);
 app.use('/api/bordereaux', bordereauRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => {
-    res.json({ message: 'API Glotelho Back-office — operationnelle' });
+    res.json({ message: 'API Glotelho Back-office operationnelle' });
 });
 
 module.exports = app;

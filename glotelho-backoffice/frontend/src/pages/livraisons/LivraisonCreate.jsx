@@ -3,19 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import BackButton from '../../components/BackButton';
 
-
-<BackButton to="/livraisons" />
 export default function LivraisonCreate() {
     const [form, setForm] = useState({
-        delivery_address: '',
-        customer_id: '',
-        delivery_person_id: '',
-        order_id: '',
-        amount_to_collect: '',
-        collected_amount: '0',
-        zone_bloc: '',
-        delivery_date: '',
-        delivery_instructions: '',
+        delivery_address: '', customer_id: '', delivery_person_id: '',
+        order_id: '', amount_to_collect: '', collected_amount: '0',
+        zone_bloc: '', delivery_date: '', delivery_instructions: '',
     });
     const [customers, setCustomers] = useState([]);
     const [livreurs, setLivreurs] = useState([]);
@@ -37,14 +29,7 @@ export default function LivraisonCreate() {
         setSelectedCustomer(customer || null);
         setSelectedOrder(null);
         setOrders([]);
-        setForm(prev => ({
-            ...prev,
-            customer_id: customerId,
-            order_id: '',
-            amount_to_collect: '',
-            collected_amount: '0',
-            delivery_address: customer?.address || '',
-        }));
+        setForm(prev => ({ ...prev, customer_id: customerId, order_id: '', amount_to_collect: '', collected_amount: '0', delivery_address: customer?.address || '' }));
         if (customerId) {
             try {
                 const res = await api.get('/customers/' + customerId + '/orders');
@@ -57,24 +42,14 @@ export default function LivraisonCreate() {
         const orderId = e.target.value;
         const order = orders.find(o => String(o.id) === String(orderId));
         setSelectedOrder(order || null);
-        setForm(prev => ({
-            ...prev,
-            order_id: orderId,
-            amount_to_collect: order ? String(order.total_amount) : '',
-            collected_amount: '0',
-        }));
+        setForm(prev => ({ ...prev, order_id: orderId, amount_to_collect: order ? String(order.total_amount) : '', collected_amount: '0' }));
     }
 
-    function handleChange(e) {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    }
+    function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
 
-    const resteAPayer = selectedOrder
-        ? Math.max(0, parseFloat(selectedOrder.total_amount) - parseFloat(form.collected_amount || 0))
-        : null;
-
-    const itemsMaintenant = selectedOrder?.delivery_items?.filter(i => i.route_info === 'A livrer maintenant') || [];
-    const itemsPlusTard = selectedOrder?.delivery_items?.filter(i => i.route_info === 'A programmer pour une prochaine livraison') || [];
+    const resteAPayer = selectedOrder ? Math.max(0, parseFloat(selectedOrder.total_amount) - parseFloat(form.collected_amount || 0)) : null;
+    const itemsMaintenant = selectedOrder?.delivery_items?.filter(i => i.status === 'Disponible') || [];
+    const itemsPlusTard = selectedOrder?.delivery_items?.filter(i => i.status === 'Non_disponible') || [];
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -90,23 +65,11 @@ export default function LivraisonCreate() {
         }
     }
 
-    const inputStyle = {
-        width: '100%', padding: '11px 14px', borderRadius: '12px',
-        border: '1px solid #ECECF2', backgroundColor: '#FAFAFC',
-        fontSize: '14px', color: '#1C1C2E', outline: 'none',
-        boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif',
-    };
-
-    const labelStyle = {
-        display: 'block', fontSize: '11px', fontWeight: 600,
-        color: '#8A8AA3', textTransform: 'uppercase',
-        letterSpacing: '0.08em', marginBottom: '8px',
-    };
+    const inputStyle = { width: '100%', padding: '11px 14px', borderRadius: '12px', border: '1px solid #ECECF2', backgroundColor: '#FAFAFC', fontSize: '14px', color: '#1C1C2E', outline: 'none', boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif' };
+    const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 600, color: '#8A8AA3', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' };
 
     const sectionTitle = (title) => (
-        <p style={{ fontSize: '13px', fontWeight: 700, color: '#1C1C2E', margin: '0 0 16px 0', paddingBottom: '8px', borderBottom: '2px solid #E8580A', display: 'inline-block' }}>
-            {title}
-        </p>
+        <p style={{ fontSize: '13px', fontWeight: 700, color: '#1C1C2E', margin: '0 0 16px 0', paddingBottom: '8px', borderBottom: '2px solid #E8580A', display: 'inline-block' }}>{title}</p>
     );
 
     const infoCard = (label, value, color) => (
@@ -118,6 +81,7 @@ export default function LivraisonCreate() {
 
     return (
         <div style={{ maxWidth: '760px' }}>
+            <BackButton to="/livraisons" />
 
             <div style={{ marginBottom: '24px' }}>
                 <Link to="/livraisons" style={{ color: '#8A8AA3', textDecoration: 'none', fontSize: '14px' }}>Livraisons</Link>
@@ -126,74 +90,45 @@ export default function LivraisonCreate() {
             </div>
 
             <div style={{ backgroundColor: 'white', borderRadius: '24px', border: '1px solid #ECECF2', padding: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-
-                {error && (
-                    <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '12px 16px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px' }}>
-                        {error}
-                    </div>
-                )}
+                {error && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '12px 16px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px' }}>{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ display: 'grid', gap: '24px' }}>
 
-                        {/* CLIENT */}
                         <div>{sectionTitle('Client')}</div>
-
                         <div>
                             <label style={labelStyle}>Selectionner le client *</label>
                             <select name="customer_id" value={form.customer_id} onChange={handleCustomerChange} style={inputStyle} required>
                                 <option value="">-- Selectionner un client --</option>
-                                {customers.map(c => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.users?.first_name} {c.users?.last_name} — {c.users?.phone}
-                                    </option>
-                                ))}
+                                {customers.map(c => <option key={c.id} value={c.id}>{c.users?.first_name} {c.users?.last_name} — {c.users?.phone}</option>)}
                             </select>
                         </div>
 
                         {selectedCustomer && (
                             <div style={{ padding: '16px', backgroundColor: '#FAFAFC', borderRadius: '16px', border: '1px solid #ECECF2' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '13px' }}>
-                                    <div>
-                                        <div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Nom complet</div>
-                                        <div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.users?.first_name} {selectedCustomer.users?.last_name}</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Telephone</div>
-                                        <div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.users?.phone}</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Adresse</div>
-                                        <div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.address || '—'}</div>
-                                    </div>
+                                    <div><div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Nom complet</div><div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.users?.first_name} {selectedCustomer.users?.last_name}</div></div>
+                                    <div><div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Telephone</div><div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.users?.phone}</div></div>
+                                    <div><div style={{ color: '#8A8AA3', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 600 }}>Adresse</div><div style={{ color: '#1C1C2E', fontWeight: 600 }}>{selectedCustomer.address || '—'}</div></div>
                                 </div>
                             </div>
                         )}
 
-                        {/* COMMANDE */}
                         {form.customer_id && (
                             <>
                                 <div>{sectionTitle('Commande')}</div>
-
                                 <div>
                                     <label style={labelStyle}>Selectionner la commande</label>
                                     <select name="order_id" value={form.order_id} onChange={handleOrderChange} style={inputStyle}>
                                         <option value="">-- Selectionner une commande --</option>
-                                        {orders.length === 0
-                                            ? <option disabled>Aucune commande disponible</option>
-                                            : orders.map(o => (
-                                                <option key={o.id} value={o.id}>
-                                                    Commande #{o.id} — {Number(o.total_amount).toLocaleString('fr-FR')} FCFA — {o.status}
-                                                </option>
-                                            ))
-                                        }
+                                        {orders.length === 0 ? <option disabled>Aucune commande disponible</option> : orders.map(o => <option key={o.id} value={o.id}>Commande #{o.id} — {Number(o.total_amount).toLocaleString('fr-FR')} FCFA — {o.status}</option>)}
                                     </select>
                                 </div>
 
                                 {selectedOrder && (
                                     <>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                                            {infoCard('Montant total commande', Number(selectedOrder.total_amount).toLocaleString('fr-FR') + ' FCFA', 'orange')}
+                                            {infoCard('Montant total', Number(selectedOrder.total_amount).toLocaleString('fr-FR') + ' FCFA', 'orange')}
                                             <div>
                                                 <label style={labelStyle}>Montant deja paye (FCFA)</label>
                                                 <input type="number" name="collected_amount" value={form.collected_amount} onChange={handleChange} style={inputStyle} min="0" max={selectedOrder.total_amount} placeholder="0" />
@@ -203,21 +138,15 @@ export default function LivraisonCreate() {
 
                                         {itemsMaintenant.length > 0 && (
                                             <div>
-                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#15803D', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                    Articles a livrer maintenant ({itemsMaintenant.length})
-                                                </div>
+                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#15803D', marginBottom: '10px', textTransform: 'uppercase' }}>Articles a livrer maintenant ({itemsMaintenant.length})</div>
                                                 <div style={{ display: 'grid', gap: '8px' }}>
                                                     {itemsMaintenant.map((item, i) => (
                                                         <div key={i} style={{ padding: '12px 16px', borderRadius: '12px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <div>
                                                                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#1C1C2E' }}>{item.product_name}</div>
-                                                                {item.delivery_instructions && (
-                                                                    <div style={{ fontSize: '11px', color: '#8A8AA3', marginTop: '3px' }}>{item.delivery_instructions}</div>
-                                                                )}
+                                                                {item.delivery_instructions && <div style={{ fontSize: '11px', color: '#8A8AA3', marginTop: '3px' }}>{item.delivery_instructions}</div>}
                                                             </div>
-                                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#15803D', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap', marginLeft: '12px' }}>
-                                                                Maintenant
-                                                            </span>
+                                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#15803D', backgroundColor: '#DCFCE7', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap', marginLeft: '12px' }}>Disponible</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -226,21 +155,15 @@ export default function LivraisonCreate() {
 
                                         {itemsPlusTard.length > 0 && (
                                             <div>
-                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                    Articles a livrer plus tard ({itemsPlusTard.length})
-                                                </div>
+                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginBottom: '10px', textTransform: 'uppercase' }}>Articles a livrer plus tard ({itemsPlusTard.length})</div>
                                                 <div style={{ display: 'grid', gap: '8px' }}>
                                                     {itemsPlusTard.map((item, i) => (
                                                         <div key={i} style={{ padding: '12px 16px', borderRadius: '12px', backgroundColor: '#FFF9C4', border: '1px solid #FDE68A', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <div>
                                                                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#1C1C2E' }}>{item.product_name}</div>
-                                                                {item.delivery_instructions && (
-                                                                    <div style={{ fontSize: '11px', color: '#8A8AA3', marginTop: '3px' }}>{item.delivery_instructions}</div>
-                                                                )}
+                                                                {item.delivery_instructions && <div style={{ fontSize: '11px', color: '#8A8AA3', marginTop: '3px' }}>{item.delivery_instructions}</div>}
                                                             </div>
-                                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#B45309', backgroundColor: '#FEF3C7', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap', marginLeft: '12px' }}>
-                                                                Plus tard
-                                                            </span>
+                                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#B45309', backgroundColor: '#FEF3C7', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap', marginLeft: '12px' }}>Non disponible</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -251,7 +174,6 @@ export default function LivraisonCreate() {
                             </>
                         )}
 
-                        {/* LIVRAISON */}
                         <div>{sectionTitle('Informations de livraison')}</div>
 
                         <div>
@@ -260,12 +182,12 @@ export default function LivraisonCreate() {
                         </div>
 
                         <div>
-                            <label style={labelStyle}>Description du lieu <span style={{ textTransform: 'none', fontWeight: 400 }}>(facultatif — ex: 3eme maison apres le marche, portail bleu)</span></label>
+                            <label style={labelStyle}>Description du lieu <span style={{ textTransform: 'none', fontWeight: 400 }}>(facultatif)</span></label>
                             <input type="text" name="zone_bloc" value={form.zone_bloc} onChange={handleChange} style={inputStyle} placeholder="Ex: Apres le carrefour Shell, portail rouge, 2eme etage" />
                         </div>
 
                         <div>
-                            <label style={labelStyle}>Instructions de livraison <span style={{ textTransform: 'none', fontWeight: 400 }}>(conditions de transport, fragile, etc.)</span></label>
+                            <label style={labelStyle}>Instructions de livraison</label>
                             <textarea name="delivery_instructions" value={form.delivery_instructions} onChange={handleChange} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Ex: Colis fragile, ne pas empiler, maintenir a la verticale..." />
                         </div>
 
@@ -274,18 +196,13 @@ export default function LivraisonCreate() {
                             <input type="datetime-local" name="delivery_date" value={form.delivery_date} onChange={handleChange} style={inputStyle} />
                         </div>
 
-                        {/* ASSIGNATION */}
                         <div>{sectionTitle('Assignation')}</div>
 
                         <div>
-                            <label style={labelStyle}>Livreur <span style={{ textTransform: 'none', fontWeight: 400 }}>(optionnel — peut etre assigne plus tard)</span></label>
+                            <label style={labelStyle}>Livreur <span style={{ textTransform: 'none', fontWeight: 400 }}>(optionnel)</span></label>
                             <select name="delivery_person_id" value={form.delivery_person_id} onChange={handleChange} style={inputStyle}>
                                 <option value="">-- Assigner plus tard --</option>
-                                {livreurs.map(l => (
-                                    <option key={l.id} value={l.id}>
-                                        {l.users?.first_name} {l.users?.last_name} — {l.zone_affectee || 'Sans zone'}
-                                    </option>
-                                ))}
+                                {livreurs.map(l => <option key={l.id} value={l.id}>{l.users?.first_name} {l.users?.last_name} — {l.zone_affectee || 'Sans zone'}</option>)}
                             </select>
                         </div>
 
@@ -297,7 +214,6 @@ export default function LivraisonCreate() {
                                 Annuler
                             </Link>
                         </div>
-
                     </div>
                 </form>
             </div>
