@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+//import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,10 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
     await Future.delayed(const Duration(seconds: 2));
     setState(() => _isLoading = false);
     if (mounted) {
+      /*Navigator.pushReplacement(context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );*/
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Connexion réussie !'),
           backgroundColor: Color(0xFF3B6D11),
+
         ),
       );
     }
@@ -299,11 +304,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Image.network(
-                          'https://www.google.com/favicon.ico',
+                          'https://www.google.com/favicon.icon',
                           width: 20,
                           height: 20,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.g_mobiledata,
+                            //Icons. g_mobiledata_outlined,
                             color: Colors.red,
                             size: 24,
                           ),

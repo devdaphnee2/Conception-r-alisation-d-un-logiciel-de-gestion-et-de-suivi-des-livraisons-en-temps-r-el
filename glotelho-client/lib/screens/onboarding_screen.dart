@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+//import 'package:flutter_svg/flutter_svg.dart';
 import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -18,19 +18,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, String>> _pages = [
     {
-      'image': 'assets/images/onboarding_1.svg',
+      'image': 'assets/images/onboarding_1.png',
       'title': 'Commandez facilement',
       'description':
       'Passez votre commande en quelques clics et laissez-nous gérer le reste.',
     },
     {
-      'image': 'assets/images/onboarding_2.svg',
+      'image': 'assets/images/onboarding_2.png',
       'title': 'Suivi en temps réel',
       'description':
       'Suivez votre livreur en direct sur la carte jusqu\'à votre porte.',
     },
     {
-      'image': 'assets/images/onboarding_3.svg',
+      'image': 'assets/images/onboarding_3.png',
       'title': 'Livraison rapide',
       'description':
       'Recevez votre colis rapidement et en toute sécurité à votre adresse.',
@@ -91,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Illustration
-                        SvgPicture.asset(
+                        Image.asset(
                           page['image']!,
                           width: 280,
                           height: 250,
