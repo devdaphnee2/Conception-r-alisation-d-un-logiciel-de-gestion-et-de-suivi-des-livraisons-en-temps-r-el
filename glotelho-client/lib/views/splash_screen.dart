@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'dart:async';
-import 'package:glotelho_client/screens/login_screen.dart';
+import '../utils/constants.dart';
+import '../controllers/auth_controller.dart';
+import 'package:glotelho_client/views/login_screen.dart';
+import '../views/onboarding_screen.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
