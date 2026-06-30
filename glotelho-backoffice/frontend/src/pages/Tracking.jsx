@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { IconTruck, IconMap, IconCheck, IconAlert, IconX, IconUser } from '../components/Icons';
+import { database, ref, onValue, off } from '../config/firebase';
 
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
@@ -67,97 +68,39 @@ function VehicleIcon({ type, color, size = 28 }) {
     );
 }
 
-// Simule positions GPS Firebase (toutes les 5s comme en production)
-function useGPSSimulation(livreurs) {
+// positions GPS Firebase (toutes les 5s comme en production)
+function useFirebasePositions(livreurs) {
     const [positions, setPositions] = useState({});
-    const [routes, setRoutes] = useState({});
-    const intervalRef = useRef(null);
-
-    // Points de départ simulés dans Douala
-    const startPoints = {
-        'Bonamoussadi': { lat: 4.0485, lng: 9.7018 },
-        'Akwa':         { lat: 4.0612, lng: 9.7268 },
-        'Makepe':       { lat: 4.0530, lng: 9.7150 },
-        'Bonaberi':     { lat: 4.0420, lng: 9.6850 },
-        'Deido':        { lat: 4.0580, lng: 9.7120 },
-        'Logbaba':      { lat: 4.0350, lng: 9.7400 },
-        'default':      { lat: 4.0511, lng: 9.7085 },
-    };
-
-    // Destinations simulées
-    const destinations = [
-        { lat: 4.0650, lng: 9.7300, label: 'Bonapriso' },
-        { lat: 4.0420, lng: 9.6980, label: 'New Bell' },
-        { lat: 4.0720, lng: 9.7180, label: 'Bali' },
-        { lat: 4.0380, lng: 9.7050, label: 'Ndogbong' },
-        { lat: 4.0810, lng: 9.7380, label: 'Bonanjo' },
-    ];
 
     useEffect(() => {
         if (livreurs.length === 0) return;
+        const listeners = [];
 
-        // Init positions
-        const initial = {};
-        const initRoutes = {};
-
-        livreurs.forEach((l, i) => {
-            const base = startPoints[l.zone_affectee] || startPoints['default'];
-            const dest = destinations[i % destinations.length];
-            const speed = l.vehicules?.type === 'moto' ? 35 : 25;
-
-            initial[l.id] = {
-                lat: base.lat + (Math.random() - 0.5) * 0.005,
-                lng: base.lng + (Math.random() - 0.5) * 0.005,
-                vitesse: l.status === 'En_livraison' ? speed + Math.floor(Math.random() * 20) : 0,
-                direction: Math.random() * 360,
-                lastUpdate: new Date(),
-                destination: dest,
-            };
-
-            // Route simulee (chemin entre depart et destination)
-            if (l.status === 'En_livraison') {
-                const steps = 8;
-                const path = [];
-                for (let s = 0; s <= steps; s++) {
-                    const t = s / steps;
-                    const jitter = (Math.random() - 0.5) * 0.003;
-                    path.push({
-                        lat: base.lat + (dest.lat - base.lat) * t + jitter,
-                        lng: base.lng + (dest.lng - base.lng) * t + jitter,
-                    });
+        livreurs.filter(l => l.status === 'En_livraison').forEach(l => {
+            const posRef = ref(database, 'positions/' + l.id);
+            const unsubscribe = onValue(posRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    setPositions(prev => ({
+                        ...prev,
+                        [l.id]: {
+                            lat: data.lat,
+                            lng: data.lng,
+                            vitesse: data.vitesse || 0,
+                            lastUpdate: new Date(data.timestamp),
+                        }
+                    }));
                 }
-                initRoutes[l.id] = path;
-            }
+            });
+            listeners.push({ posRef, unsubscribe });
         });
 
-        setPositions(initial);
-        setRoutes(initRoutes);
-
-        // Mise a jour GPS toutes les 5 secondes (Firebase Realtime en prod)
-        intervalRef.current = setInterval(() => {
-            setPositions(prev => {
-                const next = { ...prev };
-                livreurs.filter(l => l.status === 'En_livraison').forEach(l => {
-                    if (next[l.id]) {
-                        const speed = (l.vehicules?.type === 'moto' ? 35 : 25);
-                        next[l.id] = {
-                            ...next[l.id],
-                            lat: next[l.id].lat + (Math.random() - 0.5) * 0.0008,
-                            lng: next[l.id].lng + (Math.random() - 0.5) * 0.0008,
-                            vitesse: speed + Math.floor(Math.random() * 25),
-                            direction: Math.random() * 360,
-                            lastUpdate: new Date(),
-                        };
-                    }
-                });
-                return next;
-            });
-        }, 5000);
-
-        return () => clearInterval(intervalRef.current);
+        return () => {
+            listeners.forEach(({ posRef }) => off(posRef));
+        };
     }, [livreurs.length]);
 
-    return { positions, routes };
+    return { positions, routes: {} };
 }
 
 // Carte OSM avec marqueurs et routes colores
@@ -335,7 +278,7 @@ export default function Tracking() {
         }).finally(() => setLoading(false));
     }, []);
 
-    const { positions, routes } = useGPSSimulation(livreurs);
+    const { positions, routes } = useFirebasePositions(livreurs);
 
     // Map livreur id -> couleur fixe
     const colorMap = {};
@@ -365,12 +308,11 @@ export default function Tracking() {
             </div>
 
             {/* Bandeau Firebase */}
-            <div style={{ backgroundColor: P.primaryFixed, border: '1px solid ' + P.primaryContainer, borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/*<div style={{ backgroundColor: P.primaryFixed, border: '1px solid ' + P.primaryContainer, borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E', flexShrink: 0 }}></div>
                 <p style={{ margin: 0, fontSize: '12px', color: P.onPrimaryContainer, fontWeight: 500 }}>
-                  Mode simulation — positions GPS generees toutes les 5s. En production : connectez Firebase Realtime Database (<code style={{ fontSize: '11px', backgroundColor: 'rgba(125,87,0,0.1)', padding: '1px 5px', borderRadius: '3px' }}>VITE_FIREBASE_DATABASE_URL</code>) pour le tracking reel via <code style={{ fontSize: '11px', backgroundColor: 'rgba(125,87,0,0.1)', padding: '1px 5px', borderRadius: '3px' }}>positions/{"{"}id_livreur{"}"}</code>. </p>
-            </div>
-
+                 Mode simulation — positions GPS generees toutes les 5s. En production : connectez Firebase Realtime Database (<code style={{ fontSize: '11px', backgroundColor: 'rgba(125,87,0,0.1)', padding: '1px 5px', borderRadius: '3px' }}>VITE_FIREBASE_DATABASE_URL</code>) pour le tracking reel via <code style={{ fontSize: '11px', backgroundColor: 'rgba(125,87,0,0.1)', padding: '1px 5px', borderRadius: '3px' }}>positions/{"{"}id_livreur{"}"}</code>. </p>
+            </div> */}
             <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '14px' }}>
 
                 {/* LISTE LIVREURS */}
