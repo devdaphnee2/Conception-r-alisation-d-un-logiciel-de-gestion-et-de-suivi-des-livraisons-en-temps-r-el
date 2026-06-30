@@ -330,3 +330,17 @@ CREATE INDEX idx_recouvrement_delivery ON recouvrement(deliveryorder_id);
 
 ALTER TABLE bordereaux 
 MODIFY COLUMN status ENUM('Genere','Imprime','Distribue') DEFAULT 'Genere';
+
+//executez la commande ci dans votre bd glotelho
+-- Migration : Ajout photo de profil obligatoire pour enrolement livreur
+-- A executer dans MySQL Workbench sur glotelho_db
+
+USE glotelho_db;
+
+ALTER TABLE delivery_persons
+    ADD COLUMN photo_profil VARCHAR(255) NULL COMMENT 'Photo visage du livreur — cadrage obligatoire';
+
+SELECT 'Migration OK - colonne photo_profil ajoutee' AS resultat;
+
+//Puis taper la commande 
+//cd backend && npx prisma generate
