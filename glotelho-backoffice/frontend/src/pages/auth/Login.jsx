@@ -1,151 +1,167 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { IconEye, IconEyeOff } from '../../components/Icons';
+import api from '../../services/api';
 
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
+    error: '#ba1a1a', errorContainer: '#ffdad6',
     surface: '#ffffff', surfaceContainerLow: '#f3f3f3',
-    inverseS: '#2f3131', inverseSOn: '#f1f1f1',
     onSurface: '#1a1c1c', onSurfaceVariant: '#4f4536',
     outline: '#817564', outlineVariant: '#d3c4b0',
-    error: '#ba1a1a', errorContainer: '#ffdad6',
+    inverseS: '#2f3131', inverseSOn: '#f1f1f1',
 };
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'TON_CLIENT_ID.apps.googleusercontent.com';
+
 export default function Login() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const googleBtnRef = useRef(null);
 
+    // Connexion classique — nom d'utilisateur (email) + mot de passe
     async function handleSubmit(e) {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await login(email, password);
+            await login(username, password);
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Identifiants incorrects.');
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }
 
+    // Connexion Google — compte deja existant uniquement
+    async function handleGoogleCredential(response) {
+        setError('');
+        setLoading(true);
+        try {
+            const res = await api.post('/auth/google-login', { credential: response.credential });
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            window.location.href = '/dashboard';
+        } catch (err) {
+            setError(err.response?.data?.message || 'Connexion Google impossible. Avez-vous deja un compte ?');
+        } finally { setLoading(false); }
+    }
+
+    // ── Chargement du script Google Identity Services ────────
+    // Evite la double initialisation (warning GSI_LOGGER) en
+    // verifiant si le script est deja present dans le DOM avant
+    // de le recreer, et nettoie au demontage du composant.
+    useEffect(() => {
+        function initGoogle() {
+            if (window.google && googleBtnRef.current) {
+                window.google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleCredential,
+                });
+                window.google.accounts.id.renderButton(googleBtnRef.current, {
+                    theme: 'outline',
+                    size: 'large',
+                    width: '100%',
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left',
+                });
+            }
+        }
+
+        const existingScript = document.getElementById('google-identity-script');
+        if (existingScript) {
+            // Script deja charge — on initialise juste le bouton
+            initGoogle();
+        } else {
+            const script = document.createElement('script');
+            script.id = 'google-identity-script';
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = initGoogle;
+            document.body.appendChild(script);
+        }
+
+        return () => {
+            if (window.google?.accounts?.id) {
+                window.google.accounts.id.cancel();
+            }
+        };
+    }, []);
+    // ─────────────────────────────────────────────────────────
+
+    const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, fontSize: '14px', color: P.onSurface, outline: 'none', boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif' };
+
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'Poppins, sans-serif', backgroundColor: P.surface }}>
+        <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'Poppins, sans-serif' }}>
 
-            {/* LEFT — formulaire uniquement */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
-                <div style={{ width: '100%', maxWidth: '400px' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9f9f9', padding: '20px' }}>
+                <div style={{ width: '100%', maxWidth: '380px' }}>
 
-                    {/* Logo + titre */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
-                        <div style={{ width: '42px', height: '42px', backgroundColor: P.inverseS, borderRadius: '10px', padding: '6px', flexShrink: 0 }}>
-                            <img src="/logo_glotelho.png" alt="Glotelho" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <div style={{ width: '52px', height: '52px', backgroundColor: P.surfaceContainerLow, borderRadius: '14px', padding: '8px', marginBottom: '24px' }}>
+                        <img src="/logo_glotelho.png" alt="Glotelho" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    </div>
+
+                    <h1 style={{ fontSize: '22px', fontWeight: 800, color: P.onSurface, margin: '0 0 6px 0' }}>Connexion</h1>
+                    <p style={{ fontSize: '13px', color: P.outline, margin: '0 0 28px 0' }}>Accedez au back-office Glotelho.</p>
+
+                    {error && <div style={{ backgroundColor: P.errorContainer, color: P.error, padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: 500 }}>{error}</div>}
+
+                    {/* OPTION 1 — Google */}
+                    <div ref={googleBtnRef} style={{ marginBottom: '20px', minHeight: '44px' }}></div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 20px 0' }}>
+                        <div style={{ flex: 1, height: '1px', backgroundColor: P.outlineVariant }}></div>
+                        <span style={{ fontSize: '11px', color: P.outline, fontWeight: 500 }}>ou</span>
+                        <div style={{ flex: 1, height: '1px', backgroundColor: P.outlineVariant }}></div>
+                    </div>
+
+                    {/* OPTION 2 — Nom d'utilisateur + mot de passe */}
+                    <form onSubmit={handleSubmit}>
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>Nom d'utilisateur ou email</label>
+                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} style={inputStyle} placeholder="manager@glotelho.com" required />
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: P.onSurface }}>Glotelho</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: P.outline, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Back-office</p>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>Mot de passe</label>
+                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} placeholder="••••••••" required />
                         </div>
-                    </div>
 
-                    <div style={{ marginBottom: '32px' }}>
-                        <h1 style={{ margin: '0 0 6px 0', fontSize: '26px', fontWeight: 700, color: P.onSurface, letterSpacing: '-0.02em' }}>
-                            Connexion
-                        </h1>
-                        <p style={{ margin: 0, fontSize: '13px', color: P.outline }}>
-                            Acces reserve aux managers Glotelho
-                        </p>
-                    </div>
-
-                    {error && (
-                        <div style={{ backgroundColor: P.errorContainer, border: '1px solid rgba(186,26,26,0.2)', color: P.error, padding: '11px 14px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px', fontWeight: 500 }}>
-                            {error}
+                        <div style={{ textAlign: 'right', marginTop: '10px' }}>
+                            <Link to="/forgot-password" style={{ fontSize: '12px', color: P.primary, fontWeight: 600, textDecoration: 'none' }}>Mot de passe oublie ?</Link>
                         </div>
-                    )}
 
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ display: 'grid', gap: '16px' }}>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, marginBottom: '7px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    placeholder="manager@glotelho.com"
-                                    required
-                                    autoFocus
-                                    style={{ width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, fontSize: '13px', color: P.onSurface, backgroundColor: P.surface, fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box', transition: 'all 0.15s' }}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, marginBottom: '7px', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                                    Mot de passe
-                                </label>
-                                <div style={{ position: 'relative' }}>
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        required
-                                        style={{ width: '100%', padding: '12px 42px 12px 14px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, fontSize: '13px', color: P.onSurface, backgroundColor: P.surface, fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box', transition: 'all 0.15s' }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        style={{ position: 'absolute', right: '11px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: P.outline, display: 'flex', padding: '4px' }}
-                                    >
-                                        {showPassword ? <IconEyeOff style={{ width: '17px', height: '17px' }} /> : <IconEye style={{ width: '17px', height: '17px' }} />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                style={{ width: '100%', padding: '12px 24px', backgroundColor: loading ? P.outline : P.primary, color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: loading ? 'none' : '0 4px 14px rgba(125,87,0,0.3)', transition: 'all 0.2s', marginTop: '4px' }}
-                                onMouseEnter={e => { if (!loading) e.currentTarget.style.backgroundColor = '#6b4900'; }}
-                                onMouseLeave={e => { if (!loading) e.currentTarget.style.backgroundColor = P.primary; }}
-                            >
-                                {loading ? 'Connexion...' : 'Se connecter'}
-                            </button>
-
-                        </div>
+                        <button type="submit" disabled={loading}
+                            style={{ width: '100%', marginTop: '20px', backgroundColor: loading ? P.outline : P.primary, color: '#fff', padding: '13px', borderRadius: '10px', border: 'none', fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: loading ? 'none' : '0 4px 14px rgba(125,87,0,0.3)' }}>
+                            {loading ? 'Connexion...' : 'Se connecter'}
+                        </button>
                     </form>
 
-                </div>
-            </div>
-
-            {/* RIGHT — illustration sobre */}
-            <div style={{ width: '45%', backgroundColor: P.inverseS, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '48px', position: 'relative', overflow: 'hidden' }}>
-
-                <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '320px', height: '320px', borderRadius: '50%', backgroundColor: 'rgba(201,149,46,0.08)' }}></div>
-                <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '240px', height: '240px', borderRadius: '50%', backgroundColor: 'rgba(201,149,46,0.05)' }}></div>
-
-                <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '340px' }}>
-                    <div style={{ width: '72px', height: '72px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px' }}>
-                        <img src="/logo_glotelho.png" alt="Glotelho" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                    </div>
-                    <h2 style={{ margin: '0 0 14px 0', fontSize: '26px', fontWeight: 800, color: P.inverseSOn, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
-                        Gestion des livraisons<br/>
-                        <span style={{ color: P.primaryContainer }}>en temps reel</span>
-                    </h2>
-                    <p style={{ margin: 0, fontSize: '14px', color: 'rgba(241,241,241,0.45)', lineHeight: 1.7 }}>
-                        Supervisez vos livreurs, suivez chaque colis et gerez les incidents depuis un seul tableau de bord operationnel.
+                    <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: P.outline }}>
+                        Pas encore de compte ? <Link to="/register" style={{ color: P.primary, fontWeight: 600, textDecoration: 'none' }}>Creer un compte manager</Link>
                     </p>
                 </div>
-
             </div>
 
+            <div style={{ flex: 1, backgroundColor: P.inverseS, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                <div style={{ textAlign: 'center', maxWidth: '380px' }}>
+                    <div style={{ width: '90px', height: '90px', backgroundColor: P.primary, borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px' }}>
+                        <svg width="42" height="42" fill="none" stroke="white" viewBox="0 0 24 24" strokeWidth="1.6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 17H3a1 1 0 01-1-1v-4a1 1 0 011-1h12l4 3v2h-2M5 17h7"/>
+                            <circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 11l2-4h8l2 4"/>
+                        </svg>
+                    </div>
+                    <h2 style={{ fontSize: '22px', fontWeight: 700, color: P.inverseSOn, margin: '0 0 12px 0' }}>Suivi des livraisons en temps reel</h2>
+                    <p style={{ fontSize: '14px', color: 'rgba(241,241,241,0.5)', lineHeight: 1.6, margin: 0 }}>
+                        Gerez vos livraisons, livreurs et litiges depuis une plateforme unique a Douala.
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }

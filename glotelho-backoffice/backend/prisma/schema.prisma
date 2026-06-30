@@ -333,6 +333,10 @@ model users {
   delivery_persons delivery_persons?
   managers         managers?
   notifications    notifications[]
+  reset_password_token   String?   @db.VarChar(255)
+  reset_password_expires DateTime?
+  google_id String? @unique @db.VarChar(255)
+  photo_url String?  @db.VarChar(500)
 
   @@index([email], map: "idx_email")
   @@index([role], map: "idx_role")

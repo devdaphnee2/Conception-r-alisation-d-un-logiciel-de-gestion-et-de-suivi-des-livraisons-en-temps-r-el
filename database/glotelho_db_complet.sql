@@ -331,6 +331,8 @@ CREATE INDEX idx_recouvrement_delivery ON recouvrement(deliveryorder_id);
 ALTER TABLE bordereaux 
 MODIFY COLUMN status ENUM('Genere','Imprime','Distribue') DEFAULT 'Genere';
 
+
+// 30/06/2026
 //executez la commande ci dans votre bd glotelho
 -- Migration : Ajout photo de profil obligatoire pour enrolement livreur
 -- A executer dans MySQL Workbench sur glotelho_db
@@ -342,5 +344,28 @@ ALTER TABLE delivery_persons
 
 SELECT 'Migration OK - colonne photo_profil ajoutee' AS resultat;
 
-//Puis taper la commande 
+//Puis taper la commande pour gener des profils de simulation de livreurs
 //cd backend && npx prisma generate
+
+
+-- Migration : Champs pour reinitialisation mot de passe
+-- A executer dans MySQL Workbench sur glotelho_db
+
+USE glotelho_db;
+
+ALTER TABLE users
+    ADD COLUMN reset_password_token   VARCHAR(255) NULL COMMENT 'Hash du token de reset',
+    ADD COLUMN reset_password_expires DATETIME     NULL COMMENT 'Date expiration du token (1h)';
+
+SELECT 'Migration OK - colonnes reset password ajoutees' AS resultat;
+
+// -- Migration : Champs pour connexion Google OAuth
+-- A executer dans MySQL Workbench sur glotelho_db
+
+USE glotelho_db;
+
+ALTER TABLE users
+    ADD COLUMN google_id  VARCHAR(255) NULL UNIQUE COMMENT 'ID Google unique (sub)',
+    ADD COLUMN photo_url  VARCHAR(500) NULL COMMENT 'Photo de profil Google';
+
+SELECT 'Migration OK - colonnes Google OAuth ajoutees' AS resultat;
