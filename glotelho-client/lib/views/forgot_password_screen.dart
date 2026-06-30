@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../views/login_screen.dart';
+import '../utils/constants.dart';
+import '../controllers/auth_controller.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -167,7 +170,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               return null;
             },
             decoration: InputDecoration(
-              hintText: 'exemple@email.com',
+              hintText: 'entrezvotreemail@gmail.com',
               hintStyle: const TextStyle(color: Colors.grey),
               prefixIcon: const Icon(Icons.email_outlined, color: navy),
               filled: true,
