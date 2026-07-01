@@ -13,6 +13,7 @@ const bordereauRoutes = require('./routes/bordereauRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const profilRoutes = require('./routes/profilRoutes');
 const livreurMobileRoutes = require('./routes/livreurMobileRoutes');
+const recouvrementRoutes = require('./routes/recouvrementRoutes');
 
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -33,5 +34,6 @@ app.get('/', (req, res) => {
     res.json({ message: 'API Glotelho Back-office operationnelle' });
 });
 app.use('/api/mobile/livreur', livreurMobileRoutes);
+app.use('/api/recouvrements', recouvrementRoutes);
 
 module.exports = app;
