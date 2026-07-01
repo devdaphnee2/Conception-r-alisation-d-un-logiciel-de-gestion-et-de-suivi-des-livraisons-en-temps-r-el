@@ -19,7 +19,7 @@ class AppState extends ChangeNotifier {
   bool   get isDarkMode        => _isDarkMode;
   bool   get biometricEnabled  => _biometricEnabled;
   bool   get isLoggedIn        => _isLoggedIn;
-  String get userName          => _userLastName.isNotEmpty ? '$_userName $_userLastName' : _userName;
+  String get userName       => _userName; // contient full_name directement
   String get userFirstName     => _userName;
   String get userLastName      => _userLastName;
   String get userEmail         => _userEmail;
@@ -52,19 +52,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Appelé après connexion réussie — stocke sur le disque.
+  /// Appelé après connexion/inscription réussie — stocke sur le disque.
   void setUser({
     required String token,
     required String firstName,
-    required String lastName,
+    String lastName = '',
     required String email,
     required String phone,
+    String? avatarUrl,
   }) {
     _isLoggedIn   = true;
-    _userName     = firstName;
+    _userName     = firstName; // contient le full_name complet
     _userLastName = lastName;
     _userEmail    = email;
     _userPhone    = phone;
+    if (avatarUrl != null) _userAvatarPath = avatarUrl;
     StorageService.saveSession(
       token: token, firstName: firstName, lastName: lastName,
       email: email, phone: phone,
