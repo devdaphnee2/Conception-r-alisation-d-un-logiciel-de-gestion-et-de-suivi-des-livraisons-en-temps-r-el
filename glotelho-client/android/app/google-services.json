@@ -12,7 +12,20 @@
           "package_name": "com.example.glotelho_client"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1056096384522-iug9am7tc0nbb6nrfgqd577it1vc39a4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.glotelho_client",
+            "certificate_hash": "c510f3bad360000ecd31b6dd44c77ba974697548"
+          }
+        },
+        {
+          "client_id": "1056096384522-k0e89pvhcr0l8nnr1ianlpvsm8of2j2e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDj-paCOPepMpNmbcb_a01exGPaaGw_l8I"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1056096384522-k0e89pvhcr0l8nnr1ianlpvsm8of2j2e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
