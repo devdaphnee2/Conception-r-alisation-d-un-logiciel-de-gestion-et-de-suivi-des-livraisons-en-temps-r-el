@@ -12,7 +12,10 @@ const getDeliveryOrdersByCustomerId = async (customerId) => {
        d.id, d.status, d.delivery_address, d.delivery_latitude, d.delivery_longitude,
        d.amount_to_collect, d.collected_amount, d.estimated_delivery_time,
        d.creation_date, d.delivery_date,
-       dp.id AS delivery_person_id, u.first_name AS livreur_first_name, u.last_name AS livreur_last_name, u.phone AS livreur_phone
+       dp.id AS delivery_person_id,
+       u.first_name AS livreur_first_name,
+       u.last_name AS livreur_last_name,
+       u.phone AS livreur_phone
      FROM deliveryorders d
      LEFT JOIN delivery_persons dp ON d.delivery_person_id = dp.id
      LEFT JOIN users u ON dp.user_id = u.id
@@ -51,6 +54,7 @@ const validateConfirmation = async (confirmationId) => {
 };
 
 const markDeliveryAsDelivered = async (deliveryOrderId) => {
+  // Valeur ENUM correcte dans la base : 'Livré'
   await pool.query(
     `UPDATE deliveryorders SET status = 'Livré', delivery_date = NOW() WHERE id = ?`,
     [deliveryOrderId]
@@ -61,6 +65,7 @@ const markDeliveryAsDelivered = async (deliveryOrderId) => {
 // 3. Annulation d'une livraison
 // ──────────────────────────────────────────────
 const cancelDeliveryOrder = async (deliveryOrderId, reason) => {
+  // Valeur ENUM correcte dans la base : 'Annulé'
   await pool.query(
     `UPDATE deliveryorders 
      SET status = 'Annulé', suspension_reason = ?, tracking_blocked = 1
@@ -90,24 +95,32 @@ const hasNotation = async (deliveryOrderId) => {
 };
 
 // ──────────────────────────────────────────────
-// 5. Litiges
+// 5. Litiges — stockés dans remises_compensations
+// Cohérence avec le backend manager (litigeController.js utilise remises_compensations)
 // ──────────────────────────────────────────────
 
-// Récupérer le statut actuel d'un livreur (snapshot/traçabilité)
-const getDeliveryPersonStatus = async (deliveryPersonId) => {
+// Récupérer l'order_id lié à une livraison (via delivery_items)
+const getOrderIdByDeliveryOrder = async (deliveryOrderId) => {
   const [rows] = await pool.query(
-    `SELECT status FROM delivery_persons WHERE id = ?`,
-    [deliveryPersonId]
+    `SELECT order_id FROM delivery_items WHERE deliveryorder_id = ? LIMIT 1`,
+    [deliveryOrderId]
   );
-  return rows[0]?.status || null;
+  return rows[0]?.order_id || null;
 };
 
+// Récupérer le premier manager disponible
+const getFirstManagerId = async () => {
+  const [rows] = await pool.query(`SELECT id FROM managers LIMIT 1`);
+  return rows[0]?.id || null;
+};
+
+// Créer un litige dans remises_compensations
 const createLitige = async (data) => {
-  const { deliveryorder_id, customer_id, delivery_person_id, description, livreur_statut } = data;
+  const { order_id, type, reason, amount, manager_id } = data;
   const [result] = await pool.query(
-    `INSERT INTO litiges (deliveryorder_id, customer_id, delivery_person_id, description, livreur_statut_au_moment_declaration)
-     VALUES (?, ?, ?, ?, ?)`,
-    [deliveryorder_id, customer_id, delivery_person_id, description, livreur_statut]
+    `INSERT INTO remises_compensations (order_id, type, reason, amount, approved_by_manager_id, status)
+     VALUES (?, ?, ?, ?, ?, 'En_attente')`,
+    [order_id, type, reason, amount || null, manager_id]
   );
   return result.insertId;
 };
@@ -121,6 +134,7 @@ module.exports = {
   cancelDeliveryOrder,
   createNotation,
   hasNotation,
-  getDeliveryPersonStatus,
+  getOrderIdByDeliveryOrder,
+  getFirstManagerId,
   createLitige
 };

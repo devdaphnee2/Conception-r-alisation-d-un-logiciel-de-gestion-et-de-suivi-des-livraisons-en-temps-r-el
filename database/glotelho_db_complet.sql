@@ -10,7 +10,7 @@ USE glotelho_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ═══════════════════════════════════════════════════════════════
--- 1. USERS
+-- 1. USERS — avec Google OAuth et reset password intégrés
 -- ═══════════════════════════════════════════════════════════════
 CREATE TABLE users (
     id              INT AUTO_INCREMENT PRIMARY KEY,
