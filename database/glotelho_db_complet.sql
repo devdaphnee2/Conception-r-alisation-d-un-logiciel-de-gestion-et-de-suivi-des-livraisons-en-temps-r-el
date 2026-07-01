@@ -342,3 +342,15 @@ CREATE TABLE IF NOT EXISTS password_resets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_token (token)
 ) ENGINE=InnoDB COMMENT='Tokens de réinitialisation de mot de passe';
+
+
+-- Migration : Champs pour reinitialisation mot de passe
+-- A executer dans MySQL Workbench sur glotelho_db
+
+USE glotelho_db;
+
+ALTER TABLE users
+    ADD COLUMN reset_password_token   VARCHAR(255) NULL COMMENT 'Hash du token de reset',
+    ADD COLUMN reset_password_expires DATETIME     NULL COMMENT 'Date expiration du token (1h)';
+
+SELECT 'Migration OK - colonnes reset password ajoutees' AS resultat;
