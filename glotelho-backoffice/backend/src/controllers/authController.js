@@ -2,9 +2,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../utils/prismaClient');
+const { sendResetPasswordEmail } = require('../utils/mailer');
 
 // ──────────────────────────────────────────────────────────
-// LOGIN — connexion classique
+// LOGIN
 // ──────────────────────────────────────────────────────────
 async function login(req, res) {
     try {
@@ -21,7 +22,9 @@ async function login(req, res) {
             return res.status(403).json({ message: 'Ce compte n\'est pas autorise sur le back-office manager.' });
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET, { expiresIn: '8h' }
+        );
 
         res.json({
             token,
@@ -33,8 +36,7 @@ async function login(req, res) {
 }
 
 // ──────────────────────────────────────────────────────────
-// POST /api/auth/register — Creation manuelle de compte manager
-// Option A : inscription classique avec email + mot de passe
+// REGISTER — Creation compte manager classique
 // ──────────────────────────────────────────────────────────
 async function register(req, res) {
     try {
@@ -56,26 +58,19 @@ async function register(req, res) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
         const user = await prisma.users.create({
-            data: {
-                first_name,
-                last_name,
-                email,
-                phone: phone || '',
-                password: hashedPassword,
-                role: 'manager',
-            }
+            data: { first_name, last_name, email, phone: phone || '', password: hashedPassword, role: 'manager' }
         });
 
-        // Creer le profil manager associe
         try {
             await prisma.managers.create({ data: { user_id: user.id } });
         } catch (e) {
             console.warn('Profil manager non cree automatiquement :', e.message);
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET, { expiresIn: '8h' }
+        );
 
         res.status(201).json({
             message: 'Compte manager cree avec succes.',
@@ -100,6 +95,9 @@ async function me(req, res) {
     }
 }
 
+// ──────────────────────────────────────────────────────────
+// PUT /api/auth/me
+// ──────────────────────────────────────────────────────────
 async function updateMe(req, res) {
     try {
         const { first_name, last_name, email, phone } = req.body;
@@ -109,13 +107,19 @@ async function updateMe(req, res) {
                 return res.status(400).json({ message: 'Cet email est deja utilise par un autre compte.' });
             }
         }
-        const updated = await prisma.users.update({ where: { id: req.user.id }, data: { first_name, last_name, email, phone } });
+        const updated = await prisma.users.update({
+            where: { id: req.user.id },
+            data: { first_name, last_name, email, phone }
+        });
         res.json({ message: 'Profil mis a jour.', user: { id: updated.id, first_name: updated.first_name, last_name: updated.last_name, email: updated.email, phone: updated.phone, role: updated.role } });
     } catch (error) {
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 }
 
+// ──────────────────────────────────────────────────────────
+// POST /api/auth/change-password
+// ──────────────────────────────────────────────────────────
 async function changePassword(req, res) {
     try {
         const { current_password, new_password } = req.body;
@@ -134,39 +138,59 @@ async function changePassword(req, res) {
     }
 }
 
+// ──────────────────────────────────────────────────────────
+// POST /api/auth/forgot-password
+// Genere un token et envoie un VRAI email via Nodemailer
+// ──────────────────────────────────────────────────────────
 async function forgotPassword(req, res) {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: 'Email requis.' });
 
         const user = await prisma.users.findUnique({ where: { email } });
-        if (!user) return res.json({ message: 'Si ce compte existe, un email a ete envoye.' });
 
+        // Toujours repondre succes meme si email inconnu (securite)
+        if (!user) return res.json({ message: 'Si ce compte existe, un email de reinitialisation a ete envoye.' });
+
+        // Generer token securise + expiration 1h
         const resetToken = crypto.randomBytes(32).toString('hex');
         const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
-        await prisma.users.update({ where: { id: user.id }, data: { reset_password_token: resetTokenHash, reset_password_expires: resetExpires } });
+        await prisma.users.update({
+            where: { id: user.id },
+            data: { reset_password_token: resetTokenHash, reset_password_expires: resetExpires }
+        });
 
         const resetUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/reset-password?token=' + resetToken;
 
-        console.log('=== EMAIL RESET PASSWORD (simule) ===');
-        console.log('A : ' + user.email);
-        console.log('Lien : ' + resetUrl);
-        console.log('======================================');
+        // Envoi du vrai email via Nodemailer
+        await sendResetPasswordEmail(user.email, resetUrl, user.first_name);
 
-        res.json({ message: 'Si ce compte existe, un email a ete envoye.', dev_reset_url: process.env.NODE_ENV !== 'production' ? resetUrl : undefined });
+        res.json({ message: 'Email de reinitialisation envoye a ' + user.email + '. Verifiez votre boite de reception.' });
     } catch (error) {
+        console.error('Erreur forgot-password :', error.message);
+        // Si l'email echoue, on informe sans bloquer
+        if (error.message.includes('sendMail') || error.message.includes('EAUTH') || error.message.includes('credentials')) {
+            return res.status(500).json({ message: 'Erreur d\'envoi email. Verifiez EMAIL_USER et EMAIL_PASS dans .env du backend.' });
+        }
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 }
 
+// ──────────────────────────────────────────────────────────
+// GET /api/auth/verify-reset-token
+// ──────────────────────────────────────────────────────────
 async function verifyResetToken(req, res) {
     try {
         const { token } = req.query;
         if (!token) return res.status(400).json({ message: 'Token requis.' });
+
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        const user = await prisma.users.findFirst({ where: { reset_password_token: tokenHash, reset_password_expires: { gt: new Date() } } });
+        const user = await prisma.users.findFirst({
+            where: { reset_password_token: tokenHash, reset_password_expires: { gt: new Date() } }
+        });
+
         if (!user) return res.status(400).json({ message: 'Lien invalide ou expire.' });
         res.json({ valid: true });
     } catch (error) {
@@ -174,6 +198,9 @@ async function verifyResetToken(req, res) {
     }
 }
 
+// ──────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// ──────────────────────────────────────────────────────────
 async function resetPassword(req, res) {
     try {
         const { token, password } = req.body;
@@ -181,13 +208,19 @@ async function resetPassword(req, res) {
         if (password.length < 8) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caracteres.' });
 
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-        const user = await prisma.users.findFirst({ where: { reset_password_token: tokenHash, reset_password_expires: { gt: new Date() } } });
+        const user = await prisma.users.findFirst({
+            where: { reset_password_token: tokenHash, reset_password_expires: { gt: new Date() } }
+        });
+
         if (!user) return res.status(400).json({ message: 'Lien invalide ou expire. Veuillez en redemander un.' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        await prisma.users.update({ where: { id: user.id }, data: { password: hashedPassword, reset_password_token: null, reset_password_expires: null } });
+        await prisma.users.update({
+            where: { id: user.id },
+            data: { password: hashedPassword, reset_password_token: null, reset_password_expires: null }
+        });
 
-        res.json({ message: 'Mot de passe reinitialise avec succes.' });
+        res.json({ message: 'Mot de passe reinitialise avec succes. Vous pouvez vous connecter.' });
     } catch (error) {
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
