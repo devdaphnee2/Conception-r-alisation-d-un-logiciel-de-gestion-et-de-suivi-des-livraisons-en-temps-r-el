@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1056096384522",
+    "project_id": "glotelho-express",
+    "storage_bucket": "glotelho-express.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1056096384522:android:5be3003471882bfa7ad1f3",
+        "android_client_info": {
+          "package_name": "com.example.glotelho_client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj-paCOPepMpNmbcb_a01exGPaaGw_l8I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

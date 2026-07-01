@@ -131,6 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: navy,
       body: SafeArea(
         child: SingleChildScrollView(

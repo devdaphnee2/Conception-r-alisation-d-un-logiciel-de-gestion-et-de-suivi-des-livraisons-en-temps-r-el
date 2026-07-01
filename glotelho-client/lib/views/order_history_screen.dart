@@ -573,6 +573,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/app_state.dart';
 import '../utils/constants.dart';
+import '../utils/mock_orders.dart';
 import 'order_details_cancelled_screen.dart';
 import 'order_details_delivered_screen.dart';
 import 'order_details_ongoing_screen.dart';
@@ -587,80 +588,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   String _selectedFilter = 'Toutes';
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> _orders = [
-    {
-      'id': 'GE-902341',
-      'statut': 'Livré',
-      'nom': 'iPhone 15 Pro Max - Natural Titanium',
-      'date': '12 Oct. 2023 · 14:32',
-      'adresse': 'Douala, Bonapriso',
-      'prix': 895000,
-      'livraison': 2500,
-      'paiement': 'Orange Money',
-      'icon': Icons.phone_android,
-      'livreur': 'Jean-Marc Talla',
-      'livreurTel': '+237 655 123 456',
-      'livreurNote': 4.9,
-      'avis': {'etoiles': 5, 'tags': ['Fast delivery', 'Friendly driver'], 'commentaire': 'Excellent service !'},
-      'articles': [
-        {'nom': 'iPhone 15 Pro Max - 256GB', 'detail': 'Titane Naturel', 'qte': 1, 'prix': 892500, 'icon': Icons.phone_android},
-      ],
-    },
-    {
-      'id': 'GE-902558',
-      'statut': 'En cours',
-      'nom': 'Smart TV Samsung 55" QLED 4K',
-      'date': "Aujourd'hui · arrivée avant 18:00",
-      'adresse': 'Yaoundé, Bastos',
-      'prix': 450000,
-      'livraison': 2500,
-      'paiement': 'MTN MoMo',
-      'icon': Icons.tv_outlined,
-      'livreur': 'Moussa Koulibaly',
-      'livreurTel': '+237 677 987 654',
-      'livreurNote': 4.7,
-      'articles': [
-        {'nom': 'Smart TV Samsung 55" QLED 4K', 'detail': 'Résolution 4K UHD', 'qte': 1, 'prix': 447500, 'icon': Icons.tv_outlined},
-      ],
-      'etapeActuelle': 1, // 0=Colis récupéré, 1=En cours, 2=Validée
-    },
-    {
-      'id': 'GE-882110',
-      'statut': 'Annulé',
-      'nom': 'Cafetière Nespresso Pixie',
-      'date': '05 Oct. 2023 · 09:15',
-      'adresse': 'Douala, Akwa',
-      'prix': 125000,
-      'livraison': 0,
-      'paiement': 'Orange Money',
-      'icon': Icons.coffee_outlined,
-      'livreur': 'Pierre Abanda',
-      'livreurTel': '+237 699 456 789',
-      'livreurNote': 4.5,
-      'raisonAnnulation': 'Rupture de stock',
-      'articles': [
-        {'nom': 'Cafetière Nespresso Pixie', 'detail': 'Couleur Rouge', 'qte': 1, 'prix': 125000, 'icon': Icons.coffee_outlined},
-      ],
-    },
-    {
-      'id': 'GE-871190',
-      'statut': 'Livré',
-      'nom': 'MacBook Air M2 13" - Gris Sidéral',
-      'date': '28 Sep. 2023 · 11:45',
-      'adresse': 'Yaoundé, Bastos',
-      'prix': 780000,
-      'livraison': 2500,
-      'paiement': 'Espèces',
-      'icon': Icons.laptop_mac_outlined,
-      'livreur': 'Samuel Nkeng',
-      'livreurTel': '+237 655 789 012',
-      'livreurNote': 4.8,
-      'avis': null, // pas encore noté
-      'articles': [
-        {'nom': 'MacBook Air M2 13"', 'detail': 'Gris Sidéral, 8GB RAM', 'qte': 1, 'prix': 777500, 'icon': Icons.laptop_mac_outlined},
-      ],
-    },
-  ];
+  // Données déplacées dans lib/utils/mock_orders.dart (partagées avec HomeScreen).
+  final List<Map<String, dynamic>> _orders = mockOrders;
 
   List<Map<String, dynamic>> get _filtered {
     List<Map<String, dynamic>> list = _orders;
@@ -728,27 +657,33 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? const Color(0xFF0B0F17) : const Color(0xFFF5F5F5);
+    final appBarBg = isDark ? const Color(0xFF161D29) : Colors.white;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white60 : Colors.grey;
+    final filterUnselectedBg = isDark ? const Color(0xFF161D29) : Colors.white;
+    final filterUnselectedBorder = isDark ? const Color(0xFF2E3A4D) : Colors.grey.shade200;
+    final searchBg = isDark ? const Color(0xFF161D29) : Colors.white;
+    final searchBorder = isDark ? const Color(0xFF2E3A4D) : Colors.grey.shade200;
+
     final filters = state.language == 'Français'
         ? ['Toutes', 'En cours', 'Livré', 'Annulé']
         : ['All', 'Ongoing', 'Delivered', 'Cancelled'];
 
-    // Synchroniser le filtre si langue change
-    final localFilter = _selectedFilter;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: appBarBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: titleColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           state.language == 'Français' ? 'Historique des commandes' : 'Order History',
-          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 17),
+          style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 17),
         ),
-        // Pas de panier ni point d'interrogation
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -762,7 +697,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   state.language == 'Français'
                       ? 'Retrouvez le détail de vos livraisons passées et en cours.'
                       : 'Find the details of your past and ongoing deliveries.',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+                  style: TextStyle(fontSize: 13, color: subColor, height: 1.4),
                 ),
                 const SizedBox(height: 14),
 
@@ -771,7 +706,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: filters.map((f) {
-                      // Map filtre affiché → valeur interne
                       final internalVal = _toInternal(f);
                       final isSelected = _selectedFilter == internalVal;
                       return GestureDetector(
@@ -780,16 +714,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.gold : Colors.white,
+                            color: isSelected ? AppColors.gold : filterUnselectedBg,
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                                color: isSelected ? AppColors.gold : Colors.grey.shade200),
+                            border: Border.all(color: isSelected ? AppColors.gold : filterUnselectedBorder),
                           ),
                           child: Text(f,
                               style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? Colors.white : Colors.black87)),
+                                  color: isSelected ? Colors.white : titleColor)),
                         ),
                       );
                     }).toList(),
@@ -801,23 +734,23 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 Container(
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: searchBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: searchBorder),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (_) => setState(() {}),
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: titleColor),
                     decoration: InputDecoration(
                       hintText: state.language == 'Français'
                           ? 'Rechercher une commande...'
                           : 'Search an order...',
-                      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+                      hintStyle: TextStyle(color: subColor, fontSize: 13),
+                      prefixIcon: Icon(Icons.search, color: subColor, size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
+                          icon: Icon(Icons.clear, size: 18, color: subColor),
                           onPressed: () { _searchController.clear(); setState(() {}); })
                           : null,
                       border: InputBorder.none,
@@ -834,15 +767,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           Expanded(
             child: _filtered.isEmpty
                 ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.inbox_outlined, size: 56, color: Colors.grey.shade300),
+              Icon(Icons.inbox_outlined, size: 56, color: isDark ? Colors.white24 : Colors.grey.shade300),
               const SizedBox(height: 12),
               Text(state.language == 'Français' ? 'Aucune commande' : 'No orders found',
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade500)),
+                  style: TextStyle(fontSize: 15, color: subColor)),
             ]))
                 : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _filtered.length,
-              itemBuilder: (_, i) => _buildCard(_filtered[i], state),
+              itemBuilder: (_, i) => _buildCard(_filtered[i], state, isDark),
             ),
           ),
         ],
@@ -860,9 +793,21 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
   }
 
-  Widget _buildCard(Map<String, dynamic> order, AppState state) {
+  Widget _buildCard(Map<String, dynamic> order, AppState state, bool isDark) {
     final statut = order['statut'] as String;
     final isEn = state.language == 'English';
+    final cardBg = isDark ? const Color(0xFF161D29) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white60 : Colors.grey;
+    final iconBg = isDark ? const Color(0xFF1E2733) : const Color(0xFFF5F5F5);
+    final iconColor = isDark ? Colors.white38 : Colors.grey.shade500;
+    final dividerColor = isDark ? const Color(0xFF26303F) : const Color(0xFFF0F0F0);
+    final badgeBg = isDark
+        ? (statut == 'Livré' ? const Color(0xFF1B3A1F) : statut == 'En cours' ? const Color(0xFF0D2A45) : const Color(0xFF1E2733))
+        : _badgeBg(statut);
+    final cancelReasonBg = isDark ? const Color(0xFF1E2733) : Colors.grey.shade100;
+    final cancelReasonColor = isDark ? Colors.white54 : Colors.grey.shade600;
+
     final statutLabel = isEn
         ? (statut == 'Livré' ? 'DELIVERED' : statut == 'En cours' ? 'ONGOING' : 'CANCELLED')
         : statut.toUpperCase();
@@ -872,72 +817,58 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardBg,
           borderRadius: BorderRadius.circular(14),
           border: Border(left: BorderSide(color: _borderColor(statut), width: 4)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.04), blurRadius: 8)],
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ID + badge
               Row(children: [
                 Text('#${order['id']}',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black87)),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: _badgeBg(statut), borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(6)),
                   child: Text(statutLabel,
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _badgeColor(statut), letterSpacing: 0.5)),
                 ),
               ]),
               const SizedBox(height: 8),
-
-              // Produit
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Container(width: 46, height: 46,
-                    decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(order['icon'] as IconData, size: 24, color: Colors.grey.shade500)),
+                    decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+                    child: Icon(order['icon'] as IconData, size: 24, color: iconColor)),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(order['nom'] as String,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87, height: 1.3)),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor, height: 1.3)),
                   const SizedBox(height: 3),
-                  Text(order['date'] as String,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(order['date'] as String, style: TextStyle(fontSize: 12, color: subColor)),
                 ])),
               ]),
-
               const SizedBox(height: 10),
-              const Divider(height: 1, color: Color(0xFFF0F0F0)),
+              Divider(height: 1, color: dividerColor),
               const SizedBox(height: 10),
-
-              // Prix + action
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text(_fmt(order['prix'] as int),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
-                _buildAction(order, state),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
+                _buildAction(order, state, isDark),
               ]),
-
-              // Raison annulation visible directement
               if (statut == 'Annulé' && order['raisonAnnulation'] != null) ...[
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: cancelReasonBg, borderRadius: BorderRadius.circular(8)),
                   child: Row(children: [
-                    Icon(Icons.info_outline, size: 14, color: Colors.grey.shade600),
+                    Icon(Icons.info_outline, size: 14, color: cancelReasonColor),
                     const SizedBox(width: 6),
-                    Text(
-                      '${isEn ? 'Reason' : 'Raison'}: ${order['raisonAnnulation']}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
+                    Text('${isEn ? 'Reason' : 'Raison'}: ${order['raisonAnnulation']}',
+                        style: TextStyle(fontSize: 12, color: cancelReasonColor)),
                   ]),
                 ),
               ],
@@ -948,9 +879,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 
-  Widget _buildAction(Map<String, dynamic> order, AppState state) {
+  Widget _buildAction(Map<String, dynamic> order, AppState state, bool isDark) {
     final statut = order['statut'] as String;
     final isEn = state.language == 'English';
+    final outlinedColor = isDark ? Colors.white54 : Colors.black87;
+    final outlinedBorder = isDark ? const Color(0xFF2E3A4D) : Colors.grey.shade300;
 
     if (statut == 'En cours') {
       return ElevatedButton.icon(
@@ -970,11 +903,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         if (order['avis'] == null)
           OutlinedButton.icon(
             onPressed: () => _openDetail(order),
-            icon: const Icon(Icons.star_border, size: 14),
-            label: Text(isEn ? 'Review' : 'Avis', style: const TextStyle(fontSize: 11)),
+            icon: Icon(Icons.star_border, size: 14, color: outlinedColor),
+            label: Text(isEn ? 'Review' : 'Avis', style: TextStyle(fontSize: 11, color: outlinedColor)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
-              side: BorderSide(color: Colors.grey.shade300),
+              foregroundColor: outlinedColor,
+              side: BorderSide(color: outlinedBorder),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1001,17 +934,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
       ]);
     }
-    // Annulé
     return OutlinedButton(
       onPressed: () => _openDetail(order),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.black87,
-        side: BorderSide(color: Colors.grey.shade300),
+        foregroundColor: outlinedColor,
+        side: BorderSide(color: outlinedBorder),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Text(isEn ? 'Details' : 'Détails', style: const TextStyle(fontSize: 12)),
+      child: Text(isEn ? 'Details' : 'Détails', style: TextStyle(fontSize: 12, color: outlinedColor)),
     );
   }
 }
