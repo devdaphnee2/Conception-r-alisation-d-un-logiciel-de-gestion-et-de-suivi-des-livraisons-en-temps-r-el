@@ -25,11 +25,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _envoyerLien() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-      _emailEnvoye = true;
-    });
+
+    final result = await AuthController.forgotPassword(
+      email: _emailController.text.trim(),
+    );
+
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      setState(() => _emailEnvoye = true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur lors de l\'envoi.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
