@@ -54,16 +54,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final token = data['token'] as String;
       final user  = data['user']  as Map<String, dynamic>;
 
-      // Stocker le token pour toutes les prochaines requêtes
       ApiService.setToken(token);
 
-      // Sauvegarder session + profil dans AppState ET sur le disque
       context.read<AppState>().setUser(
         token:     token,
-        firstName: user['first_name'] as String? ?? '',
-        lastName:  user['last_name']  as String? ?? '',
-        email:     user['email']      as String? ?? '',
-        phone:     user['phone']      as String? ?? '',
+        firstName: user['full_name'] as String? ?? '',
+        lastName:  '',
+        email:     user['email']    as String? ?? '',
+        phone:     user['phone']    as String? ?? '',
+        avatarUrl: user['avatar_url'] as String?,
       );
 
       // Envoyer le token FCM au backend

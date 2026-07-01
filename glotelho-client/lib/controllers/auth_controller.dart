@@ -23,7 +23,6 @@ class AuthController {
     }
   }
 
-  // Inscription
   static Future<Map<String, dynamic>> register({
     required String nom,
     required String email,
@@ -34,17 +33,13 @@ class AuthController {
       final response = await ApiService.dio.post(
         '/auth/register',
         data: {
-          'last_name': nom,
-          'email': email,
-          'phone': telephone,
-          'password': password,
-          'role': 'customer',
+          'full_name': nom,
+          'email':     email,
+          'phone':     telephone,
+          'password':  password,
         },
       );
-      return {
-        'success': true,
-        'data': response.data,
-      };
+      return {'success': true, 'data': response.data};
     } on DioException catch (e) {
       return {
         'success': false,
