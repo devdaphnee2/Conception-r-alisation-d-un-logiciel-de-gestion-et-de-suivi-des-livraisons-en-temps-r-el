@@ -10,12 +10,13 @@ const {
   cancelDeliveryOrder,
   createNotation,
   hasNotation,
-  getDeliveryPersonStatus,
+  getOrderIdByDeliveryOrder,
+  getFirstManagerId,
   createLitige
 } = require('../models/clientModel');
 const pool = require('../config/db');
 
-// Récupérer le customer_id à partir de req.user.id (table customers liée à users)
+// Récupérer le customer_id à partir de req.user.id
 async function getCustomerId(userId) {
   const [rows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [userId]);
   return rows[0]?.id;
@@ -30,7 +31,6 @@ async function getCommandes(req, res) {
     if (!customerId) {
       return res.status(404).json({ message: 'Profil client introuvable.' });
     }
-
     const livraisons = await getDeliveryOrdersByCustomerId(customerId);
     res.json({ livraisons });
   } catch (error) {
@@ -84,7 +84,7 @@ async function annulerLivraison(req, res) {
     const { motif } = req.body;
 
     if (!motif) {
-      return res.status(400).json({ message: 'Le motif d\'annulation est requis.' });
+      return res.status(400).json({ message: "Le motif d'annulation est requis." });
     }
 
     const customerId = await getCustomerId(req.user.id);
@@ -93,12 +93,14 @@ async function annulerLivraison(req, res) {
       return res.status(404).json({ message: 'Livraison introuvable.' });
     }
 
+    // Vérifier les statuts ENUM exacts de la base
     if (['Livré', 'Annulé'].includes(livraison.status)) {
-      return res.status(400).json({ message: `Impossible d'annuler une livraison au statut "${livraison.status}".` });
+      return res.status(400).json({
+        message: `Impossible d'annuler une livraison au statut "${livraison.status}".`
+      });
     }
 
     await cancelDeliveryOrder(id, motif);
-
     res.json({ message: 'Livraison annulée avec succès.' });
   } catch (error) {
     console.error(error);
@@ -125,6 +127,8 @@ async function noterLivreur(req, res) {
     if (!livraison) {
       return res.status(404).json({ message: 'Livraison introuvable.' });
     }
+
+    // Vérifier le statut ENUM exact
     if (livraison.status !== 'Livré') {
       return res.status(400).json({ message: 'Seule une livraison livrée peut être notée.' });
     }
@@ -154,13 +158,24 @@ async function noterLivreur(req, res) {
 
 // ──────────────────────────────────────────────
 // 5. DÉCLARATION D'UN LITIGE (POST /litiges)
+// Stocké dans remises_compensations — cohérence avec le backend manager
 // ──────────────────────────────────────────────
 async function declarerLitige(req, res) {
   try {
-    const { deliveryorder_id, description } = req.body;
+    const { deliveryorder_id, type, reason, amount } = req.body;
 
-    if (!deliveryorder_id || !description) {
-      return res.status(400).json({ message: 'ID de livraison et description requis.' });
+    if (!deliveryorder_id || !type || !reason) {
+      return res.status(400).json({
+        message: 'ID de livraison, type et raison sont requis.',
+        types_acceptes: ['Retour_produit', 'Rabais', 'Livraison_gratuite', 'Autre']
+      });
+    }
+
+    const typesValides = ['Retour_produit', 'Rabais', 'Livraison_gratuite', 'Autre'];
+    if (!typesValides.includes(type)) {
+      return res.status(400).json({
+        message: `Type invalide. Valeurs acceptées : ${typesValides.join(', ')}`
+      });
     }
 
     const customerId = await getCustomerId(req.user.id);
@@ -169,23 +184,31 @@ async function declarerLitige(req, res) {
       return res.status(404).json({ message: 'Livraison introuvable.' });
     }
 
-    // Un litige ne peut être déclaré que sur une livraison ayant eu un livreur
-    // validé par le manager (statut Disponible au moment de l'assignation).
+    // Un litige ne peut être déclaré que si un livreur validé était assigné
     if (!livraison.delivery_person_id) {
       return res.status(400).json({
-        message: 'Impossible de déclarer un litige : aucun livreur validé n\'a été assigné à cette livraison.'
+        message: "Impossible de déclarer un litige : aucun livreur validé n'a été assigné à cette livraison."
       });
     }
 
-    // Snapshot du statut actuel du livreur (traçabilité, sans bloquer le litige)
-    const livreurStatut = await getDeliveryPersonStatus(livraison.delivery_person_id);
+    // Récupérer l'order_id lié à cette livraison
+    const orderId = await getOrderIdByDeliveryOrder(deliveryorder_id);
+    if (!orderId) {
+      return res.status(400).json({ message: 'Aucune commande associée à cette livraison.' });
+    }
+
+    // Récupérer le manager qui traitera le litige
+    const managerId = await getFirstManagerId();
+    if (!managerId) {
+      return res.status(500).json({ message: 'Aucun manager disponible pour traiter le litige.' });
+    }
 
     const litigeId = await createLitige({
-      deliveryorder_id,
-      customer_id: customerId,
-      delivery_person_id: livraison.delivery_person_id,
-      description,
-      livreur_statut: livreurStatut
+      order_id: orderId,
+      type,
+      reason,
+      amount,
+      manager_id: managerId
     });
 
     res.status(201).json({

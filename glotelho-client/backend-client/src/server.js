@@ -1,25 +1,17 @@
 // src/server.js
-// ═══════════════════════════════════════════════════════════════════
-// SERVEUR EXPRESS — POINT D'ENTRÉE DE L'API
-// ═══════════════════════════════════════════════════════════════════
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 dotenv.config();
 
-// Initialisation de l'application Express
 const app = express();
 
-// ===================================================================
-// 1. MIDDLEWARES GLOBAUX
-// ===================================================================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// ===================================================================
-// 2. ROUTES DE TEST
-// ===================================================================
+// Servir les fichiers uploadés publiquement
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Route racine
 app.get('/', (req, res) => {
@@ -37,17 +29,10 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
-// ===================================================================
-// 3. ROUTES DE L'API
-// ===================================================================
+// Routes
 app.use('/api/v1/auth', require('./routes/authRoutes'));
-
-// Routes client (commandes, confirmation, annulation, notation)
 app.use('/api/v1/client', require('./routes/clientRoutes'));
 
-// ===================================================================
-// 4. LANCEMENT DU SERVEUR
-// ===================================================================
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ [Client] Serveur lancé sur http://localhost:${PORT}`);
