@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../controllers/auth_controller.dart';
 import '../views/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -52,10 +53,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
+
+    final result = await AuthController.register(
+      nom:       _nomController.text.trim(),
+      email:     _emailController.text.trim(),
+      telephone: _telephoneController.text.trim(),
+      password:  _passwordController.text,
+    );
+
     setState(() => _isLoading = false);
-    if (mounted) {
+    if (!mounted) return;
+
+    if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Compte créé avec succès !'),
@@ -65,6 +76,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur lors de l\'inscription.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
