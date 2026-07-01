@@ -38,9 +38,12 @@ app.get('/test-db', async (req, res) => {
 });
 
 // ===================================================================
-// 3. ROUTES DE L'API (AJOUTÉ)
+// 3. ROUTES DE L'API
 // ===================================================================
 app.use('/api/v1/auth', require('./routes/authRoutes'));
+
+// Routes client (commandes, confirmation, annulation, notation)
+app.use('/api/v1/client', require('./routes/clientRoutes'));
 
 // ===================================================================
 // 4. LANCEMENT DU SERVEUR
