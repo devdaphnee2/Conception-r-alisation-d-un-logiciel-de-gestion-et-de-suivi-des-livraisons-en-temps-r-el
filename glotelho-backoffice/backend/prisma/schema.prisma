@@ -95,6 +95,7 @@ model delivery_persons {
   cni_numero            String?   @db.VarChar(50)
   cni_photo_avant       String?   @db.VarChar(255)
   cni_photo_arriere     String?   @db.VarChar(255)
+  photo_profil          String?   @db.VarChar(255)
   permis_categorie      String?   @db.VarChar(10)
   permis_photo          String?   @db.VarChar(255)
   adresse_domicile      String?   @db.VarChar(255)
@@ -105,7 +106,6 @@ model delivery_persons {
   caution_payee         Boolean?  @default(false)
   date_candidature      DateTime? @default(now())
   note_manager          String?   @db.Text
-
 
   @@index([status], map: "idx_status")
   @@index([vehicle_id], map: "vehicle_id")
@@ -333,6 +333,10 @@ model users {
   delivery_persons delivery_persons?
   managers         managers?
   notifications    notifications[]
+  reset_password_token   String?   @db.VarChar(255)
+  reset_password_expires DateTime?
+  google_id String? @unique @db.VarChar(255)
+  photo_url String?  @db.VarChar(500)
 
   @@index([email], map: "idx_email")
   @@index([role], map: "idx_role")
