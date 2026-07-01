@@ -99,7 +99,7 @@ class OrderDetailsOngoingScreen extends StatelessWidget {
                   onPressed: () => Navigator.push(context, MaterialPageRoute(
                       builder: (_) => LiveTrackingScreen(order: order))),
                   icon: Icon(Icons.location_on_outlined, size: 16, color: AppColors.navy),
-                  label: Text(isEn ? 'Live tracking' : 'Suivre ma livraison',
+                  label: Text(isEn ? 'Live tracking' : 'Suivi en direct',
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.navy),
                       textAlign: TextAlign.center),
                   style: ElevatedButton.styleFrom(
@@ -295,4 +295,3 @@ class OrderDetailsOngoingScreen extends StatelessWidget {
     ]),
   );
 }
-

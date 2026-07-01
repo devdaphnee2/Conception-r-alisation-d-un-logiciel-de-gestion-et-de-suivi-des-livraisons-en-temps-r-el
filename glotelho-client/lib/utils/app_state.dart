@@ -1,23 +1,76 @@
 import 'package:flutter/material.dart';
+import '../services/storage_service.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // AppState — état global partagé dans toute l'application
-// (langue, thème). À placer dans lib/utils/app_state.dart
 // ─────────────────────────────────────────────────────────────────
 class AppState extends ChangeNotifier {
   String _language = 'Français';
   bool   _isDarkMode = false;
   bool   _biometricEnabled = false;
-  String _userName = 'Marie';
-  String _userEmail = 'marie.ngono@gmail.com';
-  String _userPhone = '+237 6XX XXX XXX';
+  bool   _isLoggedIn = false;
+  String _userName = '';
+  String _userLastName = '';
+  String _userEmail = '';
+  String _userPhone = '';
+  String? _userAvatarPath;
 
-  String get language       => _language;
-  bool   get isDarkMode     => _isDarkMode;
-  bool   get biometricEnabled => _biometricEnabled;
-  String get userName       => _userName;
-  String get userEmail      => _userEmail;
-  String get userPhone      => _userPhone;
+  String get language          => _language;
+  bool   get isDarkMode        => _isDarkMode;
+  bool   get biometricEnabled  => _biometricEnabled;
+  bool   get isLoggedIn        => _isLoggedIn;
+  String get userName          => _userLastName.isNotEmpty ? '$_userName $_userLastName' : _userName;
+  String get userFirstName     => _userName;
+  String get userLastName      => _userLastName;
+  String get userEmail         => _userEmail;
+  String get userPhone         => _userPhone;
+  String? get userAvatarPath   => _userAvatarPath;
+
+  /// Charge la session depuis le disque au démarrage de l'app.
+  /// À appeler une fois dans main() avant runApp().
+  Future<void> loadFromDisk() async {
+    final session = await StorageService.loadSession();
+    _isLoggedIn       = session['isLoggedIn']       as bool;
+    _biometricEnabled = session['biometricEnabled']  as bool;
+    _userName         = session['firstName']         as String;
+    _userLastName     = session['lastName']          as String;
+    _userEmail        = session['email']             as String;
+    _userPhone        = session['phone']             as String;
+    _userAvatarPath   = session['avatarPath']        as String?;
+    notifyListeners();
+  }
+
+  void setLoggedIn(bool val) {
+    _isLoggedIn = val;
+    if (!val) StorageService.clearSession();
+    notifyListeners();
+  }
+
+  void setBiometric(bool val) {
+    _biometricEnabled = val;
+    StorageService.saveBiometric(val);
+    notifyListeners();
+  }
+
+  /// Appelé après connexion réussie — stocke sur le disque.
+  void setUser({
+    required String token,
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+  }) {
+    _isLoggedIn   = true;
+    _userName     = firstName;
+    _userLastName = lastName;
+    _userEmail    = email;
+    _userPhone    = phone;
+    StorageService.saveSession(
+      token: token, firstName: firstName, lastName: lastName,
+      email: email, phone: phone,
+    );
+    notifyListeners();
+  }
 
   // ── Traductions ──────────────────────────────────────────────
   static const Map<String, Map<String, String>> _tr = {
@@ -186,15 +239,24 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setBiometric(bool val) {
-    _biometricEnabled = val;
-    notifyListeners();
-  }
-
-  void updateProfile({String? name, String? email, String? phone}) {
-    if (name  != null) _userName  = name;
-    if (email != null) _userEmail = email;
-    if (phone != null) _userPhone = phone;
+  void updateProfile({String? firstName, String? lastName, String? name, String? email, String? phone, String? avatarPath}) {
+    if (firstName  != null) _userName     = firstName;
+    if (lastName   != null) _userLastName = lastName;
+    if (name       != null) _userName     = name; // compatibilité ancienne API
+    if (email      != null) _userEmail    = email;
+    if (phone      != null) _userPhone    = phone;
+    if (avatarPath != null) {
+      _userAvatarPath = avatarPath;
+      StorageService.saveAvatarPath(avatarPath);
+    }
+    // Resynchronise le profil sur le disque si connecté
+    if (_isLoggedIn) {
+      StorageService.saveSession(
+        token: '', // le token existant reste inchangé (on ne l'écrase pas ici)
+        firstName: _userName, lastName: _userLastName,
+        email: _userEmail, phone: _userPhone,
+      );
+    }
     notifyListeners();
   }
 }
