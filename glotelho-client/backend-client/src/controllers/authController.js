@@ -1,4 +1,6 @@
 // src/controllers/authController.js
+// Contrôleur d'authentification client — version complète
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -18,9 +20,12 @@ const { createResetToken, findResetToken, deleteResetToken } = require('../model
 // ──────────────────────────────────────────────
 async function register(req, res) {
   try {
-    const { full_name, email, password, phone, address, latitude, longitude, fcm_token } = req.body;
+    const { full_name, last_name, email, password, phone, address, latitude, longitude, fcm_token } = req.body;
 
-    if (!full_name || !email || !password || !phone) {
+    // Accepte full_name OU last_name (compatibilité frontend)
+    const nomComplet = full_name || last_name || '';
+
+    if (!nomComplet || !email || !password || !phone) {
       return res.status(400).json({ message: 'Nom complet, email, mot de passe et téléphone requis.' });
     }
 
@@ -31,7 +36,7 @@ async function register(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = await createUserAndCustomer({
-      full_name, email, password: hashedPassword, phone, address, latitude, longitude
+      full_name: nomComplet, email, password: hashedPassword, phone, address, latitude, longitude
     });
 
     if (fcm_token) await updateFcmToken(userId, fcm_token);
@@ -47,7 +52,7 @@ async function register(req, res) {
       token,
       user: {
         id: userId,
-        full_name,
+        full_name: nomComplet,
         email,
         phone,
         address: address || null,
@@ -145,7 +150,7 @@ async function me(req, res) {
 }
 
 // ──────────────────────────────────────────────
-// 4. UPLOAD PHOTO DE PROFIL (PATCH /api/v1/users/me/avatar)
+// 4. UPLOAD PHOTO DE PROFIL
 // ──────────────────────────────────────────────
 async function uploadAvatar(req, res) {
   try {
@@ -153,7 +158,6 @@ async function uploadAvatar(req, res) {
       return res.status(400).json({ message: 'Aucun fichier envoyé.' });
     }
 
-    // Construire l'URL publique du fichier
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
@@ -318,6 +322,43 @@ async function googleLogin(req, res) {
   }
 }
 
+// ──────────────────────────────────────────────
+// 10. CHANGEMENT DE MOT DE PASSE (utilisateur connecté)
+// ──────────────────────────────────────────────
+async function changePassword(req, res) {
+  try {
+    const { old_password, new_password } = req.body;
+
+    if (!old_password || !new_password) {
+      return res.status(400).json({ message: 'Ancien et nouveau mot de passe requis.' });
+    }
+    if (new_password.length < 6) {
+      return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
+    }
+
+    // Récupérer l'utilisateur connecté avec son mot de passe hashé
+    const user = await findUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur introuvable.' });
+    }
+
+    // Vérifier l'ancien mot de passe
+    const isValid = await bcrypt.compare(old_password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Ancien mot de passe incorrect.' });
+    }
+
+    // Hasher et sauvegarder le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+
+    res.json({ message: 'Mot de passe modifié avec succès.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur serveur.', error: error.message });
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -327,5 +368,6 @@ module.exports = {
   logout,
   forgotPassword,
   resetPassword,
-  googleLogin
+  googleLogin,
+  changePassword
 };
