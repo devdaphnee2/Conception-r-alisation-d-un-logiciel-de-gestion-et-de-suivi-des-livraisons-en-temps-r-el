@@ -6,9 +6,10 @@ const findUserByEmail = async (email) => {
   return rows[0];
 };
 
+// ✅ password inclus pour permettre bcrypt.compare dans changePassword
 const findUserById = async (id) => {
   const [rows] = await pool.query(
-    `SELECT id, last_name, first_name, email, phone, role, fcm_token, avatar_url
+    `SELECT id, last_name, first_name, email, phone, role, fcm_token, avatar_url, password
      FROM users WHERE id = ?`,
     [id]
   );
@@ -50,7 +51,6 @@ const updateFcmToken = async (userId, fcmToken) => {
   await pool.query('UPDATE users SET fcm_token = ? WHERE id = ?', [fcmToken, userId]);
 };
 
-// Mettre à jour l'avatar
 const updateAvatarUrl = async (userId, avatarUrl) => {
   await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, userId]);
 };
