@@ -55,11 +55,21 @@ const updateAvatarUrl = async (userId, avatarUrl) => {
   await pool.query('UPDATE users SET avatar_url = ? WHERE id = ?', [avatarUrl, userId]);
 };
 
+// Mettre à jour le profil (nom, email, téléphone)
+const updateProfile = async (userId, data) => {
+  const { full_name, email, phone } = data;
+  await pool.query(
+    `UPDATE users SET first_name = ?, email = ?, phone = ? WHERE id = ?`,
+    [full_name, email, phone, userId]
+  );
+};
+
 module.exports = {
   findUserByEmail,
   findUserById,
   createUserAndCustomer,
   getCustomerByUserId,
   updateFcmToken,
-  updateAvatarUrl
+  updateAvatarUrl,
+  updateProfile 
 };
