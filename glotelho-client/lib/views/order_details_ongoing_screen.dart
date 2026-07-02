@@ -42,6 +42,7 @@ class OrderDetailsOngoingScreen extends StatelessWidget {
     ];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white, elevation: 0,

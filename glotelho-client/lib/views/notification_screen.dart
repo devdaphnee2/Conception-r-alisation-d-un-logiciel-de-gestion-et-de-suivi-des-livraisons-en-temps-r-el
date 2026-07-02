@@ -48,6 +48,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     final unread = notifState.unreadCount;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Column(

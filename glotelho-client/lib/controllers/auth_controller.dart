@@ -1,10 +1,27 @@
-
 import '../services/api_service.dart';
 import 'package:dio/dio.dart';
 
 class AuthController {
 
-  // Connexion
+  // ── Connexion Google ───────────────────────────────────────────
+  static Future<Map<String, dynamic>> googleLogin({
+    required String idToken,
+  }) async {
+    try {
+      final response = await ApiService.dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+      return {'success': true, 'data': response.data};
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'message': e.response?.data['message'] ?? 'Erreur connexion Google',
+      };
+    }
+  }
+
+  // ── Connexion email/password ───────────────────────────────────
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -23,6 +40,7 @@ class AuthController {
     }
   }
 
+  // ── Inscription ────────────────────────────────────────────────
   static Future<Map<String, dynamic>> register({
     required String nom,
     required String email,
@@ -48,7 +66,7 @@ class AuthController {
     }
   }
 
-  // Mot de passe oublié
+  // ── Mot de passe oublié ────────────────────────────────────────
   static Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {
@@ -57,10 +75,7 @@ class AuthController {
         '/auth/forgot-password',
         data: {'email': email},
       );
-      return {
-        'success': true,
-        'data': response.data,
-      };
+      return {'success': true, 'data': response.data};
     } on DioException catch (e) {
       return {
         'success': false,
@@ -69,11 +84,29 @@ class AuthController {
     }
   }
 
-  // Envoie/met à jour le token FCM de l'appareil pour ce compte,
-  // afin que le backend puisse pousser des notifications push (FCM)
-  // même quand l'app est fermée.
-  // ⚠️ Endpoint à créer côté backend (Laravel) : PATCH /auth/fcm-token
-  // Body attendu : { "fcm_token": "..." }
+  // ── Changement de mot de passe (utilisateur connecté) ─────────
+  static Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await ApiService.dio.patch(
+        '/auth/change-password',
+        data: {
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        },
+      );
+      return {'success': true, 'data': response.data};
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'message': e.response?.data['message'] ?? 'Erreur changement mot de passe',
+      };
+    }
+  }
+
+  // ── Mise à jour du token FCM ───────────────────────────────────
   static Future<Map<String, dynamic>> updateFcmToken({
     required String fcmToken,
   }) async {
@@ -82,14 +115,11 @@ class AuthController {
         '/auth/fcm-token',
         data: {'fcm_token': fcmToken},
       );
-      return {
-        'success': true,
-        'data': response.data,
-      };
+      return {'success': true, 'data': response.data};
     } on DioException catch (e) {
       return {
         'success': false,
-        'message': e.response?.data['message'] ?? 'Erreur lors de l\'envoi du token FCM',
+        'message': e.response?.data['message'] ?? 'Erreur FCM',
       };
     }
   }

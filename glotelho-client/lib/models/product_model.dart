@@ -11,6 +11,7 @@ class ProductModel {
   final IconData icon;
   final String? imageUrl;
   final String? badge;
+  final String? category;
   bool isFavorite;
 
   ProductModel({
@@ -21,6 +22,7 @@ class ProductModel {
     required this.icon,
     this.imageUrl,
     this.badge,
+    this.category,
     this.isFavorite = false,
   });
 

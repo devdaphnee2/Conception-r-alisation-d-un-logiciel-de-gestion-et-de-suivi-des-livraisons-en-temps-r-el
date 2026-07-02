@@ -65,6 +65,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
