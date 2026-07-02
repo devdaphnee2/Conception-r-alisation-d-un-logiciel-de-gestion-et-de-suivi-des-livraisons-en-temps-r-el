@@ -3,10 +3,23 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import BackButton from '../../components/BackButton';
 
+const P = {
+    primary: '#7d5700', primaryContainer: '#c9952e',
+    primaryFixed: '#ffdea9', onPrimaryContainer: '#483100',
+    error: '#ba1a1a', errorContainer: '#ffdad6', onErrorContainer: '#93000a',
+    surface: '#ffffff', surfaceContainerLow: '#f3f3f3',
+    onSurface: '#1a1c1c', onSurfaceVariant: '#4f4536',
+    outline: '#817564', outlineVariant: '#d3c4b0',
+};
+
 export default function LivraisonEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [form, setForm] = useState({ delivery_address: '', zone_bloc: '', amount_to_collect: '', delivery_date: '' });
+    const [form, setForm] = useState({
+        delivery_address: '', zone_bloc: '',
+        delivery_instructions: '', delivery_date: '',
+        amount_to_collect: '', collected_amount: '',
+    });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -17,10 +30,13 @@ export default function LivraisonEdit() {
             setForm({
                 delivery_address: l.delivery_address || '',
                 zone_bloc: l.zone_bloc || '',
+                delivery_instructions: l.delivery_instructions || '',
+                delivery_date: l.delivery_date ? l.delivery_date.slice(0, 16) : '',
                 amount_to_collect: l.amount_to_collect || '',
-                delivery_date: l.delivery_date ? new Date(l.delivery_date).toISOString().slice(0, 16) : '',
+                collected_amount: l.collected_amount || '0',
             });
-        }).catch(() => setError('Livraison introuvable.')).finally(() => setLoading(false));
+        }).catch(() => setError('Livraison introuvable.'))
+          .finally(() => setLoading(false));
     }, [id]);
 
     function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
@@ -33,57 +49,63 @@ export default function LivraisonEdit() {
             await api.put('/livraisons/' + id, form);
             navigate('/livraisons/' + id);
         } catch (err) {
-            setError(err.response?.data?.message || 'Erreur lors de la modification.');
-        } finally {
-            setSaving(false);
-        }
+            setError(err.response?.data?.message || 'Erreur.');
+        } finally { setSaving(false); }
     }
 
-    const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #ECECF2', backgroundColor: '#FAFAFC', fontSize: '14px', color: '#1C1C2E', outline: 'none', boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif' };
-    const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 600, color: '#8A8AA3', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' };
+    const inputStyle = { width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, fontSize: '13px', color: P.onSurface, outline: 'none', boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif' };
+    const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '7px' };
 
-    if (loading) return <p style={{ color: '#8A8AA3', textAlign: 'center', marginTop: '60px' }}>Chargement...</p>;
+    if (loading) return <p style={{ fontFamily: 'Poppins, sans-serif', color: P.outline, textAlign: 'center', marginTop: '60px' }}>Chargement...</p>;
 
     return (
-        <div style={{ maxWidth: '680px' }}>
+        <div style={{ maxWidth: '680px', fontFamily: 'Poppins, sans-serif' }}>
             <BackButton to={'/livraisons/' + id} />
-
-            <div style={{ marginBottom: '24px' }}>
-                <Link to="/livraisons" style={{ color: '#8A8AA3', textDecoration: 'none', fontSize: '14px' }}>Livraisons</Link>
-                <span style={{ color: '#8A8AA3', margin: '0 8px' }}>/</span>
-                <Link to={'/livraisons/' + id} style={{ color: '#8A8AA3', textDecoration: 'none', fontSize: '14px' }}>Livraison #{id}</Link>
-                <span style={{ color: '#8A8AA3', margin: '0 8px' }}>/</span>
-                <span style={{ color: '#1C1C2E', fontSize: '14px', fontWeight: 500 }}>Modifier</span>
+            <div style={{ marginBottom: '20px' }}>
+                <Link to="/livraisons" style={{ color: P.outline, textDecoration: 'none', fontSize: '13px' }}>Livraisons</Link>
+                <span style={{ color: P.outlineVariant, margin: '0 6px' }}>/</span>
+                <Link to={'/livraisons/' + id} style={{ color: P.outline, textDecoration: 'none', fontSize: '13px' }}>#{String(id).padStart(5,'0')}</Link>
+                <span style={{ color: P.outlineVariant, margin: '0 6px' }}>/</span>
+                <span style={{ color: P.onSurface, fontSize: '13px', fontWeight: 500 }}>Modifier</span>
             </div>
 
-            <div style={{ backgroundColor: 'white', borderRadius: '24px', border: '1px solid #ECECF2', padding: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                {error && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '12px 16px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px' }}>{error}</div>}
+            <div style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                {error && <div style={{ backgroundColor: P.errorContainer, border: '1px solid rgba(186,26,26,0.2)', color: P.error, padding: '10px 14px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px', fontWeight: 500 }}>{error}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gap: '20px' }}>
+                    <div style={{ display: 'grid', gap: '18px' }}>
                         <div>
                             <label style={labelStyle}>Adresse de livraison *</label>
-                            <input type="text" name="delivery_address" value={form.delivery_address} onChange={handleChange} style={inputStyle} required />
+                            <input type="text" name="delivery_address" value={form.delivery_address} onChange={handleChange} style={inputStyle} required placeholder="Adresse complete" />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <label style={labelStyle}>Description du lieu</label>
+                            <input type="text" name="zone_bloc" value={form.zone_bloc} onChange={handleChange} style={inputStyle} placeholder="Apres le carrefour, portail rouge..." />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Instructions de livraison</label>
+                            <textarea name="delivery_instructions" value={form.delivery_instructions} onChange={handleChange} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Colis fragile, appeler avant..." />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                             <div>
-                                <label style={labelStyle}>Zone / Bloc</label>
-                                <input type="text" name="zone_bloc" value={form.zone_bloc} onChange={handleChange} style={inputStyle} placeholder="Ex: Zone 3, Bloc B" />
+                                <label style={labelStyle}>Montant a collecter (FCFA)</label>
+                                <input type="number" name="amount_to_collect" value={form.amount_to_collect} onChange={handleChange} style={inputStyle} min="0" />
                             </div>
                             <div>
-                                <label style={labelStyle}>Montant a recouvrer (FCFA)</label>
-                                <input type="number" name="amount_to_collect" value={form.amount_to_collect} onChange={handleChange} style={inputStyle} min="0" />
+                                <label style={labelStyle}>Deja paye (FCFA)</label>
+                                <input type="number" name="collected_amount" value={form.collected_amount} onChange={handleChange} style={inputStyle} min="0" />
                             </div>
                         </div>
                         <div>
                             <label style={labelStyle}>Date de livraison souhaitee</label>
                             <input type="datetime-local" name="delivery_date" value={form.delivery_date} onChange={handleChange} style={inputStyle} />
                         </div>
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                            <button type="submit" disabled={saving} style={{ background: 'linear-gradient(to right, #E8580A, #FF7A33)', color: 'white', padding: '12px 28px', borderRadius: '12px', border: 'none', fontSize: '14px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: '0 4px 12px rgba(232,88,10,0.25)', fontFamily: 'Poppins, sans-serif' }}>
+                        <div style={{ display: 'flex', gap: '12px', paddingTop: '8px', borderTop: '1px solid ' + P.outlineVariant }}>
+                            <button type="submit" disabled={saving}
+                                style={{ backgroundColor: saving ? P.outline : P.primary, color: '#fff', padding: '11px 24px', borderRadius: '10px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: saving ? 'none' : '0 3px 10px rgba(125,87,0,0.25)' }}>
                                 {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                             </button>
-                            <Link to={'/livraisons/' + id} style={{ padding: '12px 24px', borderRadius: '12px', border: '1px solid #ECECF2', backgroundColor: '#FAFAFC', color: '#1C1C2E', fontSize: '14px', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                            <Link to={'/livraisons/' + id} style={{ padding: '11px 20px', borderRadius: '10px', border: '1px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, color: P.onSurface, fontSize: '13px', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                                 Annuler
                             </Link>
                         </div>
