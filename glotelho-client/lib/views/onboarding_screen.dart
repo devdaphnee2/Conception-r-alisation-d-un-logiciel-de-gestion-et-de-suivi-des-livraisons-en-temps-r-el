@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 //import 'package:flutter_svg/flutter_svg.dart';
-import 'login_screen.dart';
+import '../views/login_screen.dart';
+import '../utils/constants.dart';
+import '../controllers/auth_controller.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -52,8 +54,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : navy;
+    final descColor = isDark ? Colors.white60 : Colors.grey;
+    final skipColor = isDark ? Colors.white54 : Colors.grey;
+    final dotInactive = isDark ? Colors.white24 : Colors.grey.shade300;
+    final outlineColor = isDark ? Colors.white24 : Colors.grey.shade300;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -64,10 +74,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.only(top: 12, right: 20),
                 child: TextButton(
                   onPressed: _allerALaConnexion,
-                  child: const Text(
+                  child: Text(
                     'Passer',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: skipColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -103,10 +113,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['title']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: navy,
+                            color: titleColor,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -115,9 +125,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['description']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: descColor,
                             height: 1.6,
                           ),
                         ),
@@ -139,7 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: _currentPage == index ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _currentPage == index ? gold : Colors.grey.shade300,
+                    color: _currentPage == index ? gold : dotInactive,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -196,17 +206,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onPressed: _allerALaConnexion,
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                            color: Colors.grey.shade300, width: 1.5),
+                            color: outlineColor, width: 1.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Se connecter',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: navy,
+                          color: titleColor,
                         ),
                       ),
                     ),

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../views/login_screen.dart';
+import '../utils/constants.dart';
+import '../controllers/auth_controller.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -22,11 +25,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _envoyerLien() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-      _emailEnvoye = true;
-    });
+
+    final result = await AuthController.forgotPassword(
+      email: _emailController.text.trim(),
+    );
+
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      setState(() => _emailEnvoye = true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Erreur lors de l\'envoi.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -37,7 +53,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: navy,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -108,17 +126,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 constraints: BoxConstraints(
                   minHeight: MediaQuery.of(context).size.height * 0.65,
                 ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF2F4F7),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF161D29) : const Color(0xFFF2F4F7),
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(32),
                     topRight: Radius.circular(32),
                   ),
                 ),
                 padding: const EdgeInsets.all(28),
                 child: _emailEnvoye
-                    ? _buildSuccessView()
-                    : _buildFormView(),
+                    ? _buildSuccessView(isDark)
+                    : _buildFormView(isDark),
               ),
             ],
           ),
@@ -127,51 +145,56 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildFormView() {
+  Widget _buildFormView(bool isDark) {
+    final titleColor = isDark ? Colors.white : navy;
+    final subColor = isDark ? Colors.white60 : Colors.grey;
+    final fieldBg = isDark ? const Color(0xFF1E2733) : Colors.white;
+    final iconColor = isDark ? Colors.white70 : navy;
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Mot de passe oublié ?',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: navy,
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Entrez votre email, nous vous enverrons un lien de réinitialisation.',
-            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+            style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
           ),
           const SizedBox(height: 28),
 
-          const Text(
+          Text(
             'Adresse email',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: navy,
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             validator: (val) {
               if (val == null || val.isEmpty) return 'L\'email est obligatoire';
               if (!_emailValide(val)) return 'Email invalide';
               return null;
             },
             decoration: InputDecoration(
-              hintText: 'exemple@email.com',
-              hintStyle: const TextStyle(color: Colors.grey),
-              prefixIcon: const Icon(Icons.email_outlined, color: navy),
+              hintText: 'entrezvotreemail@gmail.com',
+              hintStyle: TextStyle(color: subColor),
+              prefixIcon: Icon(Icons.email_outlined, color: iconColor),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: fieldBg,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -242,7 +265,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessView() {
+  Widget _buildSuccessView(bool isDark) {
+    final titleColor = isDark ? Colors.white : navy;
+    final subColor = isDark ? Colors.white60 : Colors.grey;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -258,21 +283,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               color: Color(0xFF3B6D11), size: 40),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Email envoyé !',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: navy,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 12),
         Text(
           'Un lien de réinitialisation a été envoyé à\n${_emailController.text}',
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: Colors.grey,
+            color: subColor,
             height: 1.6,
           ),
         ),
