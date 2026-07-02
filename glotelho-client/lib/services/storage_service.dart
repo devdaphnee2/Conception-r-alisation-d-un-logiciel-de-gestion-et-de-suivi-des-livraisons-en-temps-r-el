@@ -73,6 +73,26 @@ class StorageService {
     // pour ne pas forcer le client à tout reconfigurer à la prochaine connexion
   }
 
+  // ✅ Mise à jour profil SANS toucher au token
+  static Future<void> updateProfileOnly({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyFirstName, firstName);
+    await prefs.setString(_keyLastName,  lastName);
+    await prefs.setString(_keyEmail,     email);
+    await prefs.setString(_keyPhone,     phone);
+  }
+
+  // ✅ Mise à jour du token seul (après changement d'email)
+  static Future<void> updateToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyToken, token);
+  }
+
   // ── Token seul ──────────────────────────────────────────────
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();

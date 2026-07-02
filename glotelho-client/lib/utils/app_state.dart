@@ -241,24 +241,52 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ✅ updateProfile — corrigé : n'écrase PLUS le token
   void updateProfile({String? firstName, String? lastName, String? name, String? email, String? phone, String? avatarPath}) {
     if (firstName  != null) _userName     = firstName;
     if (lastName   != null) _userLastName = lastName;
-    if (name       != null) _userName     = name; // compatibilité ancienne API
+    if (name       != null) _userName     = name;
     if (email      != null) _userEmail    = email;
     if (phone      != null) _userPhone    = phone;
     if (avatarPath != null) {
       _userAvatarPath = avatarPath;
       StorageService.saveAvatarPath(avatarPath);
     }
-    // Resynchronise le profil sur le disque si connecté
     if (_isLoggedIn) {
-      StorageService.saveSession(
-        token: '', // le token existant reste inchangé (on ne l'écrase pas ici)
-        firstName: _userName, lastName: _userLastName,
-        email: _userEmail, phone: _userPhone,
+      StorageService.updateProfileOnly(
+        firstName: _userName,
+        lastName:  _userLastName,
+        email:     _userEmail,
+        phone:     _userPhone,
       );
     }
+    notifyListeners();
+  }
+
+  // ✅ Mise à jour depuis le serveur (GET /auth/me) — n'écrase pas le token
+  void updateFromServer({
+    required String fullName,
+    required String email,
+    required String phone,
+    String? avatarUrl,
+  }) {
+    _userName     = fullName;
+    _userLastName = '';
+    _userEmail    = email;
+    _userPhone    = phone;
+    if (avatarUrl != null) _userAvatarPath = avatarUrl;
+    StorageService.updateProfileOnly(
+      firstName: fullName,
+      lastName:  '',
+      email:     email,
+      phone:     phone,
+    );
+    notifyListeners();
+  }
+
+  // ✅ Mise à jour du token seul (après changement d'email)
+  void updateToken(String newToken) {
+    StorageService.updateToken(newToken);
     notifyListeners();
   }
 }
