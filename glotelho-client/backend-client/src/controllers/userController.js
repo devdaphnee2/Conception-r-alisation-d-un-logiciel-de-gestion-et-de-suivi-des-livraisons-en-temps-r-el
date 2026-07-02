@@ -1,6 +1,5 @@
 // src/controllers/userController.js
-// Gestion du profil utilisateur
-
+const jwt = require('jsonwebtoken');
 const {
   getCustomerByUserId,
   updateProfile
@@ -30,17 +29,34 @@ async function updateMe(req, res) {
       phone:     phone     || customer.phone,
     };
 
-    await updateProfile(req.user.id, updatedData);
+    // Mise à jour (avec vérification unicité email)
+    try {
+      await updateProfile(req.user.id, updatedData);
+    } catch (err) {
+      if (err.message === 'EMAIL_ALREADY_TAKEN') {
+        return res.status(400).json({ message: 'Cet email est déjà utilisé par un autre compte.' });
+      }
+      throw err;
+    }
 
     // Récupérer le profil mis à jour
     const updated = await getCustomerByUserId(req.user.id);
-    const name = [updated.first_name, updated.last_name].filter(Boolean).join(' ').trim();
+    const full_name_updated = [updated.first_name, updated.last_name].filter(Boolean).join(' ').trim();
+
+    // ✅ Générer un nouveau token JWT avec le nouvel email
+    // (indispensable si l'email a changé, pour que le login fonctionne)
+    const newToken = jwt.sign(
+      { id: req.user.id, email: updatedData.email, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
     res.json({
       message: 'Profil mis à jour avec succès.',
+      token: newToken, // ✅ Nouveau token à stocker côté Flutter
       user: {
         id:         updated.id,
-        full_name:  name || updatedData.full_name,
+        full_name:  full_name_updated || updatedData.full_name,
         email:      updated.email,
         phone:      updated.phone,
         address:    updated.address,
