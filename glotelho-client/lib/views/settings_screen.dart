@@ -2,6 +2,8 @@
 SKIPPED_COMMENT_BLOCK*/
 
 import 'dart:io';
+import 'package:dio/dio.dart';
+import '../services/api_service.dart';
 import '../controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -550,55 +552,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+
     try {
       String? avatarUrl;
 
       // ── 1) Upload de la photo si une nouvelle a été choisie ────
-      // ⚠️ À activer quand votre frère aura l'endpoint PATCH /users/me/avatar
-      // if (_pickedImage != null) {
-      //   final formData = FormData.fromMap({
-      //     'avatar': await MultipartFile.fromFile(
-      //       _pickedImage!.path,
-      //       filename: 'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      //       contentType: DioMediaType('image', 'jpeg'),
-      //     ),
-      //   });
-      //   final uploadResponse = await ApiService.dio.patch(
-      //     '/users/me/avatar',
-      //     data: formData,
-      //   );
-      //   avatarUrl = uploadResponse.data['avatar_url'] as String?;
-      // }
+      if (_pickedImage != null) {
+        try {
+          final formData = FormData.fromMap({
+            'avatar': await MultipartFile.fromFile(
+              _pickedImage!.path,
+              filename: 'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              contentType: DioMediaType('image', 'jpeg'),
+            ),
+          });
+          final uploadResponse = await ApiService.dio.patch(
+            '/auth/me/avatar',
+            data: formData,
+          );
+          avatarUrl = uploadResponse.data['avatar_url'] as String?;
+        } catch (e) {
+          debugPrint('Upload avatar échoué : $e');
+        }
+      }
 
       // ── 2) Mise à jour du profil (nom, email, téléphone) ───────
-      // ⚠️ À activer quand votre frère aura l'endpoint PATCH /users/me
-      // await ApiService.dio.patch('/users/me', data: {
-      //   'first_name': _nameCtrl.text.trim(),
-      //   'email':      _emailCtrl.text.trim(),
-      //   'phone':      _phoneCtrl.text.trim(),
-      // });
+      final updateResponse = await ApiService.dio.patch(
+        '/users/me',
+        data: {
+          'full_name': _nameCtrl.text.trim(),
+          'email':     _emailCtrl.text.trim(),
+          'phone':     _phoneCtrl.text.trim(),
+        },
+      );
 
-      // Simulation en attendant le backend (supprimer ces 2 lignes quand actif)
-      await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
 
-      // ── 3) Mettre à jour AppState localement ───────────────────
+      // ── 3) Stocker le nouveau token JWT (si email changé) ──────
+      final newToken = updateResponse.data['token'] as String?;
+      if (newToken != null && newToken.isNotEmpty) {
+        ApiService.setToken(newToken);
+      }
+
+      // ── 4) Mettre à jour AppState localement ───────────────────
       context.read<AppState>().updateProfile(
         name:       _nameCtrl.text.trim(),
         email:      _emailCtrl.text.trim(),
         phone:      _phoneCtrl.text.trim(),
-        // Utiliser l'URL Cloudinary si disponible, sinon le chemin local temporaire
         avatarPath: avatarUrl ?? _pickedImage?.path,
       );
 
       setState(() { _isSaving = false; _hasChanges = false; });
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil mis à jour !'), backgroundColor: Colors.green));
+        const SnackBar(content: Text('Profil mis à jour !'), backgroundColor: Colors.green),
+      );
       Navigator.pop(context);
+
+    } on DioException catch (e) {
+      setState(() => _isSaving = false);
+      final msg = e.response?.data['message'] ?? 'Erreur lors de la mise à jour.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
     } catch (e) {
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
