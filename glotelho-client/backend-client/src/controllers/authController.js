@@ -8,6 +8,8 @@ const pool = require('../config/db');
 const {
   findUserByEmail,
   findUserById,
+  findUserByGoogleId,  
+  linkGoogleId,        
   createUserAndCustomer,
   getCustomerByUserId,
   updateFcmToken,
@@ -258,9 +260,7 @@ async function resetPassword(req, res) {
   }
 }
 
-// ──────────────────────────────────────────────
-// 9. CONNEXION AVEC GOOGLE
-// ──────────────────────────────────────────────
+// ── 9. CONNEXION AVEC GOOGLE ──────────────────────────────────────
 async function googleLogin(req, res) {
   try {
     const { idToken } = req.body;
@@ -275,18 +275,37 @@ async function googleLogin(req, res) {
       return res.status(401).json({ message: 'Token Google invalide.' });
     }
 
-    const { email, given_name, family_name } = payload;
+    const { sub: googleId, email, given_name, family_name } = payload;
     const full_name = [given_name, family_name].filter(Boolean).join(' ').trim() || 'Utilisateur Google';
 
-    let user = await findUserByEmail(email);
+    // ✅ ÉTAPE 1 — Chercher par google_id (le plus fiable, indépendant de l'email)
+    let user = await findUserByGoogleId(googleId);
 
     if (!user) {
-      const hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
-      const userId = await createUserAndCustomer({
-        full_name, email, password: hashedPassword,
-        phone: 'Non renseigné', address: null, latitude: null, longitude: null
-      });
-      user = await findUserById(userId);
+      // ✅ ÉTAPE 2 — Chercher par email (pour lier un compte existant)
+      user = await findUserByEmail(email);
+
+      if (user) {
+        // Compte trouvé par email → lier le google_id pour les prochaines connexions
+        if (user.role !== 'customer') {
+          return res.status(403).json({ message: 'Accès réservé aux clients.' });
+        }
+        await linkGoogleId(user.id, googleId);
+      } else {
+        // ✅ ÉTAPE 3 — Nouveau compte
+        const hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+        const userId = await createUserAndCustomer({
+          full_name,
+          email,
+          password: hashedPassword,
+          phone: 'Non renseigné',
+          address: null,
+          latitude: null,
+          longitude: null,
+          google_id: googleId
+        });
+        user = await findUserById(userId);
+      }
     } else {
       if (user.role !== 'customer') {
         return res.status(403).json({ message: 'Accès réservé aux clients.' });
@@ -306,13 +325,13 @@ async function googleLogin(req, res) {
       message: 'Connexion avec Google réussie.',
       token,
       user: {
-        id: user.id,
-        full_name: userName || full_name,
-        email: user.email,
-        phone: user.phone,
-        address: customer?.address || null,
-        latitude: customer?.latitude || null,
-        longitude: customer?.longitude || null,
+        id:         user.id,
+        full_name:  userName || full_name,
+        email:      user.email,
+        phone:      user.phone,
+        address:    customer?.address || null,
+        latitude:   customer?.latitude || null,
+        longitude:  customer?.longitude || null,
         avatar_url: user.avatar_url || null
       }
     });
