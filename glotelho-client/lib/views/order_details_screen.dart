@@ -45,6 +45,7 @@ class OrderDetailsScreen extends StatelessWidget {
     final int total = sousTotal + livraison + taxes;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,

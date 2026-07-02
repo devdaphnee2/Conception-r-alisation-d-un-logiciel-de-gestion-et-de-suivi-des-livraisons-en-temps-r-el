@@ -2,6 +2,7 @@
 SKIPPED_COMMENT_BLOCK*/
 
 import 'dart:io';
+import '../controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -834,12 +835,27 @@ class _ChangePwdState extends State<ChangePasswordScreen> {
                 onPressed: _isSaving ? null : () async {
                   if (!_formKey.currentState!.validate()) return;
                   setState(() => _isSaving = true);
-                  await Future.delayed(const Duration(seconds: 1));
+
+                  final result = await AuthController.changePassword(
+                    oldPassword: _oldCtrl.text,
+                    newPassword: _newCtrl.text,
+                  );
+
                   setState(() => _isSaving = false);
-                  if (mounted) {
+                  if (!mounted) return;
+
+                  if (result['success'] == true) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(t('password_changed')), backgroundColor: Colors.green));
+                      SnackBar(content: Text(t('password_changed')), backgroundColor: Colors.green),
+                    );
                     Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(result['message'] ?? 'Erreur lors du changement de mot de passe.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(

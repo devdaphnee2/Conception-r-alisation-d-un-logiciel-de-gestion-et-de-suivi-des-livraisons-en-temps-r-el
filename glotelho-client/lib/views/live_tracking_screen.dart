@@ -120,6 +120,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> with TickerProv
     final screenH = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.navy,
       appBar: AppBar(
         backgroundColor: AppColors.navy,

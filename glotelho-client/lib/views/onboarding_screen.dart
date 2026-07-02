@@ -62,6 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final outlineColor = isDark ? Colors.white24 : Colors.grey.shade300;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(

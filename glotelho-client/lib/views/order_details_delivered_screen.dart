@@ -29,6 +29,7 @@ class OrderDetailsDeliveredScreen extends StatelessWidget {
     final avis = order['avis'] as Map<String, dynamic>?;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white, elevation: 0,

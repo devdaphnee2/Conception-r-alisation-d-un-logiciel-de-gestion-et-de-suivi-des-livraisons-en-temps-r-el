@@ -672,6 +672,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         : ['All', 'Ongoing', 'Delivered', 'Cancelled'];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: scaffoldBg,
       appBar: AppBar(
         backgroundColor: appBarBg,

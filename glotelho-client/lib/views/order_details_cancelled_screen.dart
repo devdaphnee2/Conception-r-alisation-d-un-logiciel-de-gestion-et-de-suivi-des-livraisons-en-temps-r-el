@@ -45,6 +45,7 @@ class OrderDetailsCancelledScreen extends StatelessWidget {
     );
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: scaffoldBg,
       appBar: AppBar(
         backgroundColor: appBarBg, elevation: 0,
