@@ -14,6 +14,34 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
+  # État de l'application
+  provider: ^6.1.2
+
+  # Réseau / API
+  dio: ^5.7.0
+
+  # Persistance locale (session, token)
+  shared_preferences: ^2.3.3
+
+  # Sélection d'images (photos CNI, permis, véhicule, profil)
+  image_picker: ^1.1.2
+
+  # Carte (suivi livraison, statuts colorés par point)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Géolocalisation (position en temps réel du livreur)
+  geolocator: ^13.0.2
+
+  # Gestion des permissions (caméra, localisation)
+  permission_handler: ^11.3.1
+
+  # Signature du client à la livraison (point 6)
+  signature: ^5.5.0
+
+  # Formatage dates/heures (disponibilités, historique)
+  intl: ^0.19.0
+
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +70,3 @@ flutter_launcher_icons:
   image_scale: 3
   adaptive_icon_background: "#0D1B2A"
   adaptive_icon_foreground: "assets/images/glotelho_delivery_logo_high_contrast.png"
-
-
-
