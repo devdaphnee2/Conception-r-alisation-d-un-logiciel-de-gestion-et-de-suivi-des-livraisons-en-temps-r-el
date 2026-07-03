@@ -1,21 +1,34 @@
 // src/controllers/authController.js
-// Contrôleur d'authentification client — version complète
+// Authentification client — version complète avec google-auth-library + Nodemailer
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const pool = require('../config/db');
+const bcrypt      = require('bcryptjs');
+const jwt         = require('jsonwebtoken');
+const crypto      = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
+const pool        = require('../config/db');
 const {
   findUserByEmail,
   findUserById,
-  findUserByGoogleId,  
-  linkGoogleId,        
+  findUserByGoogleId,
+  linkGoogleId,
   createUserAndCustomer,
   getCustomerByUserId,
   updateFcmToken,
   updateAvatarUrl
 } = require('../models/userModel');
 const { createResetToken, findResetToken, deleteResetToken } = require('../models/passwordResetModel');
+const { sendWelcomeGoogleEmail, sendResetPasswordEmail } = require('../utils/mailer');
+
+// ✅ Client Google vérifié avec le même GOOGLE_CLIENT_ID que le manager
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+async function verifyGoogleToken(idToken) {
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+  return ticket.getPayload();
+}
 
 // ──────────────────────────────────────────────
 // 1. INSCRIPTION
@@ -23,8 +36,6 @@ const { createResetToken, findResetToken, deleteResetToken } = require('../model
 async function register(req, res) {
   try {
     const { full_name, last_name, email, password, phone, address, latitude, longitude, fcm_token } = req.body;
-
-    // Accepte full_name OU last_name (compatibilité frontend)
     const nomComplet = full_name || last_name || '';
 
     if (!nomComplet || !email || !password || !phone) {
@@ -38,7 +49,9 @@ async function register(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = await createUserAndCustomer({
-      full_name: nomComplet, email, password: hashedPassword, phone, address, latitude, longitude
+      full_name: nomComplet, email, password: hashedPassword,
+      phone, address, latitude, longitude,
+      has_password: 1  // ✅ Compte classique avec mot de passe réel
     });
 
     if (fcm_token) await updateFcmToken(userId, fcm_token);
@@ -53,12 +66,8 @@ async function register(req, res) {
       message: 'Compte client créé avec succès.',
       token,
       user: {
-        id: userId,
-        full_name: nomComplet,
-        email,
-        phone,
-        address: address || null,
-        avatar_url: null
+        id: userId, full_name: nomComplet,
+        email, phone, address: address || null, avatar_url: null
       }
     });
   } catch (error) {
@@ -81,6 +90,14 @@ async function login(req, res) {
     const user = await findUserByEmail(email);
     if (!user) {
       return res.status(401).json({ message: 'Identifiants incorrects.' });
+    }
+
+    // ✅ Compte Google sans mot de passe réel
+    if (user.google_id && !user.has_password) {
+      return res.status(400).json({
+        message: 'Ce compte utilise Google Sign-In. Utilisez "Mot de passe oublié" pour créer un mot de passe.',
+        code: 'GOOGLE_ACCOUNT'
+      });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -107,14 +124,11 @@ async function login(req, res) {
       message: 'Connexion réussie.',
       token,
       user: {
-        id: user.id,
-        full_name,
-        email: user.email,
-        phone: user.phone,
+        id: user.id, full_name, email: user.email, phone: user.phone,
         address: customer?.address || null,
         latitude: customer?.latitude || null,
         longitude: customer?.longitude || null,
-        avatar_url: user.avatar_url || null
+        avatar_url: user.avatar_url || user.photo_url || null
       }
     });
   } catch (error) {
@@ -143,7 +157,7 @@ async function me(req, res) {
       address: customer.address,
       latitude: customer.latitude,
       longitude: customer.longitude,
-      avatar_url: customer.avatar_url || null
+      avatar_url: customer.avatar_url || customer.photo_url || null
     });
   } catch (error) {
     console.error(error);
@@ -152,7 +166,7 @@ async function me(req, res) {
 }
 
 // ──────────────────────────────────────────────
-// 4. UPLOAD PHOTO DE PROFIL
+// 4. UPLOAD AVATAR
 // ──────────────────────────────────────────────
 async function uploadAvatar(req, res) {
   try {
@@ -162,13 +176,9 @@ async function uploadAvatar(req, res) {
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
-
     await updateAvatarUrl(req.user.id, avatarUrl);
 
-    res.json({
-      message: 'Photo de profil mise à jour avec succès.',
-      avatar_url: avatarUrl
-    });
+    res.json({ message: 'Photo de profil mise à jour.', avatar_url: avatarUrl });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erreur serveur.', error: error.message });
@@ -176,7 +186,7 @@ async function uploadAvatar(req, res) {
 }
 
 // ──────────────────────────────────────────────
-// 5. MISE À JOUR FCM TOKEN
+// 5. FCM TOKEN
 // ──────────────────────────────────────────────
 async function updateFcmTokenHandler(req, res) {
   try {
@@ -206,7 +216,7 @@ async function logout(req, res) {
 }
 
 // ──────────────────────────────────────────────
-// 7. MOT DE PASSE OUBLIÉ
+// 7. MOT DE PASSE OUBLIÉ — envoie un vrai email
 // ──────────────────────────────────────────────
 async function forgotPassword(req, res) {
   try {
@@ -216,6 +226,8 @@ async function forgotPassword(req, res) {
     }
 
     const user = await findUserByEmail(email);
+
+    // Toujours répondre succès même si email inconnu (sécurité)
     if (!user) {
       return res.status(200).json({
         message: 'Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé.'
@@ -224,6 +236,15 @@ async function forgotPassword(req, res) {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     await createResetToken(user.id, resetToken);
+
+    // ✅ Envoi d'un vrai email avec Nodemailer
+    try {
+      const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+      await sendResetPasswordEmail(user.email, resetToken, fullName);
+    } catch (mailError) {
+      console.error('[Mailer] Erreur envoi email:', mailError.message);
+      // On ne bloque pas si l'email échoue
+    }
 
     res.status(200).json({
       message: 'Si un compte existe avec cet email, un lien de réinitialisation vous a été envoyé.'
@@ -250,17 +271,25 @@ async function resetPassword(req, res) {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, resetEntry.user_id]);
+
+    // ✅ has_password = 1 après reset (compte Google peut maintenant se connecter avec mdp)
+    await pool.query(
+      'UPDATE users SET password = ?, has_password = 1 WHERE id = ?',
+      [hashedPassword, resetEntry.user_id]
+    );
     await deleteResetToken(token);
 
-    res.json({ message: 'Mot de passe réinitialisé avec succès.' });
+    res.json({ message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erreur serveur.', error: error.message });
   }
 }
 
-// ── 9. CONNEXION AVEC GOOGLE ──────────────────────────────────────
+// ──────────────────────────────────────────────
+// 9. CONNEXION / INSCRIPTION VIA GOOGLE
+// ✅ Utilise google-auth-library (même approche que le manager)
+// ──────────────────────────────────────────────
 async function googleLogin(req, res) {
   try {
     const { idToken } = req.body;
@@ -268,43 +297,56 @@ async function googleLogin(req, res) {
       return res.status(400).json({ message: 'Token Google requis.' });
     }
 
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-    const payload = await response.json();
-
-    if (!response.ok || !payload.email) {
-      return res.status(401).json({ message: 'Token Google invalide.' });
+    // ✅ Vérification sécurisée avec OAuth2Client (au lieu de fetch tokeninfo)
+    let payload;
+    try {
+      payload = await verifyGoogleToken(idToken);
+    } catch (err) {
+      return res.status(401).json({ message: 'Token Google invalide ou expiré.' });
     }
 
-    const { sub: googleId, email, given_name, family_name } = payload;
+    if (!payload.email_verified) {
+      return res.status(401).json({ message: 'Email Google non vérifié.' });
+    }
+
+    const { sub: googleId, email, given_name, family_name, picture } = payload;
     const full_name = [given_name, family_name].filter(Boolean).join(' ').trim() || 'Utilisateur Google';
 
-    // ✅ ÉTAPE 1 — Chercher par google_id (le plus fiable, indépendant de l'email)
+    // ÉTAPE 1 — Chercher par google_id (le plus fiable)
     let user = await findUserByGoogleId(googleId);
 
     if (!user) {
-      // ✅ ÉTAPE 2 — Chercher par email (pour lier un compte existant)
+      // ÉTAPE 2 — Chercher par email (lier si compte existant)
       user = await findUserByEmail(email);
 
       if (user) {
-        // Compte trouvé par email → lier le google_id pour les prochaines connexions
         if (user.role !== 'customer') {
           return res.status(403).json({ message: 'Accès réservé aux clients.' });
         }
-        await linkGoogleId(user.id, googleId);
+        // Lier le Google ID au compte existant
+        await linkGoogleId(user.id, googleId, picture);
+        // Rafraîchir les données
+        user = await findUserById(user.id);
       } else {
-        // ✅ ÉTAPE 3 — Nouveau compte
+        // ÉTAPE 3 — Nouveau compte Google
         const hashedPassword = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
         const userId = await createUserAndCustomer({
-          full_name,
-          email,
+          full_name, email,
           password: hashedPassword,
           phone: 'Non renseigné',
-          address: null,
-          latitude: null,
-          longitude: null,
-          google_id: googleId
+          address: null, latitude: null, longitude: null,
+          google_id: googleId,
+          has_password: 0, // ✅ Pas de mot de passe réel
+          photo_url: picture || null
         });
         user = await findUserById(userId);
+
+        // ✅ Envoyer un email de bienvenue
+        try {
+          await sendWelcomeGoogleEmail(email, full_name);
+        } catch (mailError) {
+          console.error('[Mailer] Email bienvenue échoué:', mailError.message);
+        }
       }
     } else {
       if (user.role !== 'customer') {
@@ -325,14 +367,14 @@ async function googleLogin(req, res) {
       message: 'Connexion avec Google réussie.',
       token,
       user: {
-        id:         user.id,
-        full_name:  userName || full_name,
-        email:      user.email,
-        phone:      user.phone,
-        address:    customer?.address || null,
-        latitude:   customer?.latitude || null,
-        longitude:  customer?.longitude || null,
-        avatar_url: user.avatar_url || null
+        id: user.id,
+        full_name: userName || full_name,
+        email: user.email,
+        phone: user.phone,
+        address: customer?.address || null,
+        latitude: customer?.latitude || null,
+        longitude: customer?.longitude || null,
+        avatar_url: user.avatar_url || user.photo_url || null
       }
     });
   } catch (error) {
@@ -342,7 +384,7 @@ async function googleLogin(req, res) {
 }
 
 // ──────────────────────────────────────────────
-// 10. CHANGEMENT DE MOT DE PASSE (utilisateur connecté)
+// 10. CHANGEMENT DE MOT DE PASSE
 // ──────────────────────────────────────────────
 async function changePassword(req, res) {
   try {
@@ -355,21 +397,29 @@ async function changePassword(req, res) {
       return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
     }
 
-    // Récupérer l'utilisateur connecté avec son mot de passe hashé
     const user = await findUserById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur introuvable.' });
     }
 
-    // Vérifier l'ancien mot de passe
+    // ✅ Compte Google sans mot de passe réel
+    if (user.google_id && !user.has_password) {
+      return res.status(400).json({
+        message: 'Ce compte utilise Google Sign-In. Utilisez "Mot de passe oublié" pour créer un mot de passe.',
+        code: 'GOOGLE_ACCOUNT'
+      });
+    }
+
     const isValid = await bcrypt.compare(old_password, user.password);
     if (!isValid) {
       return res.status(401).json({ message: 'Ancien mot de passe incorrect.' });
     }
 
-    // Hasher et sauvegarder le nouveau mot de passe
     const hashedPassword = await bcrypt.hash(new_password, 10);
-    await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+    await pool.query(
+      'UPDATE users SET password = ?, has_password = 1 WHERE id = ?',
+      [hashedPassword, req.user.id]
+    );
 
     res.json({ message: 'Mot de passe modifié avec succès.' });
   } catch (error) {
@@ -379,14 +429,8 @@ async function changePassword(req, res) {
 }
 
 module.exports = {
-  register,
-  login,
-  me,
-  uploadAvatar,
+  register, login, me, uploadAvatar,
   updateFcmToken: updateFcmTokenHandler,
-  logout,
-  forgotPassword,
-  resetPassword,
-  googleLogin,
-  changePassword
+  logout, forgotPassword, resetPassword,
+  googleLogin, changePassword
 };
