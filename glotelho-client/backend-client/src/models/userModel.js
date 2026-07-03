@@ -9,14 +9,15 @@ const findUserByEmail = async (email) => {
 // ✅ password inclus pour bcrypt.compare dans changePassword
 const findUserById = async (id) => {
   const [rows] = await pool.query(
-    `SELECT id, last_name, first_name, email, phone, role, fcm_token, avatar_url, password, google_id
+    `SELECT id, last_name, first_name, email, phone, role, fcm_token,
+            avatar_url, photo_url, password, google_id, has_password
      FROM users WHERE id = ?`,
     [id]
   );
   return rows[0];
 };
 
-// ✅ Recherche par Google ID (évite les conflits d'email)
+// ✅ Recherche par Google ID
 const findUserByGoogleId = async (googleId) => {
   const [rows] = await pool.query(
     'SELECT * FROM users WHERE google_id = ?',
@@ -26,17 +27,25 @@ const findUserByGoogleId = async (googleId) => {
 };
 
 // ✅ Lier un Google ID à un compte existant
-const linkGoogleId = async (userId, googleId) => {
-  await pool.query('UPDATE users SET google_id = ? WHERE id = ?', [googleId, userId]);
+const linkGoogleId = async (userId, googleId, photoUrl) => {
+  await pool.query(
+    'UPDATE users SET google_id = ?, photo_url = COALESCE(photo_url, ?) WHERE id = ?',
+    [googleId, photoUrl || null, userId]
+  );
 };
 
 const createUserAndCustomer = async (data) => {
-  const { full_name, email, password, phone, address, latitude, longitude, google_id } = data;
+  const {
+    full_name, email, password, phone,
+    address, latitude, longitude,
+    google_id, has_password = 1, photo_url
+  } = data;
 
   const [userResult] = await pool.query(
-    `INSERT INTO users (first_name, last_name, email, password, phone, role, google_id)
-     VALUES (?, '', ?, ?, ?, 'customer', ?)`,
-    [full_name, email, password, phone, google_id || null]
+    `INSERT INTO users
+     (first_name, last_name, email, password, phone, role, google_id, has_password, photo_url)
+     VALUES (?, '', ?, ?, ?, 'customer', ?, ?, ?)`,
+    [full_name, email, password, phone, google_id || null, has_password, photo_url || null]
   );
   const userId = userResult.insertId;
 
@@ -51,7 +60,8 @@ const createUserAndCustomer = async (data) => {
 
 const getCustomerByUserId = async (userId) => {
   const [rows] = await pool.query(
-    `SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.fcm_token, u.avatar_url,
+    `SELECT u.id, u.first_name, u.last_name, u.email, u.phone,
+            u.fcm_token, u.avatar_url, u.photo_url,
             c.address, c.latitude, c.longitude
      FROM users u
      JOIN customers c ON u.id = c.user_id
@@ -73,7 +83,6 @@ const updateAvatarUrl = async (userId, avatarUrl) => {
 const updateProfile = async (userId, data) => {
   const { full_name, email, phone } = data;
 
-  // Vérifier que le nouvel email n'est pas déjà pris par un autre utilisateur
   if (email) {
     const [existing] = await pool.query(
       'SELECT id FROM users WHERE email = ? AND id != ?',
