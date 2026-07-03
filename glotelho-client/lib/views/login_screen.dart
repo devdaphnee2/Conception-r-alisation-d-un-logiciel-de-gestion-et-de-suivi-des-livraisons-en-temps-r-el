@@ -75,12 +75,41 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Identifiants incorrects.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final String msg   = result['message'] ?? 'Identifiants incorrects.';
+      final dynamic code = result['data']?['code'];
+
+      if (code == 'GOOGLE_ACCOUNT') {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Compte Google'),
+            content: const Text(
+              'Ce compte a été créé avec Google Sign-In.\n\n'
+              'Utilisez "Mot de passe oublié" pour créer un mot de passe.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC8960C)),
+                child: const Text('Mot de passe oublié',
+                  style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -89,7 +118,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isGoogleLoading = true);
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '1056096384522-k0e89pvhcr0l8nnr1ianlpvsm8of2j2e.apps.googleusercontent.com'
+      );
+
+      // ✅ Vider le cache Google — force le sélecteur de compte
+      try {
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (_) {}
+
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
