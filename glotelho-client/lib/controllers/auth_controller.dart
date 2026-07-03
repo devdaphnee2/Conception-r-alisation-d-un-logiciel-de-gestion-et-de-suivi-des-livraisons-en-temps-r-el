@@ -106,6 +106,19 @@ class AuthController {
     }
   }
 
+  // ✅ Récupérer le profil frais depuis le backend
+  static Future<Map<String, dynamic>> getMe() async {
+    try {
+      final response = await ApiService.dio.get('/auth/me');
+      return {'success': true, 'data': response.data};
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'message': e.response?.data['message'] ?? 'Erreur récupération profil',
+      };
+    }
+  }
+
   // ── Mise à jour du token FCM ───────────────────────────────────
   static Future<Map<String, dynamic>> updateFcmToken({
     required String fcmToken,
