@@ -32,9 +32,12 @@ app.get('/test-db', async (req, res) => {
 // Routes
 app.use('/api/v1/auth', require('./routes/authRoutes'));
 app.use('/api/v1/client', require('./routes/clientRoutes'));
-app.use('/api/v1/users', require('./routes/userRoutes')); 
+app.use('/api/v1/users', require('./routes/userRoutes'));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ [Client] Serveur lancé sur http://localhost:${PORT}`);
+  // ✅ Vérifier la connexion email au démarrage
+  const { verifyMailer } = require('./utils/mailer');
+  verifyMailer();
 });
