@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import 'home_screen.dart';
 import 'pending_verification_screen.dart';
 import 'signup/signup_screen.dart';
+import '../services/google_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,6 +77,34 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isLoading = true);
+    final token = await GoogleAuthService.signInWithGoogle();
+    if (!mounted) return;
+
+    if (token == null) {
+      setState(() => _isLoading = false);
+      _showError('Connexion Google annulée ou échouée');
+      return;
+    }
+
+    final driverState = context.read<DriverState>();
+    await driverState.saveSession(token);
+    ApiService.setToken(token);
+    await driverState.refreshProfile();
+
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+
+    if (driverState.driver?.isVerified == true) {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false);
+    } else {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
@@ -94,8 +123,30 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
-              Image.asset('assets/images/glotelho_delivery_logo_high_contrast.png', width: 80),
+              const SizedBox(height: 16),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                  },
+                  child: const Text('🧪 Accès test (sans backend)', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+              Center(
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12)],
+                  ),
+                  child: Image.asset('assets/images/glotelho_delivery_logo_high_contrast.png', fit: BoxFit.contain),
+                ),
+              ),
               const SizedBox(height: 24),
               const Text('Connexion',
                   style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
@@ -132,6 +183,35 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : const Text('Se connecter',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.white24)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('ou', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  ),
+                  Expanded(child: Divider(color: Colors.white24)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _loginWithGoogle,
+                  icon: Image.network(
+                    'https://www.google.com/favicon.ico',
+                    width: 18, height: 18,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, color: Colors.white),
+                  ),
+                  label: const Text('Continuer avec Google', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: Colors.white24),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -183,4 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+
 }

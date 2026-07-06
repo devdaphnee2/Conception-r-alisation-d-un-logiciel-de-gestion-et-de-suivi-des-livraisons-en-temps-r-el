@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../controllers/auth_controller.dart';
+import '../services/api_service.dart';
+import '../utils/app_state.dart';
 import '../views/login_screen.dart';
+import '../views/home_screen.dart';
+import '../services/fcm_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm     = true;
   bool _acceptConditions   = false;
   bool _isLoading          = false;
+  bool _isGoogleLoading    = false;
 
   bool _emailValide(String email) =>
       RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
@@ -84,6 +91,91 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  // ── Inscription via Google ──────────────────────────────────
+  Future<void> _sInscrireGoogle() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '1056096384522-k0e89pvhcr0l8nnr1ianlpvsm8of2j2e.apps.googleusercontent.com'
+      );
+      try {
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (_) {}
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => _isGoogleLoading = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        setState(() => _isGoogleLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Impossible de récupérer le token Google.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final result = await AuthController.googleLogin(idToken: idToken);
+      setState(() => _isGoogleLoading = false);
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final data  = result['data'] as Map<String, dynamic>;
+        final token = data['token'] as String;
+        final user  = data['user']  as Map<String, dynamic>;
+
+        ApiService.setToken(token);
+        context.read<AppState>().setUser(
+          token:     token,
+          firstName: user['full_name'] as String? ?? '',
+          lastName:  '',
+          email:     user['email']    as String? ?? '',
+          phone:     user['phone']    as String? ?? '',
+          avatarUrl: user['avatar_url'] as String?,
+        );
+        FcmService.registerTokenWithBackend();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Compte Google connecté avec succès !'),
+            backgroundColor: Color(0xFF3B6D11),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Erreur connexion Google.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isGoogleLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur Google Sign-In : $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -498,7 +590,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // ── Google + Facebook (fond navy) ──────────────
                 Row(
                   children: [
-                    Expanded(child: _oauthButton('Google', _googleIcon())),
+                    Expanded(child: _oauthButton('Google', _googleIcon(), onPressed: _isGoogleLoading ? null : _sInscrireGoogle, isLoading: _isGoogleLoading)),
                     const SizedBox(width: 14),
                     Expanded(child: _oauthButton('Facebook', _facebookIcon())),
                   ],
@@ -541,32 +633,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ── Bouton OAuth (fond navy avec bordure) ────────────────────
-  Widget _oauthButton(String label, Widget icon) {
+  Widget _oauthButton(String label, Widget icon, {
+    VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
     return SizedBox(
       height: 52,
       child: OutlinedButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           backgroundColor: navy,
           side: BorderSide(color: Colors.white.withOpacity(0.20), width: 1.2),
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+        child: isLoading
+            ? const SizedBox(
+                width: 20, height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC8960C)))
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  icon,
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

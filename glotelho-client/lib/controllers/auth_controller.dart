@@ -36,6 +36,7 @@ class AuthController {
       return {
         'success': false,
         'message': e.response?.data['message'] ?? 'Erreur de connexion',
+        'data': e.response?.data,
       };
     }
   }
