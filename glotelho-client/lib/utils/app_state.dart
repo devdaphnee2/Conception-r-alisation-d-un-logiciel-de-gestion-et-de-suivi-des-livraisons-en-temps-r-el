@@ -241,7 +241,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ updateProfile — corrigé : n'écrase PLUS le token
+  // ✅ updateProfile corrigé — n'écrase PLUS le token
   void updateProfile({String? firstName, String? lastName, String? name, String? email, String? phone, String? avatarPath}) {
     if (firstName  != null) _userName     = firstName;
     if (lastName   != null) _userLastName = lastName;
@@ -263,7 +263,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Mise à jour depuis le serveur (GET /auth/me) — n'écrase pas le token
+  // ✅ Mise à jour depuis le serveur (GET /auth/me)
   void updateFromServer({
     required String fullName,
     required String email,
@@ -284,7 +284,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ✅ Mise à jour du token seul (après changement d'email)
+  // ✅ Mise à jour du token seul
   void updateToken(String newToken) {
     StorageService.updateToken(newToken);
     notifyListeners();

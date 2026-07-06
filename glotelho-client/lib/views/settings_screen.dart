@@ -449,7 +449,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     final state = context.read<AppState>();
-    // Pré-remplissage initial depuis le cache local
     _nameCtrl  = TextEditingController(text: state.userName);
     _emailCtrl = TextEditingController(text: state.userEmail);
     _phoneCtrl = TextEditingController(text: state.userPhone);
@@ -460,11 +459,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     for (final c in [_nameCtrl, _emailCtrl, _phoneCtrl]) {
       c.addListener(() => setState(() => _hasChanges = true));
     }
-    // ✅ Charger les données fraîches depuis le backend
+    // ✅ Charger données fraîches depuis le backend
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFreshProfile());
   }
 
-  // ✅ Récupérer le profil à jour depuis GET /api/v1/auth/me
   Future<void> _loadFreshProfile() async {
     try {
       final response = await ApiService.dio.get('/auth/me');
@@ -473,7 +471,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final freshName  = user['full_name'] as String? ?? '';
       final freshEmail = user['email']     as String? ?? '';
       final freshPhone = user['phone']     as String? ?? '';
-      // Mettre à jour les champs sans déclencher _hasChanges
       for (final c in [_nameCtrl, _emailCtrl, _phoneCtrl]) {
         c.removeListener(() => setState(() => _hasChanges = true));
       }
@@ -484,7 +481,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       for (final c in [_nameCtrl, _emailCtrl, _phoneCtrl]) {
         c.addListener(() => setState(() => _hasChanges = true));
       }
-      // Synchroniser AppState
       if (mounted) {
         context.read<AppState>().updateFromServer(
           fullName:  freshName,
@@ -625,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!mounted) return;
 
-      // ── 3) Stocker le nouveau token JWT (si email changé) ──────
+      // ── 3) Nouveau token JWT si email changé ────────────────────
       final newToken = updateResponse.data['token'] as String?;
       if (newToken != null && newToken.isNotEmpty) {
         ApiService.setToken(newToken);
@@ -639,7 +635,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         phone:     _phoneCtrl.text.trim(),
         avatarUrl: avatarUrl,
       );
-      // Avatar local si pas d'upload cloud
       if (avatarUrl == null && _pickedImage != null) {
         context.read<AppState>().updateProfile(avatarPath: _pickedImage!.path);
       }
