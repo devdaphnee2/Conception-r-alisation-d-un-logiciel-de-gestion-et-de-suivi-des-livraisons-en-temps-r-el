@@ -23,11 +23,14 @@ const { sendWelcomeGoogleEmail, sendResetPasswordEmail } = require('../utils/mai
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 async function verifyGoogleToken(idToken) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
-  return ticket.getPayload();
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`
+  );
+  const payload = await response.json();
+  if (payload.error) {
+    throw new Error(payload.error_description || payload.error);
+  }
+  return payload;
 }
 
 // ──────────────────────────────────────────────
