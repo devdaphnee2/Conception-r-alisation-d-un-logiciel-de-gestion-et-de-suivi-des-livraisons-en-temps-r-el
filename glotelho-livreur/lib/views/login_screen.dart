@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import 'main_navigation_screen.dart';
 import 'pending_verification_screen.dart';
 import 'signup/signup_screen.dart';
 import '../services/google_auth_service.dart';
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (driverState.driver?.isVerified == true) {
         Navigator.pushAndRemoveUntil(
-            context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false);
+            context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
       } else {
         Navigator.pushAndRemoveUntil(
             context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (driverState.driver?.isVerified == true) {
       Navigator.pushAndRemoveUntil(
-          context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false);
+          context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
     } else {
       Navigator.pushAndRemoveUntil(
           context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()));
                   },
                   child: const Text('🧪 Accès test (sans backend)', style: TextStyle(color: Colors.white38, fontSize: 12)),
                 ),
