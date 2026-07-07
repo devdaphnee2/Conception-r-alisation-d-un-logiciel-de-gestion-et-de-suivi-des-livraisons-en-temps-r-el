@@ -18,9 +18,9 @@ async function login(req, res) {
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(401).json({ message: 'Identifiants incorrects.' });
 
-        if (user.role !== 'manager') {
-            return res.status(403).json({ message: 'Ce compte n\'est pas autorise sur le back-office manager.' });
-        }
+        /*if (user.role !== 'manager') {
+        return res.status(403).json({ message: 'Ce compte n\'est pas autorise sur le back-office manager.' });
+        }*/
 
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET, { expiresIn: '8h' }
@@ -225,5 +225,19 @@ async function resetPassword(req, res) {
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 }
+async function loginMobile(req, res) {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ message: 'Email et mot de passe requis.' });
+        const user = await prisma.users.findUnique({ where: { email } });
+        if (!user) return res.status(401).json({ message: 'Identifiants incorrects.' });
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) return res.status(401).json({ message: 'Identifiants incorrects.' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+        res.json({ token, user: { id: user.id, first_name: user.first_name, email: user.email, role: user.role } });
+    } catch (error) {
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+}
 
-module.exports = { login, register, me, updateMe, changePassword, forgotPassword, verifyResetToken, resetPassword };
+module.exports = { login, loginMobile, register, me, updateMe, changePassword, forgotPassword, verifyResetToken, resetPassword };
