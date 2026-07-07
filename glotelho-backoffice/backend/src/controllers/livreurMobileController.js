@@ -1,70 +1,6 @@
-// ============================================================
-// CONTROLLER API — Application Mobile Livreur
-// Routes : /api/mobile/livreur/*
-// Auth : JWT avec role delivery_person
-// Firebase : https://glotelho-livraison-default-rtdb.europe-west1.firebasedatabase.app
-// ============================================================
-
 const prisma = require('../utils/prismaClient');
+const { getFirebaseDB } = require('../config/firebaseAdmin');
 
-// Initialisation Firebase Admin (optionnel si pas encore configure)
-// Decommenter apres avoir place firebase-admin.json dans src/config/
-let firebaseDb = null;
-try {
-    const admin = require('firebase-admin');
-    if (!admin.apps.length) {
-        const serviceAccount = require('../config/firebase-admin.json');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            databaseURL: 'https://glotelho-livraison-default-rtdb.europe-west1.firebasedatabase.app',
-        });
-    }
-    firebaseDb = admin.database();
-    console.log('[Firebase] Connexion Realtime Database OK');
-} catch (e) {
-    console.warn('[Firebase] Admin SDK non configure — positions GPS en BDD uniquement :', e.message);
-}
-
-// Helper — ecrire position dans Firebase
-async function writeFirebasePosition(livreurId, data) {
-    if (!firebaseDb) return false;
-    try {
-        await firebaseDb.ref('positions/' + livreurId).set(data);
-        return true;
-    } catch (e) {
-        console.error('[Firebase] Erreur ecriture position :', e.message);
-        return false;
-    }
-}
-
-// Helper — effacer position Firebase (fin de course)
-async function clearFirebasePosition(livreurId) {
-    if (!firebaseDb) return;
-    try {
-        await firebaseDb.ref('positions/' + livreurId).remove();
-    } catch (e) {
-        console.error('[Firebase] Erreur suppression position :', e.message);
-    }
-}
-
-// Helper — envoyer notification FCM
-async function sendFCM(fcmToken, titre, corps) {
-    if (!firebaseDb || !fcmToken) return;
-    try {
-        const admin = require('firebase-admin');
-        await admin.messaging().send({
-            token: fcmToken,
-            notification: { title: titre, body: corps },
-        });
-    } catch (e) {
-        console.warn('[FCM] Notification non envoyee :', e.message);
-    }
-}
-
-// ──────────────────────────────────────────────────────────
-// GET /api/mobile/livreur/profil
-// Profil complet du livreur connecte
-// ──────────────────────────────────────────────────────────
 async function getProfil(req, res) {
     try {
         const livreur = await prisma.delivery_persons.findUnique({
@@ -72,602 +8,278 @@ async function getProfil(req, res) {
             include: { users: true, vehicules: true }
         });
         if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        if (livreur.status === 'Indisponible') {
-            return res.status(403).json({
-                message: 'Profil en attente d\'approbation. Contactez votre manager.',
-                status: 'pending',
-                caution_payee: livreur.caution_payee,
-                caution_montant: livreur.caution_montant,
-            });
-        }
-
-        if (livreur.status === 'Hors_service') {
-            return res.status(403).json({
-                message: 'Votre profil a ete rejete. Contactez le support Glotelho.',
-                status: 'rejected',
-            });
-        }
-
-        res.json({
-            id: livreur.id,
-            user_id: livreur.user_id,
-            nom: livreur.users.last_name,
-            prenom: livreur.users.first_name,
-            email: livreur.users.email,
-            telephone: livreur.users.phone,
-            fcm_token: livreur.users.fcm_token,
-            status: livreur.status,
-            available: livreur.available,
-            zone_affectee: livreur.zone_affectee,
-            vehicule: livreur.vehicules,
-            caution_payee: livreur.caution_payee,
-            firebase_database_url: 'https://glotelho-livraison-default-rtdb.europe-west1.firebasedatabase.app',
-            firebase_path: 'positions/' + livreur.id,
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        res.json(livreur);
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// GET /api/mobile/livreur/courses
-// Courses assignees au livreur connecte
-// ──────────────────────────────────────────────────────────
-async function getMesCourses(req, res) {
+async function updateFcmToken(req, res) {
     try {
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
+        const { fcm_token } = req.body;
+        await prisma.users.update({ where: { id: req.user.id }, data: { fcm_token } });
+        res.json({ message: 'Token FCM mis a jour.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
+}
 
+async function toggleDisponibilite(req, res) {
+    try {
+        const { available } = req.body;
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
+        if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
+        const newStatus = available ? 'Disponible' : 'Indisponible';
+        await prisma.delivery_persons.update({
+            where: { id: livreur.id },
+            data: { available: !!available, status: newStatus }
+        });
+        res.json({ message: 'Disponibilite mise a jour.', status: newStatus });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
+}
+
+async function getCourses(req, res) {
+    try {
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
+        if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
         const courses = await prisma.deliveryorders.findMany({
-            where: {
-                delivery_person_id: livreur.id,
-                status: { in: ['Assign_', 'En_cours'] }
-            },
-            include: {
-                customers: { include: { users: true } },
-                delivery_items: true,
-                managers: { include: { users: true } },
-            },
+            where: { delivery_person_id: livreur.id, status: { in: ['Assign_', 'En_cours'] } },
+            include: { customers: { include: { users: true } }, delivery_items: true },
             orderBy: { creation_date: 'desc' }
         });
-
         res.json(courses);
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// GET /api/mobile/livreur/historique
-// ──────────────────────────────────────────────────────────
 async function getHistorique(req, res) {
     try {
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
+        if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
         const courses = await prisma.deliveryorders.findMany({
-            where: {
-                delivery_person_id: livreur.id,
-                status: { in: ['Livr_', 'Annul_', 'Suspendu'] }
-            },
-            include: {
-                customers: { include: { users: true } },
-                delivery_items: true,
-            },
+            where: { delivery_person_id: livreur.id, status: { in: ['Livr_', 'Annul_'] } },
+            include: { customers: { include: { users: true } } },
             orderBy: { creation_date: 'desc' },
             take: 50
         });
-
         res.json(courses);
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/disponibilite
-// body: { available: true/false }
-// ──────────────────────────────────────────────────────────
-async function setDisponibilite(req, res) {
-    try {
-        const { available } = req.body;
-
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        if (livreur.status === 'En_livraison') {
-            return res.status(400).json({ message: 'Impossible de changer de disponibilite pendant une livraison.' });
-        }
-
-        const updated = await prisma.delivery_persons.update({
-            where: { user_id: req.user.id },
-            data: {
-                available: !!available,
-                status: available ? 'Disponible' : 'Indisponible'
-            }
-        });
-
-        res.json({
-            message: available ? 'Vous etes maintenant disponible.' : 'Vous etes maintenant indisponible.',
-            livreur: updated
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
-    }
-}
-
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/accepter
-// ──────────────────────────────────────────────────────────
 async function accepterCourse(req, res) {
     try {
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id },
-            include: { users: true }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { managers: { include: { users: true } } }
-        });
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
+        const course = await prisma.deliveryorders.findUnique({ where: { id: parseInt(req.params.id) } });
         if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-        if (course.delivery_person_id !== livreur.id) {
-            return res.status(403).json({ message: 'Cette course ne vous est pas assignee.' });
-        }
-        if (course.status !== 'Assign_') {
-            return res.status(400).json({ message: 'Cette course ne peut pas etre acceptee.' });
-        }
-
-        await prisma.delivery_persons.update({
-            where: { id: livreur.id },
-            data: { status: 'En_livraison', available: false }
-        });
-
-        // FCM -> notifier le manager
-        if (course.managers && course.managers.users && course.managers.users.fcm_token) {
-            await sendFCM(
-                course.managers.users.fcm_token,
-                'Course acceptee',
-                livreur.users.first_name + ' a accepte la course #' + course.id
-            );
-        }
-
-        res.json({ message: 'Course acceptee. Bonne livraison !', course });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        if (course.delivery_person_id !== livreur.id) return res.status(403).json({ message: 'Non autorise.' });
+        await prisma.deliveryorders.update({ where: { id: course.id }, data: { status: 'Assign_' } });
+        res.json({ message: 'Course acceptee.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/refuser
-// body: { motif }
-// ──────────────────────────────────────────────────────────
 async function refuserCourse(req, res) {
     try {
-        const { motif } = req.body;
-
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id },
-            include: { users: true }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { managers: { include: { users: true } } }
-        });
+        const course = await prisma.deliveryorders.findUnique({ where: { id: parseInt(req.params.id) } });
         if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-        if (course.delivery_person_id !== livreur.id) {
-            return res.status(403).json({ message: 'Cette course ne vous est pas assignee.' });
-        }
-
-        const updated = await prisma.deliveryorders.update({
-            where: { id: parseInt(req.params.id) },
-            data: {
-                status: 'En_attente',
-                delivery_person_id: null,
-            }
-        });
-
-        await prisma.delivery_persons.update({
-            where: { id: livreur.id },
-            data: { status: 'Disponible', available: true }
-        });
-
-        // FCM -> notifier le manager du refus
-        if (course.managers && course.managers.users && course.managers.users.fcm_token) {
-            await sendFCM(
-                course.managers.users.fcm_token,
-                'Course refusee',
-                livreur.users.first_name + ' a refuse la course #' + course.id + (motif ? ' : ' + motif : '')
-            );
-        }
-
-        res.json({ message: 'Course refusee. Le manager a ete notifie.', course: updated });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        await prisma.deliveryorders.update({ where: { id: course.id }, data: { status: 'En_attente', delivery_person_id: null } });
+        res.json({ message: 'Course refusee.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/demarrer
-// ──────────────────────────────────────────────────────────
 async function demarrerCourse(req, res) {
     try {
         const livreur = await prisma.delivery_persons.findUnique({
             where: { user_id: req.user.id },
             include: { users: true }
         });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
+        const courseId = parseInt(req.params.id);
         const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { customers: { include: { users: true } } }
+            where: { id: courseId },
+            include: { confirmations: true }
         });
         if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-        if (course.delivery_person_id !== livreur.id) {
-            return res.status(403).json({ message: 'Cette course ne vous est pas assignee.' });
-        }
-        if (course.status !== 'Assign_') {
-            return res.status(400).json({ message: 'La course doit etre en statut Assigne pour demarrer.' });
-        }
 
-        const updated = await prisma.deliveryorders.update({
-            where: { id: parseInt(req.params.id) },
+        await prisma.deliveryorders.update({
+            where: { id: courseId },
             data: { status: 'En_cours' }
         });
+        await prisma.delivery_persons.update({
+            where: { id: livreur.id },
+            data: { status: 'En_livraison', available: false }
+        });
 
-        // FCM -> notifier le client que le livreur est en route
-        if (course.customers && course.customers.users && course.customers.users.fcm_token) {
-            await sendFCM(
-                course.customers.users.fcm_token,
-                'Votre livreur est en route',
-                livreur.users.first_name + ' est en chemin vers votre adresse.'
-            );
+        // Recuperer OTP
+        var otp = '';
+        if (course.confirmations && course.confirmations.length > 0) {
+            otp = course.confirmations[0].otp_code || '';
         }
 
+        // Generer lien tracking public
+        var frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        var trackingUrl = frontendUrl + '/tracking/' + courseId;
+
+        // Nom client
+        var clientNom = course.client_nom || 'Client';
+        var clientWa = course.client_whatsapp || course.client_telephone || '';
+
+        // Construire message WhatsApp
+        var message = 'Bonjour ' + clientNom + ' !\n\n' +
+            'Votre livreur ' + (livreur.users ? livreur.users.first_name + ' ' + livreur.users.last_name : '') + ' vient de demarrer la course.\n\n' +
+            'Suivez votre livraison en temps reel :\n' + trackingUrl + '\n\n' +
+            'Code a donner au livreur a la reception :\n' +
+            '*' + otp + '*\n\n' +
+            'Ne partagez pas ce code.';
+
+        // Lien WhatsApp pre-rempli
+        var waTel = clientWa.replace(/\s/g, '').replace(/\+/g, '');
+        if (waTel && !waTel.startsWith('237')) {
+            waTel = '237' + waTel;
+        }
+        var waLink = waTel ? 'https://wa.me/' + waTel + '?text=' + encodeURIComponent(message) : null;
+
+        console.log('=== NOTIFICATION DEMARRAGE COURSE ===');
+        console.log('WhatsApp :', clientWa);
+        console.log('Lien :', waLink);
+        console.log(message);
+        console.log('=====================================');
+
         res.json({
-            message: 'Course demarree. Activez le partage de position GPS.',
-            course: updated,
-            firebase_database_url: 'https://glotelho-livraison-default-rtdb.europe-west1.firebasedatabase.app',
-            firebase_path: 'positions/' + livreur.id,
+            message: 'Course demarree.',
+            whatsapp_link: waLink,
+            tracking_url: trackingUrl,
+            otp: otp
         });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/position
-// body: { latitude, longitude, vitesse }
-// Appele toutes les 5 secondes par l'app mobile
-// ──────────────────────────────────────────────────────────
-async function enregistrerPosition(req, res) {
+// ── POST /api/mobile/livreur/courses/:id/position ───────────
+// Ecrit uniquement dans Firebase — BDD desactivee (races requis par schema)
+async function updatePosition(req, res) {
     try {
-        const { latitude, longitude, vitesse } = req.body;
-
+        const { latitude, longitude, speed } = req.body;
         if (!latitude || !longitude) {
             return res.status(400).json({ message: 'Latitude et longitude requises.' });
         }
 
         const livreur = await prisma.delivery_persons.findUnique({
             where: { user_id: req.user.id },
-            include: { users: true }
+            include: { users: true, vehicules: true }
         });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
+        if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
 
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) }
-        });
-        if (!course || course.tracking_blocked) {
-            return res.status(400).json({ message: 'Tracking bloque ou course introuvable.' });
-        }
+        const courseId = parseInt(req.params.id);
 
-        // Ecriture Firebase Realtime Database — lu en temps reel par le front
-        const firebaseData = {
-            lat: parseFloat(latitude),
-            lng: parseFloat(longitude),
-            vitesse: vitesse ? parseFloat(vitesse) : 0,
-            timestamp: Date.now(),
-            nom: livreur.users.first_name,
-            vehicule: livreur.vehicules ? livreur.vehicules.type : 'moto',
-            course_id: course.id,
-        };
-
-        const firebaseOk = await writeFirebasePosition(livreur.id, firebaseData);
-
-        // Historique GPS en BDD
-        await prisma.position_tracking.create({
-            data: {
-                delivery_person_id: livreur.id,
+        // Ecrire dans Firebase Realtime Database
+        const firebaseDb = getFirebaseDB();
+        if (firebaseDb) {
+            await firebaseDb.ref('positions/' + livreur.id).set({
                 latitude: parseFloat(latitude),
                 longitude: parseFloat(longitude),
-                speed: vitesse ? parseFloat(vitesse) : null,
-                timestamp: new Date(),
-            }
-        });
+                speed: speed ? parseFloat(speed) : 0,
+                livraison_id: courseId,
+                livreur_nom: livreur.users ? (livreur.users.first_name + ' ' + livreur.users.last_name) : 'Livreur',
+                vehicule: livreur.vehicules ? livreur.vehicules.type : 'moto',
+                timestamp: Date.now(),
+                status: 'En_livraison',
+            });
+            console.log('[Firebase] Position mise a jour : livreur ' + livreur.id + ' -> ' + latitude + ', ' + longitude);
+        } else {
+            console.warn('[Firebase] Non disponible — position non enregistree');
+        }
 
-        res.json({
-            message: 'Position enregistree.',
-            firebase: firebaseOk ? 'OK' : 'Non connecte — BDD uniquement',
-            firebase_path: 'positions/' + livreur.id,
-            position: { latitude, longitude, vitesse, timestamp: new Date() }
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        res.json({ message: 'Position mise a jour.', latitude, longitude });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/arrivee
-// Signaler arrivee a destination
-// ──────────────────────────────────────────────────────────
 async function signalerArrivee(req, res) {
     try {
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id },
-            include: { users: true }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { customers: { include: { users: true } } }
-        });
-        if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-
-        // Generer OTP 6 chiffres
-        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // Stocker OTP en base pour validation
-        await prisma.confirmations.create({
-            data: {
-                deliveryorder_id: parseInt(req.params.id),
-                type: 'otp',
-                value: otpCode,
-                confirmed_at: null,
-            }
-        });
-
-        // FCM -> notifier le client avec le code OTP
-        if (course.customers && course.customers.users && course.customers.users.fcm_token) {
-            await sendFCM(
-                course.customers.users.fcm_token,
-                'Votre livreur est arrive !',
-                livreur.users.first_name + ' est arrive. Code de confirmation : ' + otpCode
-            );
-        }
-
-        res.json({
-            message: 'Arrivee signalee. Code OTP envoye au client.',
-            otp_code: otpCode,
-            client_nom: course.customers ? course.customers.users.first_name : null,
-            client_telephone: course.customers ? course.customers.users.phone : null,
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        const courseId = parseInt(req.params.id);
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await prisma.confirmations.create({ data: { deliveryorder_id: courseId, type: 'otp', value: otp } });
+        res.json({ message: 'Arrivee signalee. OTP genere.', otp });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/cloturer
-// body: { otp_code, montant_collecte, observations }
-// ──────────────────────────────────────────────────────────
 async function cloturerCourse(req, res) {
     try {
-        const { otp_code, montant_collecte, observations } = req.body;
+        const { rapport } = req.body;
+        const courseId = parseInt(req.params.id);
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
 
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id },
-            include: { users: true }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
+        await prisma.deliveryorders.update({ where: { id: courseId }, data: { status: 'Livr_', tracking_blocked: true } });
+        await prisma.delivery_persons.update({ where: { id: livreur.id }, data: { status: 'Disponible', available: true } });
 
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: {
-                customers: { include: { users: true } },
-                managers: { include: { users: true } }
-            }
-        });
-        if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-        if (course.delivery_person_id !== livreur.id) {
-            return res.status(403).json({ message: 'Cette course ne vous est pas assignee.' });
-        }
-        if (course.status !== 'En_cours') {
-            return res.status(400).json({ message: 'La course doit etre En_cours pour etre cloturee.' });
+        if (rapport) {
+            await prisma.rapports.create({ data: { deliveryorder_id: courseId, type: 'livraison', contenu: rapport, auteur: 'Livreur' } });
         }
 
-        // Valider OTP si fourni
-        if (otp_code) {
-            const confirmation = await prisma.confirmations.findFirst({
-                where: {
-                    deliveryorder_id: parseInt(req.params.id),
-                    type: 'otp',
-                    value: otp_code,
-                    confirmed_at: null,
-                }
-            });
-            if (!confirmation) {
-                return res.status(400).json({ message: 'Code OTP invalide ou deja utilise.' });
-            }
-            // Marquer OTP comme utilise
-            await prisma.confirmations.update({
-                where: { id: confirmation.id },
-                data: { confirmed_at: new Date() }
-            });
+        const firebaseDb = getFirebaseDB();
+        if (firebaseDb) {
+            await firebaseDb.ref('positions/' + livreur.id).remove();
         }
 
-        // Cloturer la course
-        const updated = await prisma.deliveryorders.update({
-            where: { id: parseInt(req.params.id) },
-            data: {
-                status: 'Livr_',
-                collected_amount: montant_collecte ? parseFloat(montant_collecte) : course.amount_to_collect,
-                delivery_date: new Date(),
-                tracking_blocked: true,
-            }
-        });
-
-        // Rapport de livraison
-        if (observations) {
-            await prisma.rapports.create({
-                data: {
-                    deliveryorder_id: parseInt(req.params.id),
-                    type: 'livraison',
-                    contenu: observations,
-                    auteur: 'livreur_' + livreur.id,
-                    dateCreation: new Date(),
-                }
-            });
-        }
-
-        // Livreur redevient disponible
-        await prisma.delivery_persons.update({
-            where: { id: livreur.id },
-            data: { status: 'Disponible', available: true }
-        });
-
-        // Effacer position Firebase — tracking stoppe
-        await clearFirebasePosition(livreur.id);
-
-        // FCM -> notifier manager
-        if (course.managers && course.managers.users && course.managers.users.fcm_token) {
-            await sendFCM(
-                course.managers.users.fcm_token,
-                'Livraison effectuee',
-                'La course #' + course.id + ' a ete livree par ' + livreur.users.first_name
-            );
-        }
-
-        // FCM -> notifier client
-        if (course.customers && course.customers.users && course.customers.users.fcm_token) {
-            await sendFCM(
-                course.customers.users.fcm_token,
-                'Livraison confirmee',
-                'Votre commande a ete livree avec succes. Merci de votre confiance !'
-            );
-        }
-
-        res.json({
-            message: 'Livraison cloturee avec succes. Vous etes maintenant disponible.',
-            course: updated,
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        res.json({ message: 'Course cloturee avec succes.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/courses/:id/incident
-// body: { type: 'panne'|'perte_colis'|'colis_casse', description }
-// ──────────────────────────────────────────────────────────
 async function signalerIncident(req, res) {
     try {
-        const { type, description } = req.body;
-        if (!type) return res.status(400).json({ message: 'Type d\'incident requis.' });
-
-        const livreur = await prisma.delivery_persons.findUnique({
-            where: { user_id: req.user.id },
-            include: { users: true }
-        });
-        if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
-
-        const course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: {
-                managers: { include: { users: true } },
-                orders: true
-            }
-        });
-        if (!course) return res.status(404).json({ message: 'Course introuvable.' });
-
-        const motifMap = {
-            'panne': 'Panne vehicule — L2 recupere au point GPS arret',
-            'perte_colis': 'Colis perdu — DetteFinanciere creee — L2 repart du depot',
-            'colis_casse': 'Colis casse — DetteFinanciere + course retour debris',
-        };
+        const { type_incident, description } = req.body;
+        const courseId = parseInt(req.params.id);
+        const livreur = await prisma.delivery_persons.findUnique({ where: { user_id: req.user.id } });
 
         await prisma.deliveryorders.update({
-            where: { id: parseInt(req.params.id) },
-            data: {
-                status: 'Suspendu',
-                suspension_reason: motifMap[type] || description || type,
-            }
+            where: { id: courseId },
+            data: { status: 'Suspendu', suspension_reason: type_incident + ' : ' + (description || '') }
         });
 
-        // Creer dette financiere si perte ou casse
-        if (['perte_colis', 'colis_casse'].includes(type)) {
-            const montantDette = course.amount_to_collect || 0;
+        if (type_incident === 'perte_colis' || type_incident === 'colis_casse') {
+            const course = await prisma.deliveryorders.findUnique({ where: { id: courseId } });
             await prisma.recouvrement.create({
                 data: {
-                    deliveryorder_id: parseInt(req.params.id),
+                    deliveryorder_id: courseId,
                     delivery_person_id: livreur.id,
-                    amount_to_collect: parseFloat(montantDette),
+                    motif: type_incident,
+                    amount_to_collect: course.amount_to_collect || 0,
                     amount_collected: 0,
-                    motif: type === 'perte_colis' ? 'perte_colis' : 'colis_casse',
                 }
             });
         }
 
-        // FCM -> notifier le manager de l'incident
-        if (course.managers && course.managers.users && course.managers.users.fcm_token) {
-            await sendFCM(
-                course.managers.users.fcm_token,
-                'Incident signale — Course #' + course.id,
-                livreur.users.first_name + ' : ' + (motifMap[type] || description)
-            );
-        }
-
-        res.json({
-            message: 'Incident signale. Le manager a ete notifie.',
-            type,
-            motif: motifMap[type] || description,
-            dette_creee: ['perte_colis', 'colis_casse'].includes(type),
-            instructions: motifMap[type] || 'Attendez les instructions du manager.',
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
-    }
-}
-
-// ──────────────────────────────────────────────────────────
-// POST /api/mobile/livreur/fcm-token
-// body: { token }
-// ──────────────────────────────────────────────────────────
-async function updateFcmToken(req, res) {
-    try {
-        const { token } = req.body;
-        if (!token) return res.status(400).json({ message: 'Token FCM requis.' });
-        await prisma.users.update({
-            where: { id: req.user.id },
-            data: { fcm_token: token }
-        });
-        res.json({ message: 'Token FCM mis a jour.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+        res.json({ message: 'Incident signale.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
 
 module.exports = {
     getProfil,
-    getMesCourses,
+    updateFcmToken,
+    toggleDisponibilite,
+    getCourses,
     getHistorique,
-    setDisponibilite,
     accepterCourse,
     refuserCourse,
     demarrerCourse,
-    enregistrerPosition,
+    updatePosition,
     signalerArrivee,
     cloturerCourse,
-    signalerIncident,
-    updateFcmToken,
+    signalerIncident
 };

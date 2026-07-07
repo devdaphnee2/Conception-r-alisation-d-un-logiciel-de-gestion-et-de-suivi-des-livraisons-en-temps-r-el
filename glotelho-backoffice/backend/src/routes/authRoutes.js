@@ -1,21 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
-const {
-    login,
-    register,
-    me,
-    updateMe,
-    changePassword,
-    forgotPassword,
-    verifyResetToken,
-    resetPassword
-} = require('../controllers/authController');
+const { login, loginMobile, register, me, updateMe, changePassword, forgotPassword, verifyResetToken, resetPassword } = require('../controllers/authController');
 const { googleLogin, googleRegister } = require('../controllers/googleAuthController');
 
 // ── Connexion (2 options) ───────────────────────────────────
 router.post('/login', login); // Option B : username + mot de passe
 router.post('/google-login', googleLogin); // Option A : Google (compte existant)
+router.post('/login-mobile', loginMobile);
 
 // ── Inscription (2 options) ─────────────────────────────────
 router.post('/register', register); // Option B : formulaire complet

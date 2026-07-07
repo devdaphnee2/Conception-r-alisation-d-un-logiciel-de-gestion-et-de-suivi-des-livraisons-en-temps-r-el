@@ -1,0 +1,44 @@
+// backend/src/routes/trackingPublicRoutes.js
+// Route publique — pas de JWT requis — pour le client
+const express = require('express');
+const router = express.Router();
+const prisma = require('../utils/prismaClient');
+
+// GET /api/livraisons/public/:id
+// Retourne les infos publiques d'une livraison pour le client
+router.get('/:id', async(req, res) => {
+    try {
+        const livraison = await prisma.deliveryorders.findUnique({
+            where: { id: parseInt(req.params.id) },
+            select: {
+                id: true,
+                status: true,
+                delivery_address: true,
+                zone_bloc: true,
+                delivery_instructions: true,
+                delivery_person_id: true,
+                creation_date: true,
+                delivery_date: true,
+                delivery_persons: {
+                    select: {
+                        id: true,
+                        users: { select: { first_name: true, last_name: true } },
+                        vehicules: { select: { type: true, brand: true, plate_number: true } }
+                    }
+                },
+                confirmations: {
+                    select: { value: true, type: true },
+                    where: { type: 'otp' },
+                    take: 1,
+                },
+                // NE PAS exposer : montant, manager_id, customer_id complet
+            }
+        });
+        if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
+        res.json(livraison);
+    } catch (error) {
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+});
+
+module.exports = router;

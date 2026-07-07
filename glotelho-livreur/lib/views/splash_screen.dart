@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import 'onboarding_screen.dart';
-import 'home_screen.dart';
+import 'main_navigation_screen.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Vérification stricte du statut de validation manager (point 1)
     if (driverState.driver?.isVerified == true) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()));
     } else {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()));
     }
