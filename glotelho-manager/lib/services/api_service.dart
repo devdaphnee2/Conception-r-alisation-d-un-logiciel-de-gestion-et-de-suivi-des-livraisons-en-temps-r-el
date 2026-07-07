@@ -10,7 +10,7 @@ class ApiService {
   final AppState appState;
 
   ApiService(this.appState)
-      : dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.145:5173/api')) {
+      : dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.145:5000/api')) {
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = appState.authToken;

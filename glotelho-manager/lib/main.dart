@@ -6,6 +6,7 @@ import 'widgets/main_navigation_shell.dart';
 import 'views/parametres/parametres_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/register_screen.dart';
+import 'views/notifications/notifications_screen.dart';
 // TODO: importer au fur et à mesure
 // import 'views/litiges/litige_list_screen.dart';
 // import 'views/recouvrements/recouvrement_list_screen.dart';
@@ -36,6 +37,7 @@ class GlotelhoManagerApp extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
+        '/notifications': (_) => const NotificationsScreen(),
         '/home': (_) => const MainNavigationShell(),
         '/parametres': (_) => const ParametresScreen(),
         // '/litiges': (_) => const LitigeListScreen(),
