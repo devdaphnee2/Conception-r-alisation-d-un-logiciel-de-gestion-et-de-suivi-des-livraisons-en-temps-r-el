@@ -24,5 +24,6 @@ class AppColors {
 class AppStrings {
   static const String appName = 'Glotelho Delivery';
   // Même backend que l'app client — à garder synchronisé si l'IP change
-  static const String baseUrl = 'http://192.168.1.166:3001/api/v1';
+  static const String baseUrl = 'http://192.168.1.166:3002/api/v1';
+  static const String glotelhoUrl = 'http://192.168.1.145:5000/api/v1';
 }

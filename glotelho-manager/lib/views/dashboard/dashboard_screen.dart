@@ -4,6 +4,7 @@ import '../../config/app_state.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../widgets/kpi_card.dart';
+import '../../widgets/welcome_banner.dart';
 
 /// Écran d'accueil manager — reprend la logique et les KPIs exacts de
 /// Dashboard.jsx : appels en parallèle sur /livraisons, /livreurs,
@@ -123,7 +124,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accueil')),
+      appBar: AppBar(
+        title: const Text('Accueil'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notifications',
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -131,6 +141,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            WelcomeBanner(
+              firstName: context.watch<AppState>().currentManager?['first_name'] ??
+                  'Manager',
+            ),
+            const SizedBox(height: 16),
             // Alertes
             ...alertes.map((a) => Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -168,7 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 2.4,
+              childAspectRatio: 1.85,
               children: [
                 KpiCard(
                   icon: Icons.inventory_2_outlined,
