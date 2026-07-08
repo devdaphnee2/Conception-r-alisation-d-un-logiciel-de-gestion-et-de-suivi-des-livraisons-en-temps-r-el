@@ -3,6 +3,7 @@ import 'api_service.dart';
 import '../models/driver_model.dart';
 import '../models/vehicle_model.dart';
 import 'dart:io';
+import '../utils/constants.dart';
 
 class RegisterResult {
   final bool success;
@@ -71,7 +72,12 @@ class DriverService {
         'photoVehicule': await MultipartFile.fromFile(photoVehicule.path),
       });
 
-      final response = await ApiService.dio.post('/drivers/register', data: formData);
+     final dio = Dio(BaseOptions(
+    baseUrl: AppStrings.glotelhoUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+));
+final response = await dio.post('/drivers/register', data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
