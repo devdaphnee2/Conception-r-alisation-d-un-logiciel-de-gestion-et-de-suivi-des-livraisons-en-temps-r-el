@@ -47,8 +47,9 @@ export default function LivreurList() {
 
     const filtered = livreurs.filter(l => {
         const matchStatus = !filterStatus || l.status === filterStatus;
+        const user = l.users || l.user; // Sécurité
         const matchSearch = !search || [
-            l.users?.first_name, l.users?.last_name, l.users?.phone, l.zone_affectee,
+            user?.first_name, user?.last_name, user?.phone, l.zone_affectee,
         ].some(v => v?.toLowerCase().includes(search.toLowerCase()));
         return matchStatus && matchSearch;
     });
@@ -76,7 +77,7 @@ export default function LivreurList() {
                 <div style={{ padding: '13px 16px', borderBottom: '1px solid ' + P.surfaceContainerLow, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', flex: 1 }}>
                         <IconSearch style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', width: '13px', height: '13px', color: P.outline }} />
-                        <input type="text" placeholder="Rechercher par nom, telephone, zone..." value={search} onChange={e => setSearch(e.target.value)}
+                        <input type="text" placeholder="Rechercher par nom, téléphone, zone..." value={search} onChange={e => setSearch(e.target.value)}
                             style={{ width: '100%', padding: '8px 12px 8px 28px', borderRadius: '8px', border: '1px solid ' + P.outlineVariant, fontSize: '12px', backgroundColor: P.surfaceContainerLow, boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif', color: P.onSurface, outline: 'none' }} />
                     </div>
                     <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
@@ -95,7 +96,7 @@ export default function LivreurList() {
 
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
-                        {['Livreur', 'Contact', 'Zone', 'Vehicule', 'Statut', ''].map(h => (
+                        {['Livreur', 'Contact / CNI', 'Zone / Caution', 'Véhicule', 'Statut', ''].map(h => (
                             <th key={h} style={thStyle}>{h}</th>
                         ))}
                     </tr></thead>
@@ -103,9 +104,11 @@ export default function LivreurList() {
                         {loading ? (
                             <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: P.outline, padding: '40px' }}>Chargement...</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: P.outline, padding: '40px' }}>Aucun livreur.</td></tr>
+                            <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: P.outline, padding: '40px' }}>Aucun livreur trouvé.</td></tr>
                         ) : filtered.map(l => {
                             const sc = statusConfig[l.status] || { bg: P.surfaceContainerHigh, color: P.onSurfaceVariant, dot: P.outline, label: l.status };
+                            const user = l.users || l.user; // Sécurité pour récupérer le user
+                            
                             return (
                                 <tr key={l.id}
                                     onMouseEnter={e => e.currentTarget.style.backgroundColor = P.surfaceContainerLow}
@@ -115,23 +118,50 @@ export default function LivreurList() {
                                 >
                                     <td style={tdStyle}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                                                {l.users?.first_name?.[0]}
+                                            {/* 👇 On affiche la vraie photo si elle existe */}
+                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+                                                {l.photo_profil_url ? (
+                                                    <img src={l.photo_profil_url} alt="profil" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                                                ) : (
+                                                    user?.first_name?.[0]
+                                                )}
                                             </div>
                                             <div>
-                                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>{l.users?.first_name} {l.users?.last_name}</p>
+                                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>{user?.first_name} {user?.last_name}</p>
                                                 <p style={{ margin: 0, fontSize: '11px', color: P.outline }}>#{String(l.id).padStart(3,'0')}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td style={tdStyle}>
-                                        <p style={{ margin: 0, fontSize: '12px' }}>{l.users?.phone}</p>
-                                        <p style={{ margin: 0, fontSize: '11px', color: P.outline }}>{l.users?.email}</p>
+                                        <p style={{ margin: 0, fontSize: '12px' }}>{user?.phone}</p>
+                                        <p style={{ margin: 0, fontSize: '11px', color: P.outline }}>{user?.email}</p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: P.outlineVariant, fontWeight: 600 }}>
+                                            CNI: {l.cni_numero || 'Non renseigné'}
+                                        </p>
                                     </td>
-                                    <td style={{ ...tdStyle, fontSize: '12px' }}>{l.zone_affectee || '—'}</td>
                                     <td style={{ ...tdStyle, fontSize: '12px' }}>
-                                        {l.vehicules ? <span>{l.vehicules.brand} {l.vehicules.type}<br/><span style={{ fontSize: '10px', color: P.outline }}>{l.vehicules.plate_number}</span></span> : '—'}
+                                        <p style={{ margin: 0 }}>{l.zone_affectee || '—'}</p>
+                                        <span style={{ 
+                                            display: 'inline-block', marginTop: '4px', fontSize: '10px', fontWeight: 600, 
+                                            padding: '2px 6px', borderRadius: '4px',
+                                            backgroundColor: l.caution_payee ? '#c8e6c9' : P.errorContainer, 
+                                            color: l.caution_payee ? '#1b5e20' : P.error 
+                                        }}>
+                                            {l.caution_payee ? 'Caution Payée' : 'Caution Non Payée'}
+                                        </span>
                                     </td>
+                                    
+                                    {/* 👇 On utilise les nouveaux champs véhicule directs */}
+                                    <td style={{ ...tdStyle, fontSize: '12px' }}>
+                                        {l.vehicule_marque || l.vehicule_type ? (
+                                            <span>
+                                                {l.vehicule_marque} {l.vehicule_type}
+                                                <br/>
+                                                <span style={{ fontSize: '10px', color: P.outline }}>{l.vehicule_immatriculation || 'Pas de plaque'}</span>
+                                            </span>
+                                        ) : '—'}
+                                    </td>
+                                    
                                     <td style={tdStyle}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: sc.dot }}></div>
