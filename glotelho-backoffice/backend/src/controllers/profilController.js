@@ -145,6 +145,7 @@ async function approuver(req, res) {
             data: {
                 status: 'Disponible',
                 available: 1,
+                date_activation: new Date(), // 👈 On enregistre le Top départ des 14 jours
                 note_manager: (livreur.note_manager ? livreur.note_manager + '\n' : '') +
                     '[' + new Date().toLocaleString('fr-FR') + '] Profil approuve — acces plateforme accorde'
             }
@@ -152,7 +153,7 @@ async function approuver(req, res) {
 
         var nom = user ? user.first_name + ' ' + user.last_name : 'Le livreur';
         res.json({
-            message: nom + ' est maintenant actif et peut recevoir des courses.',
+            message: nom + ' est maintenant actif et peut recevoir des courses. Il a 14 jours pour payer sa caution.',
             livreur: updated
         });
     } catch (error) {
