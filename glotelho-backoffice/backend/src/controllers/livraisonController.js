@@ -180,7 +180,7 @@ async function create(req, res) {
         });
 
         var frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        var trackingUrl = frontendUrl + '/tracking/' + livraison.id;
+        var trackingUrl = frontendUrl + '/suivi/' + livraison.id;
 
         // Envoyer SMS + generer lien WhatsApp
         var notif = await envoyerNotificationClient(
