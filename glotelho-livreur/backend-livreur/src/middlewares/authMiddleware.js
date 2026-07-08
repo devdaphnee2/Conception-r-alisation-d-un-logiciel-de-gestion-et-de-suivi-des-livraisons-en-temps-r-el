@@ -12,8 +12,9 @@ const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Utiliser le champ 'status' (VARCHAR) au lieu de 'account_status'
     const [rows] = await pool.query(
-      `SELECT dp.id, dp.account_status AS status, u.email
+      `SELECT dp.id, dp.status, u.email
        FROM delivery_persons dp
        JOIN users u ON u.id = dp.user_id
        WHERE dp.id = ?`,
