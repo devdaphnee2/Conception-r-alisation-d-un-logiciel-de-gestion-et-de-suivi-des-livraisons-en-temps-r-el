@@ -167,6 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               _buildHeader(prenom),
+              
+              // 👇 Ajout du composant de la bannière de caution juste ici
+              _buildCautionBanner(driverState.driver),
+              
               const SizedBox(height: 20),
               _buildCommissionCard(),
               const SizedBox(height: 14),
@@ -185,6 +189,79 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 👇 Méthode pour afficher la bannière de caution
+  Widget _buildCautionBanner(dynamic driver) {
+    // On cache si le driver est null, si la caution est payée (1), ou s'il n'y a pas de date d'activation
+    if (driver == null || driver.cautionPayee == 1 || driver.dateActivation == null) {
+      return const SizedBox.shrink();
+    }
+
+    final now = DateTime.now();
+    DateTime activationDate;
+    
+    // Parse de la date d'activation en sécurité
+    try {
+      activationDate = driver.dateActivation is DateTime 
+          ? driver.dateActivation 
+          : DateTime.parse(driver.dateActivation.toString());
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
+
+    final joursEcoules = now.difference(activationDate).inDays;
+    final joursRestants = 14 - joursEcoules;
+
+    if (joursRestants <= 0) {
+      return Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.redAccent),
+        ),
+        child: const Text(
+          'Délai dépassé ! Votre compte risque la suspension. Réglez votre caution immédiatement.',
+          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Caution requise — Plus que $joursRestants jour(s)',
+                  style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Pour éviter la suspension de votre compte et recevoir vos commissions, veuillez régler votre caution :\n\n'
+            '• OM : *144*1*1*698000000*50000#\n'
+            '• MoMo : *126*1*1*677000000*50000#',
+            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(String prenom) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -193,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               width: 48, height: 48,
-              decoration: BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
               child: const Icon(Icons.person_outline, color: Colors.white70),
             ),
             const SizedBox(width: 12),
