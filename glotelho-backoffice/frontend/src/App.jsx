@@ -28,7 +28,7 @@ import LitigeShow from './pages/litiges/LitigeShow';
 import Recouvrements from './pages/Recouvrements';
 import Parametres from './pages/Parametres';
 
-// Page publique — client (sans auth)
+// Page publique client — sans auth, sans sidebar
 import TrackingPublic from './pages/TrackingPublic';
 
 export default function App() {
@@ -36,16 +36,18 @@ export default function App() {
         <AuthProvider>
             <Router>
                 <Routes>
-                    {/* Routes publiques */}
+
+                    {/* ── ROUTES PUBLIQUES — sans auth, sans sidebar ── */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
-                    {/* Tracking public pour le client — SANS authentification */}
-                    <Route path="/tracking/:id" element={<TrackingPublic />} />
+                    {/* Page tracking client — totalement separee du manager */}
+                    <Route path="/suivi" element={<TrackingPublic />} />
+                    <Route path="/suivi/:id" element={<TrackingPublic />} />
 
-                    {/* Routes protegees — e-commercant */}
+                    {/* ── ROUTES PROTEGEES — avec sidebar manager ── */}
                     <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
