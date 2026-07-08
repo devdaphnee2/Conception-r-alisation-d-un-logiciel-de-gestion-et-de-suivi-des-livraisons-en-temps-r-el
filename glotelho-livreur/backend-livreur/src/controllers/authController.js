@@ -12,14 +12,18 @@ function generateToken(livreurId) {
 }
 
 // ── Construire le profil retourné au Flutter ───────────────────
-// Flutter lit : _id, nom, prenom, dateNaissance, telephone, email,
-//               photoUrl, adresseResidence, cniNumero, cniRectoUrl,
-//               cniVersoUrl, permisUrl, vehicule{...}, disponibilites,
-//               mobileMoneyNumero, mobileMoneyTitulaire,
-//               status (pending|approved|rejected), soldeCommission, emprunt, note
+// Utilise les noms de colonnes EXACTS de ta table actuelle
 function buildProfile(row) {
   let disponibilites = [];
   try { disponibilites = JSON.parse(row.disponibilites || '[]'); } catch (_) {}
+
+  // Mapping du statut (VARCHAR) → valeurs attendues par Flutter
+  const statusMap = {
+    'Disponible': 'approved',
+    'Indisponible': 'pending',
+    'Hors_service': 'rejected',
+    'Suspendu': 'suspended'
+  };
 
   return {
     _id                 : String(row.livreur_id),
@@ -46,7 +50,7 @@ function buildProfile(row) {
     disponibilites,
     mobileMoneyNumero   : row.mobile_money_numero    || '',
     mobileMoneyTitulaire: row.mobile_money_titulaire || '',
-    status              : row.account_status || 'pending',  // ← ce que Flutter attend
+    status              : statusMap[row.status] || 'pending',
     soldeCommission     : parseFloat(row.solde_commission || 0),
     emprunt             : parseFloat(row.emprunt || 0),
     note                : parseFloat(row.note || 0),
@@ -54,10 +58,11 @@ function buildProfile(row) {
 }
 
 // ── Requête SELECT profil complet ──────────────────────────────
+// Utilise les noms de colonnes EXACTS de ta table actuelle
 const SELECT_PROFILE = `
   SELECT
     dp.id              AS livreur_id,
-    dp.account_status,
+    dp.status,
     dp.date_naissance,
     dp.photo_profil_url,
     dp.adresse_residence,
@@ -104,7 +109,6 @@ exports.register = async (req, res) => {
     const disponibilites = parseDisponibilites(req.body);
     const files = req.files || {};
 
-    // Champs obligatoires
     if (!telephone || !password) {
       return res.status(400).json({ message: 'Le téléphone et le mot de passe sont requis.' });
     }
@@ -117,7 +121,6 @@ exports.register = async (req, res) => {
       return res.status(409).json({ message: 'Ce numéro de téléphone est déjà utilisé.' });
     }
 
-    // Vérifier doublon email
     if (email) {
       const [existEmail] = await conn.query(
         'SELECT id FROM users WHERE email = ?', [email]
@@ -139,10 +142,10 @@ exports.register = async (req, res) => {
     );
     const userId = userResult.insertId;
 
-    // 2. Insérer dans delivery_persons
+    // 2. Insérer dans delivery_persons (avec tes colonnes EXACTES)
     const [dpResult] = await conn.query(
       `INSERT INTO delivery_persons
-         (user_id, account_status,
+         (user_id, status,
           date_naissance, photo_profil_url, adresse_residence,
           cni_numero, cni_recto_url, cni_verso_url, permis_url,
           vehicule_type, vehicule_marque, vehicule_modele,
@@ -150,7 +153,7 @@ exports.register = async (req, res) => {
           assurance_numero, assurance_expiration,
           mobile_money_numero, mobile_money_titulaire,
           disponibilites)
-       VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, 'Indisponible', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         dateNaissance ? new Date(dateNaissance).toISOString().slice(0, 10) : null,
@@ -197,18 +200,15 @@ exports.register = async (req, res) => {
 
 // ═══════════════════════════════════════════════════════════════
 // POST /api/v1/drivers/login
-// Accepte téléphone OU email (champ "telephone" dans le body)
 // ═══════════════════════════════════════════════════════════════
 exports.login = async (req, res) => {
   try {
-    // Flutter envoie le champ "telephone" qui peut contenir un email ou un numéro
     const { telephone, password } = req.body;
 
     if (!telephone || !password) {
       return res.status(400).json({ message: 'Identifiant et mot de passe requis.' });
     }
 
-    // Chercher par téléphone OU par email
     const [rows] = await pool.query(
       `SELECT dp.id AS livreur_id, u.password
        FROM delivery_persons dp
@@ -244,7 +244,6 @@ exports.googleAuth = async (req, res) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ message: 'idToken requis.' });
 
-    // Vérifier le token Google
     const ticket  = await googleClient.verifyIdToken({
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -252,7 +251,6 @@ exports.googleAuth = async (req, res) => {
     const payload = ticket.getPayload();
     const { email, given_name, family_name, picture } = payload;
 
-    // Email déjà en base → connexion directe
     const [rows] = await conn.query(
       `SELECT dp.id AS livreur_id
        FROM delivery_persons dp
@@ -265,7 +263,6 @@ exports.googleAuth = async (req, res) => {
       return res.status(200).json({ token: generateToken(rows[0].livreur_id) });
     }
 
-    // Nouveau → créer compte minimal pending
     await conn.beginTransaction();
 
     const [userResult] = await conn.query(
@@ -275,8 +272,8 @@ exports.googleAuth = async (req, res) => {
     );
 
     const [dpResult] = await conn.query(
-      `INSERT INTO delivery_persons (user_id, account_status, photo_profil_url)
-       VALUES (?, 'pending', ?)`,
+      `INSERT INTO delivery_persons (user_id, status, photo_profil_url)
+       VALUES (?, 'Indisponible', ?)`,
       [userResult.insertId, picture || null]
     );
 
@@ -322,12 +319,10 @@ exports.updateMe = async (req, res) => {
     const files = req.files || {};
     const body  = req.body;
 
-    // Récupérer valeurs actuelles
     const [rows] = await conn.query(SELECT_PROFILE, [livreurId]);
     if (!rows.length) return res.status(404).json({ message: 'Livreur introuvable.' });
     const cur = rows[0];
 
-    // Récupérer user_id
     const [userRows] = await conn.query('SELECT id FROM users WHERE id = (SELECT user_id FROM delivery_persons WHERE id = ?)', [livreurId]);
     const userId = userRows[0].id;
 
@@ -392,7 +387,6 @@ exports.updateMe = async (req, res) => {
       ]
     );
 
-    // Retourner profil mis à jour
     const [updated] = await conn.query(SELECT_PROFILE, [livreurId]);
     return res.status(200).json({ data: buildProfile(updated[0]) });
 
@@ -409,7 +403,6 @@ exports.updateMe = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 exports.logout = async (req, res) => {
   try {
-    // Effacer le fcm_token pour arrêter les notifications push
     await pool.query(
       `UPDATE users SET fcm_token = NULL
        WHERE id = (SELECT user_id FROM delivery_persons WHERE id = ?)`,
