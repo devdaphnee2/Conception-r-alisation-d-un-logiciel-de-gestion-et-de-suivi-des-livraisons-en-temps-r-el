@@ -25,7 +25,6 @@ const upload = multer({
   },
 });
 
-// Exactement les noms de champs envoyés par Flutter
 const uploadFields = upload.fields([
   { name: 'photoProfil',   maxCount: 1 },
   { name: 'cniRecto',      maxCount: 1 },

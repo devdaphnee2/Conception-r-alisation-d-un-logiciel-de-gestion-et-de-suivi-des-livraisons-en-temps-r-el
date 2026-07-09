@@ -1,4 +1,4 @@
-const jwt  = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
 const authMiddleware = async (req, res, next) => {
@@ -12,22 +12,36 @@ const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Utiliser le champ 'status' (VARCHAR) au lieu de 'account_status'
-    const [rows] = await pool.query(
-      `SELECT dp.id, dp.status, u.email
-       FROM delivery_persons dp
-       JOIN users u ON u.id = dp.user_id
-       WHERE dp.id = ?`,
-      [decoded.livreurId]
-    );
-
-    if (!rows.length) {
-      return res.status(401).json({ message: 'Non authentifié' });
+    if (!decoded.livreurId) {
+      return res.status(401).json({ message: 'Token invalide' });
     }
 
-    req.livreur = { id: decoded.livreurId };
-    next();
-  } catch {
+    const connection = await pool.getConnection();
+    try {
+      const [rows] = await connection.query(
+        `SELECT dp.id, dp.status, u.email
+         FROM delivery_persons dp
+         JOIN users u ON u.id = dp.user_id
+         WHERE dp.id = ?`,
+        [decoded.livreurId]
+      );
+
+      if (!rows.length) {
+        return res.status(401).json({ message: 'Non authentifié' });
+      }
+
+      req.livreur = {
+        id: decoded.livreurId,
+        status: rows[0].status,
+        email: rows[0].email
+      };
+
+      next();
+    } finally {
+      connection.release();
+    }
+  } catch (err) {
+    console.error('[authMiddleware] Erreur:', err.message);
     return res.status(401).json({ message: 'Non authentifié' });
   }
 };
