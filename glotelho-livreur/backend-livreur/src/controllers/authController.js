@@ -196,28 +196,35 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Identifiant et mot de passe requis.' });
     }
 
-    const [rows] = await pool.query(
-      `SELECT dp.id AS livreur_id, u.password
-       FROM delivery_persons dp
-       JOIN users u ON u.id = dp.user_id
-       WHERE u.phone = ? OR u.email = ?`,
-      [telephone, telephone]
-    );
+    const conn = await pool.getConnection();
+    try {
+      const [rows] = await conn.query(
+        `SELECT dp.id AS livreur_id, u.password
+         FROM delivery_persons dp
+         JOIN users u ON u.id = dp.user_id
+         WHERE u.phone = ? OR u.email = ?`,
+        [telephone, telephone]
+      );
 
-    if (!rows.length) {
-      return res.status(401).json({ message: 'Identifiants incorrects.' });
+      if (!rows.length) {
+        return res.status(401).json({ message: 'Identifiants incorrects.' });
+      }
+
+      const valid = await bcrypt.compare(password, rows[0].password);
+      if (!valid) {
+        return res.status(401).json({ message: 'Identifiants incorrects.' });
+      }
+
+      const token = generateToken(rows[0].livreur_id);
+      return res.status(200).json({ token });
+    } finally {
+      conn.release();
     }
-
-    const valid = await bcrypt.compare(password, rows[0].password);
-    if (!valid) {
-      return res.status(401).json({ message: 'Identifiants incorrects.' });
-    }
-
-    const token = generateToken(rows[0].livreur_id);
-    return res.status(200).json({ token });
-
   } catch (err) {
     console.error('[login]', err.message);
+    if (err.code === 'ECONNRESET') {
+      return res.status(503).json({ message: 'La base de données est temporairement indisponible. Réessayez.' });
+    }
     return res.status(500).json({ message: 'Erreur serveur lors de la connexion.' });
   }
 };
@@ -399,7 +406,7 @@ exports.updateFcmToken = async (req, res) => {
   }
 };
 
-// ─── FORGOT PASSWORD (utilise created_at) ─────────────────────
+// ─── FORGOT PASSWORD ──────────────────────────────────────────
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -446,7 +453,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// ─── RESET PASSWORD (utilise created_at + 1h) ─────────────────
+// ─── RESET PASSWORD ────────────────────────────────────────────
 exports.resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -489,7 +496,7 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// ─── CHANGE PASSWORD (livreur connecté) ──────────────────────
+// ─── CHANGE PASSWORD ──────────────────────────────────────────
 exports.changePassword = async (req, res) => {
   try {
     const { old_password, new_password } = req.body;

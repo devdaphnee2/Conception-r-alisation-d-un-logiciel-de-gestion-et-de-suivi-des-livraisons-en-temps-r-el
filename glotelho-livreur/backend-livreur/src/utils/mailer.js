@@ -8,9 +8,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/**
- * Email de réinitialisation du mot de passe
- */
 async function sendResetPasswordEmail(toEmail, resetToken, fullName) {
   const resetUrl = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
 
