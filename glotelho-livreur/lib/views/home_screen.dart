@@ -1,86 +1,8 @@
-/*import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../utils/constants.dart';
-import '../utils/driver_state.dart';
-import 'package:permission_handler/permission_handler.dart';
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-
-class _HomeScreenState extends State<HomeScreen> {
-  GoogleMapController? _mapController;
-
-  static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(4.0511, 9.7679), // Douala, Akwa
-    zoom: 14,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final driverState = context.watch<DriverState>();
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        title: const Text('Glotelho Delivery', style: TextStyle(color: Colors.white)),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(
-              'Bienvenue ${driverState.driver?.prenom ?? ""} 👋',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: GoogleMap(
-              initialCameraPosition: _initialPosition,
-              onMapCreated: (controller) => _mapController = controller,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              markers: {
-                const Marker(
-                  markerId: MarkerId('depart'),
-                  position: LatLng(4.0511, 9.7679),
-                  infoWindow: InfoWindow(title: 'Point de départ - Douala Akwa'),
-                ),
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _requestLocationPermission();
-  }
-
-  Future<void> _requestLocationPermission() async {
-    await Permission.location.request();
-  }
-}*/
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
+import '../models/driver_model.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
 import 'activities_screen.dart';
@@ -126,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final ok = await EarningsService.repayDebt();
     setState(() => _isRepaying = false);
     if (!mounted) return;
-
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Emprunt réglé avec succès ✓'),
@@ -154,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
     final prenom = driverState.driver?.prenom ?? '';
+    final driver = driverState.driver;
 
     return Scaffold(
       backgroundColor: AppColors.navy,
@@ -167,10 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               _buildHeader(prenom),
-              
-              // 👇 Ajout du composant de la bannière de caution juste ici
-              _buildCautionBanner(driverState.driver),
-              
+              // Bannière caution — visible si caution non payée
+              _buildCautionBanner(driver),
               const SizedBox(height: 20),
               _buildCommissionCard(),
               const SizedBox(height: 14),
@@ -189,28 +109,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 👇 Méthode pour afficher la bannière de caution
-  Widget _buildCautionBanner(dynamic driver) {
-    // On cache si le driver est null, si la caution est payée (1), ou s'il n'y a pas de date d'activation
-    if (driver == null || driver.cautionPayee == 1 || driver.dateActivation == null) {
-      return const SizedBox.shrink();
-    }
+  // ── BANNIÈRE CAUTION ─────────────────────────────────────────
+  Widget _buildCautionBanner(DriverModel? driver) {
+    // Masquer si pas de driver, caution déjà payée, ou compte pas encore activé
+    if (driver == null) return const SizedBox.shrink();
+    if (driver.cautionPayee) return const SizedBox.shrink();
+    if (driver.dateActivation == null) return const SizedBox.shrink();
 
+    // Calculer jours restants
     final now = DateTime.now();
-    DateTime activationDate;
-    
-    // Parse de la date d'activation en sécurité
-    try {
-      activationDate = driver.dateActivation is DateTime 
-          ? driver.dateActivation 
-          : DateTime.parse(driver.dateActivation.toString());
-    } catch (e) {
-      return const SizedBox.shrink();
-    }
+    final joursEcoules = now.difference(driver.dateActivation!).inDays;
+    final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
+    final montant = driver.cautionMontant.toStringAsFixed(0);
 
-    final joursEcoules = now.difference(activationDate).inDays;
-    final joursRestants = 14 - joursEcoules;
-
+    // Délai dépassé
     if (joursRestants <= 0) {
       return Container(
         margin: const EdgeInsets.only(top: 14),
@@ -220,48 +132,108 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.redAccent),
         ),
-        child: const Text(
-          'Délai dépassé ! Votre compte risque la suspension. Réglez votre caution immédiatement.',
-          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Délai dépassé — Suspension imminente',
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. '
+              'Votre compte risque la suspension immédiate. Réglez maintenant :',
+              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 10),
+            _cautionInstructions(montant),
+          ],
         ),
       );
     }
+
+    // Dans les délais
+    final isUrgent = joursRestants <= 3;
+    final borderColor = isUrgent ? Colors.redAccent : Colors.orange;
+    final bgColor = isUrgent ? Colors.red.withOpacity(0.12) : Colors.orange.withOpacity(0.12);
 
     return Container(
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.15),
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+              Icon(
+                isUrgent ? Icons.error_outline : Icons.warning_amber_rounded,
+                color: borderColor,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Caution requise — Plus que $joursRestants jour(s)',
-                  style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(
+                    color: borderColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Pour éviter la suspension de votre compte et recevoir vos commissions, veuillez régler votre caution :\n\n'
-            '• OM : *144*1*1*698000000*50000#\n'
-            '• MoMo : *126*1*1*677000000*50000#',
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          Text(
+            'Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, '
+            'veuillez régler votre caution de $montant FCFA :',
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
           ),
+          const SizedBox(height: 10),
+          _cautionInstructions(montant),
         ],
       ),
     );
   }
 
+  Widget _cautionInstructions(String montant) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('• OM : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            Text('*144*1*1*698000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+          ]),
+          const SizedBox(height: 4),
+          Row(children: [
+            const Text('• MoMo : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            Text('*126*1*1*677000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  // ── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader(String prenom) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -295,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── COMMISSION CARD ──────────────────────────────────────────
   Widget _buildCommissionCard() {
     final montant = _summary?.soldeCommission ?? 0;
     return Container(
@@ -350,6 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── EMPRUNT CARD ─────────────────────────────────────────────
   Widget _buildEmpruntCard() {
     final montant = _summary?.emprunt ?? 0;
     return Container(
@@ -392,6 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── ACTIVITÉS ────────────────────────────────────────────────
   Widget _buildActivitiesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,6 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _moisAbrege(int m) => const ['', 'Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'][m];
 
+  // ── STATS ────────────────────────────────────────────────────
   Widget _buildStatsSection() {
     final gains = _summary?.totalGains ?? 0;
     final ventes = _summary?.totalVentes ?? 0;
