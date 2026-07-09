@@ -1,13 +1,13 @@
 import 'package:glotelho_livreur/models/vehicle_model.dart';
 
-/// Statut de validation du compte livreur par le manager (point 1).
+/// Statut de validation du compte livreur par le manager.
 enum DriverStatus { pending, approved, rejected }
 
 /// Disponibilité hebdomadaire du livreur.
 class Availability {
-  final String jour; // ex: Lundi
-  final String heureDebut; // ex: 08:00
-  final String heureFin; // ex: 18:00
+  final String jour;
+  final String heureDebut;
+  final String heureFin;
 
   Availability({required this.jour, required this.heureDebut, required this.heureFin});
 
@@ -49,8 +49,14 @@ class DriverModel {
   // Statut & finances
   final DriverStatus status;
   final double soldeCommission;
-  final double emprunt; // dette en cas de litige (point 3)
-  final double note; // évaluation moyenne
+  final double emprunt;
+  final double note;
+
+  // Caution
+  final bool cautionPayee;
+  final double cautionMontant;
+  final DateTime? dateActivation;
+  final int? joursRestantsAvantSuspension;
 
   bool get isVerified => status == DriverStatus.approved;
 
@@ -75,6 +81,10 @@ class DriverModel {
     this.soldeCommission = 0,
     this.emprunt = 0,
     this.note = 0,
+    this.cautionPayee = false,
+    this.cautionMontant = 50000,
+    this.dateActivation,
+    this.joursRestantsAvantSuspension,
   });
 
   String get nomComplet => '$prenom $nom';
@@ -102,6 +112,13 @@ class DriverModel {
     soldeCommission: (json['soldeCommission'] ?? 0).toDouble(),
     emprunt: (json['emprunt'] ?? 0).toDouble(),
     note: (json['note'] ?? 0).toDouble(),
+    // Caution — nouveaux champs du backend Glotelho
+    cautionPayee: json['cautionPayee'] == true || json['cautionPayee'] == 1,
+    cautionMontant: (json['cautionMontant'] ?? 50000).toDouble(),
+    dateActivation: json['dateActivation'] != null
+        ? DateTime.tryParse(json['dateActivation'].toString())
+        : null,
+    joursRestantsAvantSuspension: json['joursRestantsAvantSuspension'] as int?,
   );
 
   static DriverStatus _statusFromString(String? s) {
