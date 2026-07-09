@@ -1,9 +1,3 @@
-/**
- * Parse les disponibilités envoyées par Flutter/Dio depuis FormData.
- * Supporte deux formats :
- *   1. JSON strings répétés : disponibilites = '{"jour":"Lundi",...}'
- *   2. Champs indexés : disponibilites[0][jour] = "Lundi"
- */
 function parseDisponibilites(body) {
   // Format 1 : champ "disponibilites" = JSON string(s)
   if (body.disponibilites !== undefined) {
@@ -37,9 +31,6 @@ function parseDisponibilites(body) {
   return Object.values(result);
 }
 
-/**
- * Construit l'URL publique d'un fichier uploadé.
- */
 function fileUrl(req, file) {
   if (!file) return null;
   return `${process.env.APP_URL}/uploads/${file.filename}`;
