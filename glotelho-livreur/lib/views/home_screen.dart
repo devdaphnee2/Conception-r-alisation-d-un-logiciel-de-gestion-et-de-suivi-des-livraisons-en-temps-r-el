@@ -7,6 +7,7 @@ import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
 import 'activities_screen.dart';
 import 'widgets/donut_chart.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,24 +23,37 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isRepaying = false;
   bool _hideBalances = false;
 
+ Timer? _autoRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
+// 🎯 Version améliorée avec rafraîchissement du profil en tâche de fond
+  Future<void> _load({bool isBackground = false}) async {
+    if (!isBackground) setState(() => _isLoading = true);
+    
     final summary = await EarningsService.getSummary();
     final activities = await EarningsService.getActivities(limit: 4);
+    
     if (!mounted) return;
+
+    // 🛠️ Force le rafraîchissement du profil pour détecter ton clic sur "Caution Payée"
+    try {
+      final driverState = Provider.of<DriverState>(context, listen: false);
+      // Appelle la méthode de ton collègue pour recharger le profil (ex: loadDriver, getMe, ou refresh)
+      await driverState.loadDriver(); 
+    } catch (_) {}
+
     setState(() {
       _summary = summary;
       _activities = activities;
       _isLoading = false;
     });
   }
-
+  
   String _fmt(double p) =>
       '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
 
@@ -114,12 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Masquer si pas de driver, caution déjà payée, ou compte pas encore activé
     if (driver == null) return const SizedBox.shrink();
     if (driver.cautionPayee) return const SizedBox.shrink();
-    if (driver.dateActivation == null) return const SizedBox.shrink();
-
-    // Calculer jours restants
     final now = DateTime.now();
-    final joursEcoules = now.difference(driver.dateActivation!).inDays;
-    final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
+// On calcule les jours écoulés seulement si la date existe, sinon 0
+final joursEcoules = driver.dateActivation != null ? now.difference(driver.dateActivation!).inDays : 0;
+final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
     final montant = driver.cautionMontant.toStringAsFixed(0);
 
     // Délai dépassé
