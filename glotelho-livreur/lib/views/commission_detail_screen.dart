@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import '../models/activity_model.dart';
 import '../services/earnings_service.dart';
-import 'commission_detail_screen.dart';
+import 'delivery_detail_screen.dart';
 
-class DeliveryDetailScreen extends StatelessWidget {
-  final ActivityModel delivery;
-  const DeliveryDetailScreen({super.key, required this.delivery});
+class CommissionDetailScreen extends StatelessWidget {
+  final ActivityModel commission;
+  const CommissionDetailScreen({super.key, required this.commission});
 
   static const Color _bg = Color(0xFF1F3A4D);
   static const Color _teal = Color(0xFF35D0B8);
   static const Color _gold = Color(0xFFE0A400);
 
   String _fmt(double v) =>
-      '${v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} XAF';
+      '${v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
 
   String _dateLong(DateTime d) {
     const mois = ['', 'Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -22,7 +22,7 @@ class DeliveryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final d = delivery;
+    final c = commission;
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
@@ -37,42 +37,47 @@ class DeliveryDetailScreen extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
             ),
             const SizedBox(height: 18),
-            Text(_dateLong(d.date), style: const TextStyle(color: Color(0xFFC5D2DD), fontSize: 16)),
+            Text(_dateLong(c.date), style: const TextStyle(color: Color(0xFFC5D2DD), fontSize: 16)),
             const SizedBox(height: 8),
-            Text(_fmt(d.amount),
+            Text('+${_fmt(c.amount)}',
                 style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800)),
             const SizedBox(height: 24),
 
-            _row('ID', d.id, mono: true),
+            _row('ID', c.id, mono: true),
             _rowBadge('Statut', 'Effectué'),
+            _row('Operation', 'Commission'),
+            _row('Opérateur (Manager)', c.manager),
+            _row('Solde de', _fmt(c.soldeAvant ?? 0)),
+            _row('Solde à', _fmt(c.soldeApres ?? 0)),
+
+            const SizedBox(height: 20),
+            const Divider(color: Colors.white24, height: 1),
+            const SizedBox(height: 22),
+            const Text('TRANSACTION SOURCE',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+            const SizedBox(height: 6),
+
+            _row('ID', c.linkedId ?? '—', mono: true),
+            _row('Montant', '+${_fmt(c.amount)}'),
             _row('Service', 'Livraison à domicile'),
-            _row('Opérateur (Manager)', d.manager),
-            _row('Client', d.clientName ?? '—'),
-            _row('Numéro Client', d.clientPhone ?? '—'),
-            _row('Adresse Client', d.clientAddress ?? '—'),
-            _row('Articles', d.articles ?? '—'),
-            _row('Quantité', d.quantite ?? '—'),
-            _row('Montant produits', _fmt(d.amount)),
-            _row('Frais de livraison', _fmt(d.fraisLivraison ?? 0)),
-            _row('Méthode de paiement', d.paymentMethod ?? '—'),
-            _row('Zone / Distance', d.zone ?? '—'),
-            _row('Prise en charge → Livraison', '${d.priseEnCharge} → ${d.heureLivraison}'),
-            _row('Instructions', d.note ?? '—'),
+            _row('Opérateur (Manager)', c.manager),
+            _row('Client', c.clientName ?? '—'),
+            _row('Numéro Client', c.clientPhone ?? '—'),
 
             const SizedBox(height: 20),
             _linkButton(
               context,
-              'Voir la commission associée →',
-              _teal,
+              'Voir la livraison source →',
+              _gold,
                   () async {
                 final all = await EarningsService.getActivities();
-                final comm = all.firstWhere(
-                      (a) => a.id == d.linkedId,
-                  orElse: () => d,
+                final deliv = all.firstWhere(
+                      (a) => a.id == c.linkedId,
+                  orElse: () => c,
                 );
-                if (comm.isCommission && context.mounted) {
+                if (deliv.isLivraison && context.mounted) {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => CommissionDetailScreen(commission: comm)));
+                      MaterialPageRoute(builder: (_) => DeliveryDetailScreen(delivery: deliv)));
                 }
               },
             ),

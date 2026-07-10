@@ -13,12 +13,19 @@ class AppColors {
   static const Color blueBg = Color(0xFFE3F2FD);
   static const Color amber = Color(0xFF633806);
   static const Color amberBg = Color(0xFFFAEEDA);
+  static const Color cardNavy = Color(0xFF16324A);
 
   // Statuts de livraison sur la carte (point 7 du cahier des charges)
   static const Color statusDelivered = green;   // vert
   static const Color statusCancelled = red;     // rouge
   static const Color statusInProgress = blue;   // bleu
   static const Color statusPending = amber;     // orange/jaune
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 5) return 'Bonsoir';
+    if (hour < 18) return 'Bonjour';
+    return 'Bonsoir';
+  }
 }
 
 class AppStrings {

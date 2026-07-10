@@ -7,6 +7,10 @@ class AppTheme {
   static const navy = Color(0xFF0D1B2A);
   static const navyLight = Color(0xFF1C3D56);
 
+  /// Exception à la règle navy/blanc : couleur dorée réservée
+  /// uniquement au bouton flottant d'action principale ("+").
+  static const gold = Color(0xFFC9952E);
+
   static ThemeData get navyTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
@@ -46,4 +50,23 @@ class AppTheme {
     ),
     bottomAppBarTheme: const BottomAppBarThemeData(color: Colors.white),
   );
+
+  /// Fond des champs de saisie/recherche, harmonisé avec les champs
+  /// de l'écran mot de passe : translucide sur navy en thème sombre,
+  /// gris clair en thème clair.
+  static Color inputFill(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade100;
+  }
+
+  /// Couleur du texte saisi/placeholder, adaptée au thème.
+  static Color inputText(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white : navy;
+  }
+
+  static Color inputHint(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white54 : Colors.grey.shade500;
+  }
 }

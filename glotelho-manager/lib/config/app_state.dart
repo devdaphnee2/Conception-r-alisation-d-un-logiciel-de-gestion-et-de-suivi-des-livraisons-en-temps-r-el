@@ -5,17 +5,30 @@ import 'package:flutter/material.dart';
 /// du manager connecté.
 class AppState extends ChangeNotifier {
   String _locale = 'fr';
+  // Clair = thème par défaut de l'app manager.
   ThemeMode _themeMode = ThemeMode.light;
+  bool _biometricEnabled = false;
   String? _authToken;
   Map<String, dynamic>? _currentManager;
 
   String get locale => _locale;
   ThemeMode get themeMode => _themeMode;
+  bool get biometricEnabled => _biometricEnabled;
   bool get isAuthenticated => _authToken != null;
   Map<String, dynamic>? get currentManager => _currentManager;
 
+  void setLocale(String locale) {
+    _locale = locale;
+    notifyListeners();
+  }
+
   void toggleLocale() {
     _locale = _locale == 'fr' ? 'en' : 'fr';
+    notifyListeners();
+  }
+
+  void toggleBiometric() {
+    _biometricEnabled = !_biometricEnabled;
     notifyListeners();
   }
 

@@ -30,7 +30,7 @@ class KpiCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.navy,
+          color: AppTheme.navyLight,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
