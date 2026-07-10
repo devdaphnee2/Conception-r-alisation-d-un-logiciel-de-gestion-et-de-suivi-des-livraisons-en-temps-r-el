@@ -10,7 +10,7 @@ class ApiService {
   final AppState appState;
 
   ApiService(this.appState)
-      : dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.145:5000/api')) {
+      : dio = Dio(BaseOptions(baseUrl: 'http://10.0.2.2:5000/api')) {
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = appState.authToken;
@@ -65,6 +65,29 @@ class ApiService {
       dio.get('/livreurs${all ? '?all=true' : ''}');
   Future<Response> getLitiges() => dio.get('/litiges');
   Future<Response> getRecouvrements() => dio.get('/recouvrements');
+  Future<Response> getLivraisonsEnCours() =>
+      dio.get('/livraisons', queryParameters: {'status': 'En_cours'});
+
+  Future<Response> getLivraison(int id) => dio.get('/livraisons/$id');
+
+  Future<Response> assignerLivreur(int livraisonId, int deliveryPersonId) =>
+      dio.post('/livraisons/$livraisonId/assigner',
+          data: {'delivery_person_id': deliveryPersonId});
+
+  Future<Response> annulerLivraison(int id) => dio.post('/livraisons/$id/annuler');
+
+  Future<Response> createLivraison(Map<String, dynamic> payload) =>
+      dio.post('/livraisons', data: payload);
+
+  /// ⚠️ Adapte le nom exact de l'endpoint une fois confirmé côté backend.
+  Future<Response> changePassword(String current, String newPassword) =>
+      dio.post('/auth/change-password', data: {
+        'current_password': current,
+        'new_password': newPassword,
+      });
   Future<Response> getCommandes() => dio.get('/orders');
   Future<Response> getProfilsEnAttente() => dio.get('/profils/en-attente');
+  Future<Response> approuverProfil(int id) => dio.post('/profils/$id/approuver');
+  Future<Response> rejeterProfil(int id, String motif) =>
+      dio.post('/profils/$id/rejeter', data: {'motif': motif});
 }

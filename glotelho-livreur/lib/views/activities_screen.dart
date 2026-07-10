@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
+import 'delivery_detail_screen.dart';
+import 'commission_detail_screen.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -34,11 +36,18 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   String _dateKey(DateTime d) => '${d.day} ${_moisComplet(d.month)} ${d.year}';
   String _moisComplet(int m) => const ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][m];
 
+  // Libellés dérivés du type (remplace label/subLabel).
+  String _titleOf(ActivityModel a) => a.isCommission ? 'Commission' : 'Livraison';
+  String _subOf(ActivityModel a) =>
+      a.isCommission ? a.manager : '${a.clientName ?? '—'} · ${a.clientPhone ?? ''}';
+
   Map<String, List<ActivityModel>> get _grouped {
     final q = _searchCtrl.text.toLowerCase();
     final filtered = q.isEmpty
         ? _all
-        : _all.where((a) => a.label.toLowerCase().contains(q) || a.subLabel.toLowerCase().contains(q)).toList();
+        : _all.where((a) =>
+    _titleOf(a).toLowerCase().contains(q) ||
+        _subOf(a).toLowerCase().contains(q)).toList();
 
     final map = <String, List<ActivityModel>>{};
     for (final a in filtered) {
@@ -46,6 +55,17 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       map.putIfAbsent(key, () => []).add(a);
     }
     return map;
+  }
+
+  void _openDetail(ActivityModel a) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => a.isCommission
+            ? CommissionDetailScreen(commission: a)
+            : DeliveryDetailScreen(delivery: a),
+      ),
+    );
   }
 
   @override
@@ -114,54 +134,61 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   Widget _buildTile(ActivityModel a) {
-    final isPositive = a.amount >= 0;
+    final isCommission = a.isCommission;
+
     IconData icon;
     Color iconColor;
     Color iconBg;
 
-    if (a.type == ActivityType.commission) {
+    if (isCommission) {
       icon = Icons.arrow_downward;
       iconColor = Colors.tealAccent;
       iconBg = Colors.teal.withOpacity(0.15);
-    } else if (a.provider == 'orange') {
-      icon = Icons.phone_android;
+    } else {
+      icon = Icons.inventory_2_outlined; // colis
       iconColor = Colors.white;
       iconBg = Colors.orange;
-    } else {
-      icon = Icons.phone_android;
-      iconColor = Colors.white;
-      iconBg = Colors.blue;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final amountText = isCommission
+        ? '+${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF'
+        : '${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF';
+
+    return InkWell(
+      onTap: () => _openDetail(a),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_titleOf(a), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(_subOf(a), maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(a.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(a.subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(amountText,
+                    style: TextStyle(color: isCommission ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text('${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${isPositive ? '+' : ''}${a.amount.toStringAsFixed(1)} XAF',
-                  style: TextStyle(color: isPositive ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-              Text('${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: Colors.white38, fontSize: 11)),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

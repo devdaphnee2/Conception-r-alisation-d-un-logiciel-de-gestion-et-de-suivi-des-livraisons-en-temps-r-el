@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../models/driver_model.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
-import 'activities_screen.dart';
 import 'widgets/donut_chart.dart';
-import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ValueChanged<int>? onNavigateTab;
+  const HomeScreen({super.key, this.onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -22,16 +22,30 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   bool _isRepaying = false;
   bool _hideBalances = false;
+  int _cardIndex = 0;
+  final PageController _cardController = PageController();
 
- Timer? _autoRefreshTimer;
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+
+    // Vérifie le statut de la caution en arrière-plan toutes les 8 secondes
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      _load(isBackground: true);
+    });
   }
 
-// 🎯 Version améliorée avec rafraîchissement du profil en tâche de fond
+  @override
+  void dispose() {
+    _cardController.dispose();
+    _autoRefreshTimer?.cancel(); // Arrêt propre du minuteur pour éviter les fuites de mémoire
+    super.dispose();
+  }
+
+  // 🎯 Version améliorée avec rafraîchissement du profil en tâche de fond
   Future<void> _load({bool isBackground = false}) async {
     if (!isBackground) setState(() => _isLoading = true);
     
@@ -40,10 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
     
     if (!mounted) return;
 
-    // 🛠️ Force le rafraîchissement du profil pour détecter ton clic sur "Caution Payée"
+    // Force le rafraîchissement du profil pour détecter le clic admin sur "Caution Payée"
     try {
       final driverState = Provider.of<DriverState>(context, listen: false);
-      // Appelle la méthode de ton collègue pour recharger le profil (ex: loadDriver, getMe, ou refresh)
       await driverState.loadDriver(); 
     } catch (_) {}
 
@@ -55,7 +68,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   
   String _fmt(double p) =>
-      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
+      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]},")} XAF';
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 18) return 'Bonjour';
+    return 'Bonsoir';
+  }
 
   Future<void> _repay() async {
     setState(() => _isRepaying = true);
@@ -85,11 +104,19 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
+  void _goToActivities() {
+    if (widget.onNavigateTab != null) {
+      widget.onNavigateTab!(1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
     final prenom = driverState.driver?.prenom ?? '';
+    final displayName = prenom.isEmpty ? 'Livreur' : prenom;
     final driver = driverState.driver;
+    final hasDebt = (_summary?.emprunt ?? 0) > 0;
 
     return Scaffold(
       backgroundColor: AppColors.navy,
@@ -102,17 +129,12 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              _buildHeader(prenom),
+              _buildHeader(displayName),
               // Bannière caution — visible si caution non payée
               _buildCautionBanner(driver),
               const SizedBox(height: 20),
-              _buildCommissionCard(),
-              const SizedBox(height: 14),
-              if (_summary != null && _summary!.emprunt > 0) ...[
-                _buildEmpruntCard(),
-                const SizedBox(height: 20),
-              ] else
-                const SizedBox(height: 6),
+              _buildCardCarousel(hasDebt),
+              const SizedBox(height: 24),
               _buildActivitiesSection(),
               const SizedBox(height: 24),
               _buildStatsSection(),
@@ -125,13 +147,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── BANNIÈRE CAUTION ─────────────────────────────────────────
   Widget _buildCautionBanner(DriverModel? driver) {
-    // Masquer si pas de driver, caution déjà payée, ou compte pas encore activé
+    // Masquer si pas de driver ou caution déjà payée
     if (driver == null) return const SizedBox.shrink();
     if (driver.cautionPayee) return const SizedBox.shrink();
+    
     final now = DateTime.now();
-// On calcule les jours écoulés seulement si la date existe, sinon 0
-final joursEcoules = driver.dateActivation != null ? now.difference(driver.dateActivation!).inDays : 0;
-final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
+    // On calcule les jours écoulés seulement si la date existe, sinon 0
+    final joursEcoules = driver.dateActivation != null ? now.difference(driver.dateActivation!).inDays : 0;
+    final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
     final montant = driver.cautionMontant.toStringAsFixed(0);
 
     // Délai dépassé
@@ -150,7 +173,7 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
             const Row(
               children: [
                 Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-                SizedBox(width: 8),
+                SExpandingBox(width: 8),
                 Expanded(
                   child: Text(
                     'Délai dépassé — Suspension imminente',
@@ -161,8 +184,7 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
             ),
             const SizedBox(height: 10),
             Text(
-              'Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. '
-              'Votre compte risque la suspension immédiate. Réglez maintenant :',
+              'Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. Votre compte risque la suspension immédiate. Réglez maintenant :',
               style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 10),
@@ -210,8 +232,7 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
           ),
           const SizedBox(height: 10),
           Text(
-            'Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, '
-            'veuillez régler votre caution de $montant FCFA :',
+            'Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, veuillez régler votre caution de $montant FCFA :',
             style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 10),
@@ -261,8 +282,14 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Bonjour,', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                Text('$prenom 👋', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('${_greeting()},', style: const TextStyle(color: Colors.white60, fontSize: 13)),
+                Row(
+                  children: [
+                    Text(prenom, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 6),
+                    const Text('👋', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
               ],
             ),
           ],
@@ -270,10 +297,54 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                SizedBox(width: 4),
+                Icon(Icons.diamond, color: Colors.pinkAccent, size: 14),
+              ],
+            ),
             Text('+${_fmt(_summary?.totalGains ?? 0)}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           ],
+        ),
+      ],
+    );
+  }
+
+  // ── CARROUSEL DES CARTES ─────────────────────────────────────
+  Widget _buildCardCarousel(bool hasDebt) {
+    if (!hasDebt) {
+      return _buildCommissionCard();
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 250,
+          child: PageView(
+            controller: _cardController,
+            onPageChanged: (i) => setState(() => _cardIndex = i),
+            children: [
+              _buildCommissionCard(),
+              _buildEmpruntCard(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(2, (i) => AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: _cardIndex == i ? 20 : 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: _cardIndex == i ? AppColors.gold : Colors.white24,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          )),
         ),
       ],
     );
@@ -284,7 +355,11 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
     final montant = _summary?.soldeCommission ?? 0;
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppColors.cardNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -307,7 +382,7 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
+                  onPressed: _goToActivities,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Colors.white24),
@@ -341,36 +416,42 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF3A1414),
+        color: AppColors.cardNavy,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          const Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
-              SizedBox(width: 8),
-              Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
+              Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => setState(() => _hideBalances = !_hideBalances),
+                child: Icon(_hideBalances ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: Colors.white54, size: 20),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
-              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isRepaying ? null : _repay,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          Center(
+            child: SizedBox(
+              width: 200,
+              child: ElevatedButton(
+                onPressed: _isRepaying ? null : _repay,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isRepaying
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('RÉGLER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-              child: _isRepaying
-                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('RÉGLER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ),
         ],
@@ -388,7 +469,7 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
           children: [
             const Text('Activités récentes', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
+              onPressed: _goToActivities,
               child: const Text('Plus', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
             ),
           ],
@@ -396,7 +477,11 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: AppColors.cardNavy,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
+          ),
           child: Column(
             children: _activities.asMap().entries.map((entry) {
               final isLast = entry.key == _activities.length - 1;
@@ -409,59 +494,67 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
   }
 
   Widget _buildActivityTile(ActivityModel a, bool isLast) {
-    final isPositive = a.amount >= 0;
+    final isCommission = a.isCommission;
+
     IconData icon;
     Color iconColor;
     Color iconBg;
 
-    if (a.type == ActivityType.commission) {
+    if (isCommission) {
       icon = Icons.arrow_downward;
       iconColor = Colors.tealAccent;
       iconBg = Colors.teal.withOpacity(0.15);
-    } else if (a.provider == 'orange') {
-      icon = Icons.phone_android;
+    } else {
+      icon = Icons.inventory_2_outlined;
       iconColor = Colors.white;
       iconBg = Colors.orange;
-    } else {
-      icon = Icons.phone_android;
-      iconColor = Colors.white;
-      iconBg = Colors.blue;
     }
 
-    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
-        '${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}';
+    final title = isCommission ? 'Commission' : 'Livraison';
+    final sub = isCommission ? a.manager : '${a.clientName ?? "—"} · ${a.clientPhone ?? ""}';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: isLast ? null : const Border(bottom: BorderSide(color: Colors.white10)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final amountText = isCommission
+        ? '+${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF'
+        : '${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF';
+
+    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, ${a.date.hour.toString().padLeft(2, "0")}:${a.date.minute.toString().padLeft(2, "0")}';
+
+    return InkWell(
+      onTap: () {
+        // Logique de navigation optionnelle ici
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: isLast ? null : const Border(bottom: BorderSide(color: Colors.white10)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(a.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(a.subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(amountText, style: TextStyle(color: isCommission ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${isPositive ? '+' : ''}${a.amount.toStringAsFixed(1)} XAF',
-                  style: TextStyle(color: isPositive ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -471,28 +564,30 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
   // ── STATS ────────────────────────────────────────────────────
   Widget _buildStatsSection() {
     final gains = _summary?.totalGains ?? 0;
-    final ventes = _summary?.totalVentes ?? 0;
+    final emprunt = _summary?.emprunt ?? 0;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(20)),
-      child: Row(
+      decoration: BoxDecoration(
+        color: AppColors.cardNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Column(
         children: [
           DonutChart(
-            value1: ventes,
+            value1: emprunt > 0 ? emprunt : 1,
             value2: gains,
             centerLabel: 'Total Gain',
             centerValue: _compact(gains),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _legendDot(const Color(0xFF7C6FF0), 'Ventes', _compact(ventes)),
-                const SizedBox(height: 10),
-                _legendDot(AppColors.gold, 'Gain', _compact(gains)),
-              ],
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _legendItem(const Color(0xFF7C6FF0), 'Emprunt', _compact(emprunt)),
+              _legendItem(AppColors.gold, 'Gain', _compact(gains)),
+            ],
           ),
         ],
       ),
@@ -504,14 +599,29 @@ final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules)
     return v.toStringAsFixed(0);
   }
 
-  Widget _legendDot(Color color, String label, String value) {
-    return Row(
+  Widget _legendItem(Color color, String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 8),
-        Text('$label  ', style: const TextStyle(color: Colors.white60, fontSize: 13)),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
       ],
     );
   }
+}
+
+// Widget utilitaire pour espacer proprement les icônes
+class SExpandingBox extends StatelessWidget {
+  final double width;
+  const SExpandingBox({super.key, required this.width});
+  @override
+  Widget build(BuildContext context) => SizedBox(width: width);
 }
