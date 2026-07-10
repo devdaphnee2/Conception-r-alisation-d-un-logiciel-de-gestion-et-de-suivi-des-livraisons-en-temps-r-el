@@ -1,93 +1,14 @@
-/*import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../utils/constants.dart';
-import '../utils/driver_state.dart';
-import 'package:permission_handler/permission_handler.dart';
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-
-class _HomeScreenState extends State<HomeScreen> {
-  GoogleMapController? _mapController;
-
-  static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(4.0511, 9.7679), // Douala, Akwa
-    zoom: 14,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final driverState = context.watch<DriverState>();
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        title: const Text('Glotelho Delivery', style: TextStyle(color: Colors.white)),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(
-              'Bienvenue ${driverState.driver?.prenom ?? ""} 👋',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            child: GoogleMap(
-              initialCameraPosition: _initialPosition,
-              onMapCreated: (controller) => _mapController = controller,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              markers: {
-                const Marker(
-                  markerId: MarkerId('depart'),
-                  position: LatLng(4.0511, 9.7679),
-                  infoWindow: InfoWindow(title: 'Point de départ - Douala Akwa'),
-                ),
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _requestLocationPermission();
-  }
-
-  Future<void> _requestLocationPermission() async {
-    await Permission.location.request();
-  }
-}*/
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
-import 'activities_screen.dart';
 import 'widgets/donut_chart.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ValueChanged<int>? onNavigateTab;
+  const HomeScreen({super.key, this.onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -99,11 +20,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   bool _isRepaying = false;
   bool _hideBalances = false;
+  int _cardIndex = 0;
+  final PageController _cardController = PageController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _cardController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -120,6 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _fmt(double p) =>
       '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 18) return 'Bonjour';
+    return 'Bonsoir';
+  }
 
   Future<void> _repay() async {
     setState(() => _isRepaying = true);
@@ -150,10 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
+  void _goToActivities() {
+    if (widget.onNavigateTab != null) {
+      widget.onNavigateTab!(1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
-    final prenom = driverState.driver?.prenom ?? '';
+    final prenom = driverState.driver?.prenom;
+    final displayName = (prenom == null || prenom.isEmpty) ? 'Livreur' : prenom;
+    final hasDebt = (_summary?.emprunt ?? 0) > 0;
 
     return Scaffold(
       backgroundColor: AppColors.navy,
@@ -166,15 +109,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              _buildHeader(prenom),
+              _buildHeader(displayName),
               const SizedBox(height: 20),
-              _buildCommissionCard(),
-              const SizedBox(height: 14),
-              if (_summary != null && _summary!.emprunt > 0) ...[
-                _buildEmpruntCard(),
-                const SizedBox(height: 20),
-              ] else
-                const SizedBox(height: 6),
+              _buildCardCarousel(hasDebt),
+              const SizedBox(height: 24),
               _buildActivitiesSection(),
               const SizedBox(height: 24),
               _buildStatsSection(),
@@ -193,15 +131,21 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               width: 48, height: 48,
-              decoration: BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
               child: const Icon(Icons.person_outline, color: Colors.white70),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Bonjour,', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                Text('$prenom 👋', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('${_greeting()},', style: const TextStyle(color: Colors.white60, fontSize: 13)),
+                Row(
+                  children: [
+                    Text(prenom, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 6),
+                    const Text('👋', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
               ],
             ),
           ],
@@ -209,10 +153,56 @@ class _HomeScreenState extends State<HomeScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                SizedBox(width: 4),
+                Icon(Icons.diamond, color: Colors.pinkAccent, size: 14),
+              ],
+            ),
+            // Total cumulatif de toutes les commissions gagnées,
+            // ne varie jamais suite à un retrait ou un remboursement d'emprunt.
             Text('+${_fmt(_summary?.totalGains ?? 0)}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCardCarousel(bool hasDebt) {
+    if (!hasDebt) {
+      // Un seul badge, pas besoin de carrousel.
+      return _buildCommissionCard();
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 250,
+          child: PageView(
+            controller: _cardController,
+            onPageChanged: (i) => setState(() => _cardIndex = i),
+            children: [
+              _buildCommissionCard(),
+              _buildEmpruntCard(),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(2, (i) => AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: _cardIndex == i ? 20 : 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: _cardIndex == i ? AppColors.gold : Colors.white24,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          )),
         ),
       ],
     );
@@ -222,7 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final montant = _summary?.soldeCommission ?? 0;
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppColors.cardNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -245,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
+                  onPressed: _goToActivities,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Colors.white24),
@@ -278,36 +272,42 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF3A1414),
+        color: AppColors.cardNavy,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          const Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
-              SizedBox(width: 8),
-              Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
+              Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => setState(() => _hideBalances = !_hideBalances),
+                child: Icon(_hideBalances ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: Colors.white54, size: 20),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
-              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isRepaying ? null : _repay,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          Center(
+            child: SizedBox(
+              width: 200,
+              child: ElevatedButton(
+                onPressed: _isRepaying ? null : _repay,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isRepaying
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('RÉGLER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-              child: _isRepaying
-                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('RÉGLER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ),
         ],
@@ -324,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text('Activités récentes', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
+              onPressed: _goToActivities,
               child: const Text('Plus', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
             ),
           ],
@@ -332,7 +332,11 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: AppColors.cardNavy,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
+          ),
           child: Column(
             children: _activities.asMap().entries.map((entry) {
               final isLast = entry.key == _activities.length - 1;
@@ -406,28 +410,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStatsSection() {
     final gains = _summary?.totalGains ?? 0;
-    final ventes = _summary?.totalVentes ?? 0;
+    final emprunt = _summary?.emprunt ?? 0;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(20)),
-      child: Row(
+      decoration: BoxDecoration(
+        color: AppColors.cardNavy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Column(
         children: [
           DonutChart(
-            value1: ventes,
+            value1: emprunt > 0 ? emprunt : 1,
             value2: gains,
             centerLabel: 'Total Gain',
             centerValue: _compact(gains),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _legendDot(const Color(0xFF7C6FF0), 'Ventes', _compact(ventes)),
-                const SizedBox(height: 10),
-                _legendDot(AppColors.gold, 'Gain', _compact(gains)),
-              ],
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _legendItem(const Color(0xFF7C6FF0), 'Emprunt', _compact(emprunt)),
+              _legendItem(AppColors.gold, 'Gain', _compact(gains)),
+            ],
           ),
         ],
       ),
@@ -439,13 +445,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return v.toStringAsFixed(0);
   }
 
-  Widget _legendDot(Color color, String label, String value) {
-    return Row(
+  Widget _legendItem(Color color, String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 8),
-        Text('$label  ', style: const TextStyle(color: Colors.white60, fontSize: 13)),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
       ],
     );
   }
