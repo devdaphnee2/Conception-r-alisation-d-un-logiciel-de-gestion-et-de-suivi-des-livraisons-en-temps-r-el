@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:glotelho_livreur/views/tracking/tracking_screen.dart';
 import '../utils/constants.dart';
 import 'home_screen.dart';
 import 'activities_screen.dart';
@@ -20,8 +21,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(onNavigateTab: _goToTab),
       const ActivitiesScreen(),
-      const _PlaceholderScreen(title: 'Services'),
-      const _PlaceholderScreen(title: 'Analyses'),
+      const TrackingScreen(),
+      const _PlaceholderScreen(title: 'Livraisons'),
       const _PlaceholderScreen(title: 'Paramètres'),
     ];
 
@@ -40,8 +41,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               children: [
                 _navItem(0, Icons.home_outlined, 'Accueil'),
                 _navItem(1, Icons.swap_horiz, 'Activités'),
-                _navItem(2, Icons.storefront_outlined, 'Services'),
-                _navItem(3, Icons.show_chart, 'Analyses'),
+                _navItem(2, Icons.location_on_outlined, 'Tracking'),
+                _navItem(3, Icons.local_shipping_outlined, 'Livraisons'),
                 _navItem(4, Icons.settings_outlined, 'Paramètres'),
               ],
             ),
