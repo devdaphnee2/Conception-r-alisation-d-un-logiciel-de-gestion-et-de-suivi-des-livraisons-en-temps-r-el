@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
 import 'widgets/donut_chart.dart';
-import 'delivery_detail_screen.dart';
-import 'commission_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -25,32 +24,50 @@ class _HomeScreenState extends State<HomeScreen> {
   int _cardIndex = 0;
   final PageController _cardController = PageController();
 
+  Timer? _autoRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     _load();
+
+    // Vérifie le statut de la caution en arrière-plan toutes les 8 secondes
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      _load(isBackground: true);
+    });
   }
 
   @override
   void dispose() {
     _cardController.dispose();
+    _autoRefreshTimer?.cancel(); // Arrêt propre du minuteur pour éviter les fuites de mémoire
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
+  // 🎯 Version améliorée avec rafraîchissement du profil en tâche de fond
+  Future<void> _load({bool isBackground = false}) async {
+    if (!isBackground) setState(() => _isLoading = true);
+    
     final summary = await EarningsService.getSummary();
     final activities = await EarningsService.getActivities(limit: 4);
+    
     if (!mounted) return;
+
+    // Force le rafraîchissement du profil pour détecter le clic admin sur "Caution Payée"
+    try {
+      final driverState = Provider.of<DriverState>(context, listen: false);
+      await driverState.loadDriver(); 
+    } catch (_) {}
+
     setState(() {
       _summary = summary;
       _activities = activities;
       _isLoading = false;
     });
   }
-
+  
   String _fmt(double p) =>
-      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
+      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]},")} XAF';
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -96,8 +113,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
+<<<<<<< HEAD
     final prenom = driverState.driver?.prenom;
     final displayName = (prenom == null || prenom.isEmpty) ? 'Livreur' : prenom;
+=======
+    final prenom = driverState.driver?.prenom ?? '';
+    final displayName = prenom.isEmpty ? 'Livreur' : prenom;
+    final driver = driverState.driver;
+>>>>>>> d19e18d3427318e922345defbaef10f6bd94b955
     final hasDebt = (_summary?.emprunt ?? 0) > 0;
 
     return Scaffold(
@@ -112,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               _buildHeader(displayName),
+<<<<<<< HEAD
               const SizedBox(height: 20),
               _buildCardCarousel(hasDebt),
               const SizedBox(height: 24),
@@ -619,6 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               _buildHeader(displayName),
+=======
+>>>>>>> d19e18d3427318e922345defbaef10f6bd94b955
               // Bannière caution — visible si caution non payée
               _buildCautionBanner(driver),
               const SizedBox(height: 20),
@@ -639,7 +665,11 @@ class _HomeScreenState extends State<HomeScreen> {
     // Masquer si pas de driver ou caution déjà payée
     if (driver == null) return const SizedBox.shrink();
     if (driver.cautionPayee) return const SizedBox.shrink();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> d19e18d3427318e922345defbaef10f6bd94b955
     final now = DateTime.now();
     // On calcule les jours écoulés seulement si la date existe, sinon 0
     final joursEcoules = driver.dateActivation != null ? now.difference(driver.dateActivation!).inDays : 0;
@@ -1113,4 +1143,8 @@ class SExpandingBox extends StatelessWidget {
   const SExpandingBox({super.key, required this.width});
   @override
   Widget build(BuildContext context) => SizedBox(width: width);
+<<<<<<< HEAD
 }*/
+=======
+}
+>>>>>>> d19e18d3427318e922345defbaef10f6bd94b955
