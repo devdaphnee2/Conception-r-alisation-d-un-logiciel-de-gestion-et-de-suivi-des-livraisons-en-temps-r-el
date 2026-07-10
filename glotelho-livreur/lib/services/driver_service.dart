@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
+import 'dart:io';
 import 'api_service.dart';
 import '../models/driver_model.dart';
 import '../models/vehicle_model.dart';
-import 'dart:io';
-import '../utils/constants.dart';
+// import '../utils/constants.dart'; // Décommente si nécessaire
 
 class RegisterResult {
   final bool success;
@@ -15,6 +15,7 @@ class RegisterResult {
 }
 
 class DriverService {
+  /// Récupère le profil complet du livreur connecté
   static Future<DriverModel?> fetchProfile() async {
     try {
       final response = await ApiService.dio.get('/drivers/me');
@@ -22,11 +23,13 @@ class DriverService {
         return DriverModel.fromJson(response.data['data'] ?? response.data);
       }
       return null;
-    } on DioException {
+    } on DioException catch (e) {
+      print("Erreur fetchProfile: ${e.response?.data}");
       return null;
     }
   }
 
+  /// Soumet le dossier d'inscription avec les fichiers et les informations
   static Future<RegisterResult> register({
     required String nom,
     required String prenom,
@@ -64,7 +67,11 @@ class DriverService {
         'assuranceExpiration': vehicle.assuranceExpiration.toIso8601String(),
         'mobileMoneyNumero': mobileMoneyNumero,
         'mobileMoneyTitulaire': mobileMoneyTitulaire,
-        'disponibilites': disponibilites.map((d) => d.toJson()).toList(),
+        
+        // Envoi des disponibilités sous format JSON String pour le backend
+        'disponibilites': disponibilites.map((d) => d.toJson()).toList(), 
+
+        // Les fichiers images / documents
         'photoProfil': await MultipartFile.fromFile(photoProfil.path),
         'cniRecto': await MultipartFile.fromFile(cniRecto.path),
         'cniVerso': await MultipartFile.fromFile(cniVerso.path),
@@ -72,25 +79,22 @@ class DriverService {
         'photoVehicule': await MultipartFile.fromFile(photoVehicule.path),
       });
 
-     final dio = Dio(BaseOptions(
-    baseUrl: AppStrings.glotelhoUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-));
-final response = await dio.post('/drivers/register', data: formData);
+      // On utilise le Dio centralisé (ApiService.dio)
+      final response = await ApiService.dio.post('/drivers/register', data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         return RegisterResult.success(token: data['token'] ?? data['data']?['token']);
       }
       return RegisterResult.failure('Erreur serveur (${response.statusCode})');
+      
     } on DioException catch (e) {
       final msg = e.response?.data is Map
           ? (e.response?.data['message'] ?? 'Erreur lors de l\'inscription')
-          : 'Erreur réseau, vérifiez votre connexion';
+          : 'Erreur réseau, vérifiez votre connexion.';
       return RegisterResult.failure(msg.toString());
     } catch (e) {
-      return RegisterResult.failure('Une erreur inattendue est survenue');
+      return RegisterResult.failure('Erreur inattendue : $e');
     }
   }
 }

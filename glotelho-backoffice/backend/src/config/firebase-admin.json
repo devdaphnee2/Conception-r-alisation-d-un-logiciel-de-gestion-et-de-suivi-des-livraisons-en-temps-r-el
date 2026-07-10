@@ -1,0 +1,13 @@
+{
+    "type": "service_account",
+    "project_id": "glotelho-livraison",
+    "private_key_id": "51fa331083534af566dce8566e398ba5a061bf8d",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDJJS9KmYGnM1fO\nRA5c52ldvjHRk5eg8DTdN0IDklOqBCllyHTDLygrJV26+7riKmnhNRzX/+sx1IZR\nWtqE2an8qydBqpoxGuPrUZrocXr716JVMhxf28+we+S6qdfs9Hm+ad0wvXf63PTK\nTagwOR9VHv3KMqqwXQCLvNymMpozw5dKkJr0ouU4pyXJm7Dh0ft1YB0xMiXZSKY9\ndvHjEqyUCgQSxp/eL5biKldBw49ltWy9CVaHLKJ+nnND2dFQZa+4OXHkQVFLkGy6\nhZGuybcn5X6LiCWT+nHytcKuiue1DT3wcr57nUBrLjOr1kFK593YIQ/Qhk/7lNip\nsZdG8RDFAgMBAAECggEALazDsR8r/Y1vXB+AmnCS8M5CTkqDRTCedHg6hYiZ9nKk\n+t+awgKojqmYv9+vJ3HForXWk6bhn6pYiMtGcSHjE4TC8IqeolVumW4prKwuJtdn\nnYx4PH0zy2nKvedY6I34QjiUWV/AyaaYcILTVQX3mzLjIuG/+DXaLKEJgrTdZrDV\nFFsMQ/ZGjlPP7bsRcoHQTsWKUGy9G+Yx6QEiuH+9u6EJ73W9x8l9ktYHMzmifFgb\nM8IVrG65Ce05QaC4X0W4yxi0mYs6ivZuyaamIW38HULtTIxkT8dXcr25bFQn1s2U\nAy0cRhXBUNVlKRUkZCOn/dg0JuO8WdkauubbXjXvoQKBgQD6CTcqP+0nHtY5hfCS\nk/JJHMy50PFP3ZtiXnivKGhJSIlyrOB4b70rQ9/tPTRzx/hKQHe7NhzYgPcmC+Gz\n/A6o4mXre0nLcB/BKns9ql0ROboOLY5VvF9ynpczso5jXQT5wU038zcOhwW/C98h\nVmzJxlqjgS0BvK/uilm1p+aWYQKBgQDN8W4A5S04f2Fwa4saFGnpW3+Zi+ubSnZa\nu9gHbjtyRqsCWSUST5O9Qk7wDbjZkYGjzGdm73dhsw9XmBrCjIIQz7gv7ybjStjH\nQcMxIk6cu0NcqYz+IFWEjNqTnF7XoSFoBmjTdCfqbnO9ztubHlQsVmioZ43sW+Xj\nsWbriqAM5QKBgQCRLeqnEIk97szKh7fhFCBZTWyd8/E5w13mpx4B7j9nVcPhHvoT\nVCYNyhJqaOBc3d6QFpCu1kO3fmKC5+E8pX1JmHM/YM2/XzJA8c6vRo1VZCRg+Rit\nNXxiTC1VKjc9AJTUA+Y3N3RfbgzrGhSMAeeW3SJhz653VLz+j7x5Gq1r4QKBgQCW\nVQbX4HOCKnoWdmq0PvKRRhl/HISAd3quATFRO0ZpxOxQaoKFO1G9dgnpchrdtznL\nOArDOUsMJomsh3wBSFAptXfehdT9VkWoLnkuBL0d7BTgL2ScnT3P5IIp/pu9DAI2\nzXb35HK+zqHujHICacFIHEuJow4W236VF4rppefvgQKBgQDeLi+9K2Bg1Ka7Fgqg\nMacfeowuKTqk6CFCn+ELGOdMgV6HK+eNoJLMVNPJoYxnJLINDuyMdi4ccxFVUT1M\n/JWv+1v9D5E0vE186WkQRB836fvblVitkeqLqnbfknn5iKhERq6FooPaAoav0jP1\nQHmtLsOTXtadJlzrtagDf3F7QQ==\n-----END PRIVATE KEY-----\n",
+    "client_email": "firebase-adminsdk-fbsvc@glotelho-livraison.iam.gserviceaccount.com",
+    "client_id": "117375211670991195185",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40glotelho-livraison.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+}
