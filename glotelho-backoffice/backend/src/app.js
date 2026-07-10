@@ -15,6 +15,11 @@ const livreurMobileRoutes = require('./routes/livreurMobileRoutes');
 const recouvrementRoutes = require('./routes/recouvrementRoutes');
 const trackingPublicRoutes = require('./routes/trackingPublicRoutes');
 
+const driversRoutes = require('./routes/driversRoutes');
+const path = require('path');
+
+
+
 app.use(cors({
     origin: [
         'http://localhost:5173',
@@ -43,5 +48,11 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/profils', profilRoutes);
 app.use('/api/mobile/livreur', livreurMobileRoutes);
 app.use('/api/recouvrements', recouvrementRoutes);
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+
+app.use('/api/v1/drivers', driversRoutes);
+app.use('/api/drivers', driversRoutes);
 
 module.exports = app;

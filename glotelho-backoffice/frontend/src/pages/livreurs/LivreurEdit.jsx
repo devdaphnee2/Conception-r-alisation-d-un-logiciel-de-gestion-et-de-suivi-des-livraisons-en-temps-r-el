@@ -14,8 +14,12 @@ const P = {
 export default function LivreurEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [form, setForm] = useState({ last_name: '', first_name: '', phone: '', zone_affectee: '', vehicle_id: '' });
-    const [vehicules, setVehicules] = useState([]);
+    
+    // 👇 Mise à jour du state pour inclure les nouveaux champs de la BD
+    const [form, setForm] = useState({ 
+        last_name: '', first_name: '', phone: '', zone_affectee: '', 
+        vehicule_type: '', vehicule_marque: '', vehicule_modele: '', vehicule_immatriculation: '' 
+    });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -23,9 +27,19 @@ export default function LivreurEdit() {
     useEffect(() => {
         api.get('/livreurs/' + id).then(res => {
             const l = res.data;
-            setForm({ last_name: l.users?.last_name || '', first_name: l.users?.first_name || '', phone: l.users?.phone || '', zone_affectee: l.zone_affectee || '', vehicle_id: l.vehicle_id || '' });
+            const user = l.users || l.user; // Sécurité pour récupérer le user
+            
+            setForm({ 
+                last_name: user?.last_name || '', 
+                first_name: user?.first_name || '', 
+                phone: user?.phone || '', 
+                zone_affectee: l.zone_affectee || '',
+                vehicule_type: l.vehicule_type || '',
+                vehicule_marque: l.vehicule_marque || '',
+                vehicule_modele: l.vehicule_modele || '',
+                vehicule_immatriculation: l.vehicule_immatriculation || ''
+            });
         }).catch(() => setError('Livreur introuvable.')).finally(() => setLoading(false));
-        api.get('/vehicules').then(res => setVehicules(res.data)).catch(() => {});
     }, [id]);
 
     function handleChange(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
@@ -38,7 +52,7 @@ export default function LivreurEdit() {
             await api.put('/livreurs/' + id, form);
             navigate('/livreurs/' + id);
         } catch (err) {
-            setError(err.response?.data?.message || 'Erreur.');
+            setError(err.response?.data?.message || 'Erreur lors de la modification.');
         } finally { setSaving(false); }
     }
 
@@ -48,7 +62,7 @@ export default function LivreurEdit() {
     if (loading) return <p style={{ fontFamily: 'Poppins, sans-serif', color: P.outline, textAlign: 'center', marginTop: '60px' }}>Chargement...</p>;
 
     return (
-        <div style={{ maxWidth: '680px', fontFamily: 'Poppins, sans-serif' }}>
+        <div style={{ maxWidth: '680px', fontFamily: 'Poppins, sans-serif', paddingBottom: '40px' }}>
             <BackButton to={'/livreurs/' + id} />
             <div style={{ marginBottom: '20px' }}>
                 <Link to="/livreurs" style={{ color: P.outline, textDecoration: 'none', fontSize: '13px' }}>Livreurs</Link>
@@ -57,27 +71,40 @@ export default function LivreurEdit() {
                 <span style={{ color: P.outlineVariant, margin: '0 6px' }}>/</span>
                 <span style={{ color: P.onSurface, fontSize: '13px', fontWeight: 500 }}>Modifier</span>
             </div>
+            
             <div style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                 {error && <div style={{ backgroundColor: P.errorContainer, border: '1px solid rgba(186,26,26,0.2)', color: P.error, padding: '10px 14px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px', fontWeight: 500 }}>{error}</div>}
+                
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gap: '18px' }}>
+                    <div style={{ display: 'grid', gap: '20px' }}>
+                        
+                        {/* Section Personnelle */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                             <div><label style={labelStyle}>Nom *</label><input type="text" name="last_name" value={form.last_name} onChange={handleChange} style={inputStyle} required /></div>
-                            <div><label style={labelStyle}>Prenom *</label><input type="text" name="first_name" value={form.first_name} onChange={handleChange} style={inputStyle} required /></div>
+                            <div><label style={labelStyle}>Prénom *</label><input type="text" name="first_name" value={form.first_name} onChange={handleChange} style={inputStyle} required /></div>
                         </div>
-                        <div><label style={labelStyle}>Telephone *</label><input type="text" name="phone" value={form.phone} onChange={handleChange} style={inputStyle} required /></div>
-                        <div><label style={labelStyle}>Zone affectee</label><input type="text" name="zone_affectee" value={form.zone_affectee} onChange={handleChange} style={inputStyle} placeholder="Ex: Bonamoussadi" /></div>
-                        <div>
-                            <label style={labelStyle}>Vehicule</label>
-                            <select name="vehicle_id" value={form.vehicle_id} onChange={handleChange} style={inputStyle}>
-                                <option value="">-- Aucun vehicule --</option>
-                                {vehicules.map(v => <option key={v.id} value={v.id}>{v.brand} {v.type} — {v.plate_number}</option>)}
-                            </select>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                            <div><label style={labelStyle}>Téléphone *</label><input type="text" name="phone" value={form.phone} onChange={handleChange} style={inputStyle} required /></div>
+                            <div><label style={labelStyle}>Zone affectée</label><input type="text" name="zone_affectee" value={form.zone_affectee} onChange={handleChange} style={inputStyle} placeholder="Ex: Bonamoussadi" /></div>
                         </div>
-                        <div style={{ display: 'flex', gap: '12px', paddingTop: '8px', borderTop: '1px solid ' + P.outlineVariant }}>
+
+                        <hr style={{ border: 'none', borderTop: '1px solid ' + P.surfaceContainerHigh, margin: '10px 0' }} />
+
+                        {/* Section Véhicule */}
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: P.onSurface }}>Informations du véhicule</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                            <div><label style={labelStyle}>Type (Moto, Voiture...)</label><input type="text" name="vehicule_type" value={form.vehicule_type} onChange={handleChange} style={inputStyle} /></div>
+                            <div><label style={labelStyle}>Marque</label><input type="text" name="vehicule_marque" value={form.vehicule_marque} onChange={handleChange} style={inputStyle} /></div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                            <div><label style={labelStyle}>Modèle</label><input type="text" name="vehicule_modele" value={form.vehicule_modele} onChange={handleChange} style={inputStyle} /></div>
+                            <div><label style={labelStyle}>Plaque d'immatriculation</label><input type="text" name="vehicule_immatriculation" value={form.vehicule_immatriculation} onChange={handleChange} style={inputStyle} /></div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid ' + P.outlineVariant, marginTop: '10px' }}>
                             <button type="submit" disabled={saving}
-                                style={{ backgroundColor: saving ? P.outline : P.primary, color: '#fff', padding: '11px 24px', borderRadius: '10px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: saving ? 'none' : '0 3px 10px rgba(125,87,0,0.25)' }}>
-                                {saving ? 'Enregistrement...' : 'Enregistrer'}
+                                style={{ backgroundColor: saving ? P.outline : P.primary, color: '#fff', padding: '11px 24px', borderRadius: '10px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: saving ? 'none' : '0 3px 10px rgba(46,125,50,0.25)' }}>
+                                {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                             </button>
                             <Link to={'/livreurs/' + id} style={{ padding: '11px 20px', borderRadius: '10px', border: '1px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, color: P.onSurface, fontSize: '13px', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Annuler</Link>
                         </div>
