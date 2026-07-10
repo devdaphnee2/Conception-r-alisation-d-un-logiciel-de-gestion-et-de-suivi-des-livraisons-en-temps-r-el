@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/api_service.dart';
+import '../models/driver_model.dart'; // Ajout de l'import pour DriverStatus
 import 'main_navigation_screen.dart';
 import 'pending_verification_screen.dart';
 import 'signup/signup_screen.dart';
@@ -58,7 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      if (driverState.driver?.isVerified == true) {
+      // Correction ici : Utilisation de DriverStatus.approved au lieu de isVerified
+      if (driverState.driver?.status == DriverStatus.approved) {
         Navigator.pushAndRemoveUntil(
             context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
       } else {
@@ -96,7 +98,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
     if (!mounted) return;
 
-    if (driverState.driver?.isVerified == true) {
+    // Correction ici : Utilisation de DriverStatus.approved au lieu de isVerified
+    if (driverState.driver?.status == DriverStatus.approved) {
       Navigator.pushAndRemoveUntil(
           context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
     } else {
@@ -132,7 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('🧪 Accès test (sans backend)', style: TextStyle(color: Colors.white38, fontSize: 12)),
                 ),
               ),
-
               const SizedBox(height: 32),
               Center(
                 child: Container(
@@ -188,12 +190,12 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.white24)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  const Expanded(child: Divider(color: Colors.white24)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text('ou', style: TextStyle(color: Colors.white38, fontSize: 12)),
                   ),
-                  Expanded(child: Divider(color: Colors.white24)),
+                  const Expanded(child: Divider(color: Colors.white24)),
                 ],
               ),
               const SizedBox(height: 20),
@@ -263,6 +265,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-
 }

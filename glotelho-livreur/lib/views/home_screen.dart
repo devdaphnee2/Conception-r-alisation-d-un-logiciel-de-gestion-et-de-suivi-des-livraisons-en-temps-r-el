@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
+import '../models/driver_model.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
 import 'widgets/donut_chart.dart';
-import 'delivery_detail_screen.dart';
-import 'commission_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -25,32 +25,50 @@ class _HomeScreenState extends State<HomeScreen> {
   int _cardIndex = 0;
   final PageController _cardController = PageController();
 
+  Timer? _autoRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     _load();
+
+    // Vérifie le statut de la caution en arrière-plan toutes les 8 secondes
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      _load(isBackground: true);
+    });
   }
 
   @override
   void dispose() {
     _cardController.dispose();
+    _autoRefreshTimer?.cancel(); // Arrêt propre du minuteur pour éviter les fuites de mémoire
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
+  // 🎯 Version améliorée avec rafraîchissement du profil en tâche de fond
+  Future<void> _load({bool isBackground = false}) async {
+    if (!isBackground) setState(() => _isLoading = true);
+    
     final summary = await EarningsService.getSummary();
     final activities = await EarningsService.getActivities(limit: 4);
+    
     if (!mounted) return;
+
+    // Force le rafraîchissement du profil pour détecter le clic admin sur "Caution Payée"
+    try {
+      final driverState = Provider.of<DriverState>(context, listen: false);
+      await driverState.loadDriver(); 
+    } catch (_) {}
+
     setState(() {
       _summary = summary;
       _activities = activities;
       _isLoading = false;
     });
   }
-
+  
   String _fmt(double p) =>
-      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} XAF';
+      '${p.toStringAsFixed(p.truncateToDouble() == p ? 0 : 1).replaceAllMapped(RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"), (m) => "${m[1]},")} XAF';
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -63,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final ok = await EarningsService.repayDebt();
     setState(() => _isRepaying = false);
     if (!mounted) return;
-
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Emprunt réglé avec succès ✓'),
@@ -96,8 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
-    final prenom = driverState.driver?.prenom;
-    final displayName = (prenom == null || prenom.isEmpty) ? 'Livreur' : prenom;
+    final prenom = driverState.driver?.prenom ?? '';
+    final displayName = prenom.isEmpty ? 'Livreur' : prenom;
+    final driver = driverState.driver;
     final hasDebt = (_summary?.emprunt ?? 0) > 0;
 
     return Scaffold(
@@ -112,6 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               _buildHeader(displayName),
+              // Bannière caution — visible si caution non payée
+              _buildCautionBanner(driver),
               const SizedBox(height: 20),
               _buildCardCarousel(hasDebt),
               const SizedBox(height: 24),
@@ -125,6 +145,128 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── BANNIÈRE CAUTION ─────────────────────────────────────────
+  Widget _buildCautionBanner(DriverModel? driver) {
+    // Masquer si pas de driver ou caution déjà payée
+    if (driver == null) return const SizedBox.shrink();
+    if (driver.cautionPayee) return const SizedBox.shrink();
+    
+    final now = DateTime.now();
+    // On calcule les jours écoulés seulement si la date existe, sinon 0
+    final joursEcoules = driver.dateActivation != null ? now.difference(driver.dateActivation!).inDays : 0;
+    final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
+    final montant = driver.cautionMontant.toStringAsFixed(0);
+
+    // Délai dépassé
+    if (joursRestants <= 0) {
+      return Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.redAccent),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                SExpandingBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Délai dépassé — Suspension imminente',
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. Votre compte risque la suspension immédiate. Réglez maintenant :',
+              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 10),
+            _cautionInstructions(montant),
+          ],
+        ),
+      );
+    }
+
+    // Dans les délais
+    final isUrgent = joursRestants <= 3;
+    final borderColor = isUrgent ? Colors.redAccent : Colors.orange;
+    final bgColor = isUrgent ? Colors.red.withOpacity(0.12) : Colors.orange.withOpacity(0.12);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isUrgent ? Icons.error_outline : Icons.warning_amber_rounded,
+                color: borderColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Caution requise — Plus que $joursRestants jour(s)',
+                  style: TextStyle(
+                    color: borderColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, veuillez régler votre caution de $montant FCFA :',
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 10),
+          _cautionInstructions(montant),
+        ],
+      ),
+    );
+  }
+
+  Widget _cautionInstructions(String montant) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('• OM : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            Text('*144*1*1*698000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+          ]),
+          const SizedBox(height: 4),
+          Row(children: [
+            const Text('• MoMo : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
+            Text('*126*1*1*677000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  // ── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader(String prenom) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,8 +305,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.diamond, color: Colors.pinkAccent, size: 14),
               ],
             ),
-            // Total cumulatif de toutes les commissions gagnées,
-            // ne varie jamais suite à un retrait ou un remboursement d'emprunt.
             Text('+${_fmt(_summary?.totalGains ?? 0)}',
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           ],
@@ -173,9 +313,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── CARROUSEL DES CARTES ─────────────────────────────────────
   Widget _buildCardCarousel(bool hasDebt) {
     if (!hasDebt) {
-      // Un seul badge, pas besoin de carrousel.
       return _buildCommissionCard();
     }
 
@@ -210,6 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── COMMISSION CARD ──────────────────────────────────────────
   Widget _buildCommissionCard() {
     final montant = _summary?.soldeCommission ?? 0;
     return Container(
@@ -269,6 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── EMPRUNT CARD ─────────────────────────────────────────────
   Widget _buildEmpruntCard() {
     final montant = _summary?.emprunt ?? 0;
     return Container(
@@ -317,6 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── ACTIVITÉS ────────────────────────────────────────────────
   Widget _buildActivitiesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,33 +505,23 @@ class _HomeScreenState extends State<HomeScreen> {
       iconColor = Colors.tealAccent;
       iconBg = Colors.teal.withOpacity(0.15);
     } else {
-      icon = Icons.inventory_2_outlined; // colis
+      icon = Icons.inventory_2_outlined;
       iconColor = Colors.white;
       iconBg = Colors.orange;
     }
 
     final title = isCommission ? 'Commission' : 'Livraison';
-    final sub = isCommission
-        ? a.manager
-        : '${a.clientName ?? '—'} · ${a.clientPhone ?? ''}';
+    final sub = isCommission ? a.manager : '${a.clientName ?? "—"} · ${a.clientPhone ?? ""}';
 
     final amountText = isCommission
         ? '+${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF'
         : '${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF';
 
-    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
-        '${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}';
+    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, ${a.date.hour.toString().padLeft(2, "0")}:${a.date.minute.toString().padLeft(2, "0")}';
 
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => isCommission
-                ? CommissionDetailScreen(commission: a)
-                : DeliveryDetailScreen(delivery: a),
-          ),
-        );
+        // Logique de navigation optionnelle ici
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -408,8 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 12)),
                 ],
               ),
             ),
@@ -417,8 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(amountText,
-                    style: TextStyle(color: isCommission ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(amountText, style: TextStyle(color: isCommission ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
@@ -430,6 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _moisAbrege(int m) => const ['', 'Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'][m];
 
+  // ── STATS ────────────────────────────────────────────────────
   Widget _buildStatsSection() {
     final gains = _summary?.totalGains ?? 0;
     final emprunt = _summary?.emprunt ?? 0;
@@ -484,4 +616,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+}
+
+// Widget utilitaire pour espacer proprement les icônes
+class SExpandingBox extends StatelessWidget {
+  final double width;
+  const SExpandingBox({super.key, required this.width});
+  @override
+  Widget build(BuildContext context) => SizedBox(width: width);
 }
