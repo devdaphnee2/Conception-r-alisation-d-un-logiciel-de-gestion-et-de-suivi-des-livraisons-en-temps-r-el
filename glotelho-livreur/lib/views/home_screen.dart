@@ -5,6 +5,8 @@ import '../utils/driver_state.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
 import 'widgets/donut_chart.dart';
+import 'delivery_detail_screen.dart';
+import 'commission_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -349,59 +351,79 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActivityTile(ActivityModel a, bool isLast) {
-    final isPositive = a.amount >= 0;
+    final isCommission = a.isCommission;
+
     IconData icon;
     Color iconColor;
     Color iconBg;
 
-    if (a.type == ActivityType.commission) {
+    if (isCommission) {
       icon = Icons.arrow_downward;
       iconColor = Colors.tealAccent;
       iconBg = Colors.teal.withOpacity(0.15);
-    } else if (a.provider == 'orange') {
-      icon = Icons.phone_android;
+    } else {
+      icon = Icons.inventory_2_outlined; // colis
       iconColor = Colors.white;
       iconBg = Colors.orange;
-    } else {
-      icon = Icons.phone_android;
-      iconColor = Colors.white;
-      iconBg = Colors.blue;
     }
+
+    final title = isCommission ? 'Commission' : 'Livraison';
+    final sub = isCommission
+        ? a.manager
+        : '${a.clientName ?? '—'} · ${a.clientPhone ?? ''}';
+
+    final amountText = isCommission
+        ? '+${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF'
+        : '${a.amount.toStringAsFixed(a.amount.truncateToDouble() == a.amount ? 0 : 1)} XAF';
 
     final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
         '${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: isLast ? null : const Border(bottom: BorderSide(color: Colors.white10)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 18),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => isCommission
+                ? CommissionDetailScreen(commission: a)
+                : DeliveryDetailScreen(delivery: a),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: isLast ? null : const Border(bottom: BorderSide(color: Colors.white10)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(a.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(a.subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(amountText,
+                    style: TextStyle(color: isCommission ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${isPositive ? '+' : ''}${a.amount.toStringAsFixed(1)} XAF',
-                  style: TextStyle(color: isPositive ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
