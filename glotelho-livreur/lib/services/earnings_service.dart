@@ -22,8 +22,8 @@ class EarningsService {
     if (_useMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return EarningsSummary(
-        soldeCommission: 4781.96,
-        emprunt: 0,
+        soldeCommission: 4782.0,
+        emprunt: 2000.0, // ← non nul pour tester l'affichage de la carte Emprunt
         totalGains: 35100,
         totalVentes: 237000,
       );

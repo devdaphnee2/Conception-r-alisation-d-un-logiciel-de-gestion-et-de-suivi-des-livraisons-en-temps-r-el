@@ -13,22 +13,24 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _index = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    ActivitiesScreen(),
-    _PlaceholderScreen(title: 'Services'),
-    _PlaceholderScreen(title: 'Analyses'),
-    _PlaceholderScreen(title: 'Paramètres'),
-  ];
+  void _goToTab(int i) => setState(() => _index = i);
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      HomeScreen(onNavigateTab: _goToTab),
+      const ActivitiesScreen(),
+      const _PlaceholderScreen(title: 'Services'),
+      const _PlaceholderScreen(title: 'Analyses'),
+      const _PlaceholderScreen(title: 'Paramètres'),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.navy,
-      body: IndexedStack(index: _index, children: _screens),
+      body: IndexedStack(index: _index, children: screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF16324A),
+          color: AppColors.cardNavy,
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -2))],
         ),
         child: SafeArea(
@@ -53,7 +55,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final active = _index == i;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _index = i),
+        onTap: () => _goToTab(i),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
