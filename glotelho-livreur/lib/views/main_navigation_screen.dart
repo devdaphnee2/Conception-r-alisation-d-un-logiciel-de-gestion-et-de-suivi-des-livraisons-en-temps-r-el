@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:glotelho_livreur/views/tracking/tracking_screen.dart';
 import '../utils/constants.dart';
 import 'home_screen.dart';
 import 'activities_screen.dart';
+import 'delivery_map_screen.dart';
+import 'settings_screen.dart';
+import 'deliveries_list_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -21,9 +23,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(onNavigateTab: _goToTab),
       const ActivitiesScreen(),
-      const TrackingScreen(),
-      const _PlaceholderScreen(title: 'Livraisons'),
-      const _PlaceholderScreen(title: 'Paramètres'),
+      const DeliveryMapScreen(),
+    const DeliveriesListScreen(),
+      const SettingsScreen(),
     ];
 
     return Scaffold(
