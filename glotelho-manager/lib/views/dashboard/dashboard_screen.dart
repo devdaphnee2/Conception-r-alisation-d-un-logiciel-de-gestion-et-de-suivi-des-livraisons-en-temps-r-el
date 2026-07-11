@@ -437,8 +437,6 @@ import '../../widgets/kpi_card.dart';
 import '../../widgets/dashboard_header.dart';
 import '../livraisons/nouvelle_livraison_screen.dart';
 import '../livraisons/livraison_detail_screen.dart';
-//import '../litiges/nouveau_litige_screen.dart';
-import '../livreurs/livreurs_screen.dart';
 import '../tracking/tracking_screen.dart';
 
 /// Écran d'accueil manager — reprend la logique et les KPIs exacts de
@@ -455,11 +453,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
   List livraisons = [];
-  List livreurs = [];
   List litiges = [];
   List commandes = [];
   List recouvrements = [];
-  List profils = [];
 
   @override
   void initState() {
@@ -473,19 +469,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final results = await Future.wait([
         api.getLivraisons().catchError((_) => null),
-        api.getLivreurs(all: true).catchError((_) => null),
         api.getLitiges().catchError((_) => null),
         api.getCommandes().catchError((_) => null),
         api.getRecouvrements().catchError((_) => null),
-        api.getProfilsEnAttente().catchError((_) => null),
       ]);
       setState(() {
         livraisons = results[0]?.data ?? [];
-        livreurs = results[1]?.data ?? [];
-        litiges = results[2]?.data ?? [];
-        commandes = results[3]?.data ?? [];
-        recouvrements = results[4]?.data ?? [];
-        profils = results[5]?.data ?? [];
+        litiges = results[1]?.data ?? [];
+        commandes = results[2]?.data ?? [];
+        recouvrements = results[3]?.data ?? [];
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -508,17 +500,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'en_cours': livraisons.where((l) => l['status'] == 'En_cours').length,
       'en_attente': livraisons.where((l) => l['status'] == 'En_attente').length,
       'livrees': livraisons.where((l) => l['status'] == 'Livré').length,
-      'suspendues': livraisons.where((l) => l['status'] == 'Suspendu').length,
-      'livreurs_actifs':
-      livreurs.where((l) => l['status'] == 'En_livraison').length,
-      'livreurs_dispo':
-      livreurs.where((l) => l['status'] == 'Disponible').length,
-      'litiges_ouverts':
-      litiges.where((l) => l['status'] == 'En_attente').length,
       'commandes_total': commandes.length,
-      'profils_attente': profils.length,
-      'dette_total': detteTotal,
-      'ca_total': caTotal,
     };
   }
 
@@ -543,18 +525,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       alertes.add({
         'type': 'error',
         'msg': '${s['litiges_ouverts']} litige(s) non traité(s)'
-      });
-    }
-    if (s['suspendues'] > 0) {
-      alertes.add({
-        'type': 'error',
-        'msg': '${s['suspendues']} livraison(s) suspendue(s) — réassignation requise'
-      });
-    }
-    if (s['dette_total'] > 0) {
-      alertes.add({
-        'type': 'warning',
-        'msg': '${s['dette_total']} FCFA de dettes livreurs non recouvrées'
       });
     }
 
@@ -624,13 +594,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         iconColor: Colors.white,
                       ),
                       KpiCard(
-                        icon: Icons.local_shipping_outlined,
-                        label: 'Livreurs actifs',
-                        value: '${s['livreurs_actifs']}',
-                        sub: '${s['livreurs_dispo']} disponibles',
-                        iconColor: const Color(0xFF81C784),
-                      ),
-                      KpiCard(
                         icon: Icons.report_gmailerrorred_outlined,
                         label: 'Litiges ouverts',
                         value: '${s['litiges_ouverts']}',
@@ -650,24 +613,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         value: '${s['livrees']}',
                         iconColor: const Color(0xFF81C784),
                       ),
-                      KpiCard(
-                        icon: Icons.hourglass_empty,
-                        label: 'En attente',
-                        value: '${s['en_attente']}',
-                        iconColor: Colors.white,
-                      ),
-                      KpiCard(
-                        icon: Icons.pause_circle_outline,
-                        label: 'Suspendues',
-                        value: '${s['suspendues']}',
-                        iconColor: const Color(0xFFEF9A9A),
-                      ),
-                      KpiCard(
-                        icon: Icons.person_search_outlined,
-                        label: 'Profils en attente',
-                        value: '${s['profils_attente']}',
-                        iconColor: Colors.white,
-                      ),
                     ],
                   ),
 
@@ -682,15 +627,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ...recent.map((l) => _livraisonTile(l)),
 
                   const SizedBox(height: 20),
-
-                  // Livreurs
-                  _sectionTitle(context, 'Livreurs (${livreurs.length})', '/livreurs'),
-                  const SizedBox(height: 8),
-                  if (livreurs.isEmpty)
-                    _emptyCard('Aucun livreur.')
-                  else
-                    ...livreurs.take(6).map((l) => _livreurTile(l)),
-
                   // Dettes
                   if (s['dette_total'] > 0) ...[
                     const SizedBox(height: 20),
@@ -702,17 +638,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Dettes livreurs',
-                              style: TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          Text('${s['dette_total']} FCFA',
-                              style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFFBA1A1A))),
-                        ],
                       ),
                     ),
                   ],
@@ -744,22 +669,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         AppTheme.navy,
                         onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const TrackingScreen())),
-                      ),
-                     /*_quickAction(
-                        'Nouveau litige',
-                        const Color(0xFFFFDAD6),
-                        const Color(0xFFBA1A1A),
-                        onTap: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const NouveauLitigeScreen())),
-                      ),*/
-                      _quickAction(
-                        'Profils à valider',
-                        const Color(0xFFFFDEA9),
-                        const Color(0xFF7D5700),
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const LivreursScreen(initialTabIndex: 1))),
                       ),
                     ],
                   ),
