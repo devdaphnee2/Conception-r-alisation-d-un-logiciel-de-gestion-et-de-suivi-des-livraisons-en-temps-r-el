@@ -4,6 +4,17 @@ import '../models/delivery_model.dart';
 class TrackingService {
   static const bool _useMock = true;
 
+  /// Vérifie le code de clôture envoyé par le manager au client.
+  /// MOCK : accepte "1234" en attendant le backend.
+  static Future<bool> verifierCodeCloture(String deliveryId, String code) async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (_useMock) {
+      return code.trim() == '1234';
+    }
+    // TODO : POST /drivers/me/deliveries/$deliveryId/close  { code }
+    throw UnimplementedError();
+  }
+
   static Future<List<DeliveryModel>> getTodayDeliveries() async {
     if (_useMock) {
       await Future.delayed(const Duration(milliseconds: 400));
