@@ -58,7 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // Force le rafraîchissement du profil pour détecter le clic admin sur "Caution Payée"
     try {
       final driverState = Provider.of<DriverState>(context, listen: false);
-      //await driverState.loadDriver();
+
+     
+      await driverState.refreshProfile();
+
     } catch (_) {}
 
     setState(() {
