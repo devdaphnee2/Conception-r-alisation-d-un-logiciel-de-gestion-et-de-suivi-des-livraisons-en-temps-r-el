@@ -4,6 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../utils/constants.dart';
 
+/// Label au-dessus d'un champ (style sombre cohérent avec le login).
+Widget fieldLabel(String text) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 8, left: 2),
+    child: Text(text,
+        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+  );
+}
+
 Widget buildTextField(
     TextEditingController ctrl,
     String label,
@@ -12,24 +21,38 @@ Widget buildTextField(
       bool obscure = false,
       String? Function(String?)? validator,
     }) {
-  return TextFormField(
-    controller: ctrl,
-    keyboardType: keyboardType,
-    obscureText: obscure,
-    validator: validator ?? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null,
-    style: const TextStyle(fontSize: 14),
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(fontSize: 13, color: Colors.grey),
-      prefixIcon: Icon(icon, size: 20, color: Colors.grey),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
-    ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      fieldLabel(label),
+      TextFormField(
+        controller: ctrl,
+        keyboardType: keyboardType,
+        obscureText: obscure,
+        validator: validator ?? (v) => v == null || v.trim().isEmpty ? 'Champ requis' : null,
+        style: const TextStyle(fontSize: 15, color: Colors.white),
+        decoration: InputDecoration(
+          hintText: label,
+          hintStyle: const TextStyle(fontSize: 14, color: Colors.white30),
+          prefixIcon: Icon(icon, size: 20, color: Colors.white54),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.06),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
+          errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Colors.redAccent)),
+          focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
+          errorStyle: const TextStyle(color: Colors.redAccent),
+        ),
+      ),
+    ],
   );
 }
 
@@ -59,30 +82,40 @@ Widget buildDateTextField(
     String label, {
       String? Function(String?)? validator,
     }) {
-  return TextFormField(
-    controller: ctrl,
-    keyboardType: TextInputType.number,
-    inputFormatters: [DateInputFormatter()],
-    validator: validator ?? (v) {
-      if (v == null || v.trim().isEmpty) return 'Champ requis';
-      if (v.length != 10) return 'Format jj/MM/aaaa';
-      return null;
-    },
-    style: const TextStyle(fontSize: 14),
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: 'jj/MM/aaaa',
-      labelStyle: const TextStyle(fontSize: 13, color: Colors.grey),
-      hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-      prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20, color: Colors.grey),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
-    ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      fieldLabel(label),
+      TextFormField(
+        controller: ctrl,
+        keyboardType: TextInputType.number,
+        inputFormatters: [DateInputFormatter()],
+        validator: validator ??
+                (v) {
+              if (v == null || v.trim().isEmpty) return 'Champ requis';
+              if (v.length != 10) return 'Format jj/MM/aaaa';
+              return null;
+            },
+        style: const TextStyle(fontSize: 15, color: Colors.white),
+        decoration: InputDecoration(
+          hintText: 'jj/MM/aaaa',
+          hintStyle: const TextStyle(fontSize: 14, color: Colors.white30),
+          prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20, color: Colors.white54),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.06),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
+          errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Colors.redAccent)),
+          errorStyle: const TextStyle(color: Colors.redAccent),
+        ),
+      ),
+    ],
   );
 }
 
@@ -101,7 +134,7 @@ DateTime? parseDateInput(String text) {
   }
 }
 
-/// Sélecteur de photo avec aperçu (utilisé pour photo profil, CNI, permis, véhicule).
+/// Sélecteur de photo avec aperçu (photo profil, CNI, permis, véhicule).
 class ImagePickerField extends StatelessWidget {
   final String label;
   final File? file;
@@ -125,6 +158,7 @@ class ImagePickerField extends StatelessWidget {
   void _showSourceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.cardNavy,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(
         child: Column(
@@ -133,7 +167,7 @@ class ImagePickerField extends StatelessWidget {
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined, color: AppColors.gold),
-              title: const Text('Prendre une photo'),
+              title: const Text('Prendre une photo', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _pick(ImageSource.camera);
@@ -141,7 +175,7 @@ class ImagePickerField extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined, color: AppColors.gold),
-              title: const Text('Choisir depuis la galerie'),
+              title: const Text('Choisir depuis la galerie', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 _pick(ImageSource.gallery);
@@ -159,36 +193,34 @@ class ImagePickerField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        fieldLabel(label),
         GestureDetector(
           onTap: () => _showSourceSheet(context),
           child: Container(
             height: height,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: file == null ? Colors.grey.shade300 : AppColors.gold, width: file == null ? 1 : 1.5),
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: file == null ? Colors.white24 : AppColors.gold,
+                  width: file == null ? 1 : 1.5),
             ),
             child: file == null
                 ? Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_a_photo_outlined, color: Colors.grey.shade400, size: 32),
+                Icon(Icons.add_a_photo_outlined, color: Colors.white38, size: 32),
                 const SizedBox(height: 6),
-                Text('Ajouter une photo', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                const Text('Ajouter une photo', style: TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             )
                 : Stack(
               fit: StackFit.expand,
               children: [
-                Container(
-                  color: Colors.grey.shade100,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(11),
-                    child: Image.file(file!, fit: BoxFit.contain),
-                  ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: Image.file(file!, fit: BoxFit.contain),
                 ),
                 Positioned(
                   top: 6, right: 6,
