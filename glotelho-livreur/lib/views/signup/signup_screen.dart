@@ -216,7 +216,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.navy,
       appBar: AppBar(
         backgroundColor: AppColors.navy,
         elevation: 0,
@@ -233,7 +233,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   height: 4,
                   margin: EdgeInsets.only(right: i == _totalSteps - 1 ? 0 : 6),
                   decoration: BoxDecoration(
-                    color: i <= _step ? AppColors.gold : Colors.grey.shade300,
+                    color: i <= _step ? AppColors.gold : Colors.white24,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -278,7 +278,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _sectionTitle(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+    child: Text(title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
   );
 
   Widget _buildStep1() {
@@ -334,7 +335,7 @@ class _SignupScreenState extends State<SignupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionTitle('Véhicule'),
-          Text('Type de véhicule', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+          const Text('Type de véhicule', style: TextStyle(fontSize: 13, color: Colors.white70)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -345,8 +346,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 selected: selected,
                 onSelected: (_) => setState(() => _typeVehicule = t),
                 selectedColor: AppColors.gold,
-                labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87, fontSize: 12),
-                backgroundColor: Colors.white,
+                labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70, fontSize: 12),
+                backgroundColor: AppColors.cardNavy,
+                side: BorderSide(color: selected ? AppColors.gold : Colors.white24),
               );
             }).toList(),
           ),
@@ -374,7 +376,7 @@ class _SignupScreenState extends State<SignupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionTitle('Disponibilités'),
-          Text('Jours disponibles', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+          const Text('Jours disponibles', style: TextStyle(fontSize: 13, color: Colors.white70)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -385,8 +387,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 selected: selected,
                 onSelected: (v) => setState(() => v ? _joursDisponibles.add(j) : _joursDisponibles.remove(j)),
                 selectedColor: AppColors.gold,
-                labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
-                backgroundColor: Colors.white,
+                labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70),
+                backgroundColor: AppColors.cardNavy,
+                side: BorderSide(color: selected ? AppColors.gold : Colors.white24),
               );
             }).toList(),
           ),
@@ -402,11 +405,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Heure de début',
-                      labelStyle: const TextStyle(fontSize: 12),
-                      filled: true, fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelStyle: const TextStyle(fontSize: 12, color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.06),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    child: Text(_heureDebut == null ? '--:--' : _fmtTime(_heureDebut!)),
+                    child: Text(_heureDebut == null ? '--:--' : _fmtTime(_heureDebut!),
+                        style: const TextStyle(color: Colors.white)),
                   ),
                 ),
               ),

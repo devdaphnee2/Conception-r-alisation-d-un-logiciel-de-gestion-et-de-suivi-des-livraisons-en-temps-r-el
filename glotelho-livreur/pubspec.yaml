@@ -44,6 +44,14 @@ dependencies:
   url_launcher: ^6.3.0
   http: ^1.2.2
 
+  # Authentification biométrique (empreinte / visage)
+  local_auth: ^2.3.0
+
+  # Coffre sécurisé (stockage du token pour la connexion biométrique)
+  flutter_secure_storage: ^9.2.2
+   # Notifications locales (simulation push en attendant Firebase)
+  flutter_local_notifications: ^18.0.1
+
 
 dev_dependencies:
   flutter_test:

@@ -1,8 +1,34 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
+import '../models/delivery_request_model.dart';
+import '../services/delivery_request_manager.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _notifications = true;
+
+  /// Simule l'arrivée d'une demande de course (démo, en attendant Firebase).
+  void _simulerCourse() {
+    DeliveryRequestManager.onNewRequest(
+      DeliveryRequestModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        clientNom: 'Aïcha Ngono',
+        clientTelephone: '693 598 665',
+        adresseLivraison: 'Bonapriso, Rue Njo-Njo, Douala',
+        articles: 'Riz 5kg · Huile 5L · Sardines',
+        montant: 15000,
+        fraisLivraison: 1500,
+        managerNom: 'Jean Kamga',
+        distanceKm: 4.2,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +70,33 @@ class SettingsScreen extends StatelessWidget {
             _tile(Icons.account_balance_wallet_outlined, 'Moyens de retrait'),
             const SizedBox(height: 20),
             _section('Préférences'),
-            _switchTile(Icons.notifications_none, 'Notifications', true),
+            _switchTile(
+              Icons.notifications_none,
+              'Notifications',
+              _notifications,
+                  (v) => setState(() => _notifications = v),
+            ),
             _tile(Icons.language, 'Langue', trailing: 'Français'),
             _tile(Icons.dark_mode_outlined, 'Thème', trailing: 'Sombre'),
             const SizedBox(height: 20),
+
+            // ── Section démo (à retirer après la soutenance) ──
+            _section('Développeur'),
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(color: AppColors.cardNavy, borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: const Icon(Icons.notification_add_outlined, color: AppColors.gold),
+                title: const Text('Simuler une demande de course',
+                    style: TextStyle(color: Colors.white, fontSize: 15)),
+                subtitle: const Text('Test notification (démo)',
+                    style: TextStyle(color: Colors.white38, fontSize: 12)),
+                trailing: const Icon(Icons.play_arrow, color: AppColors.gold),
+                onTap: _simulerCourse,
+              ),
+            ),
+            const SizedBox(height: 20),
+
             _section('Support'),
             _tile(Icons.help_outline, 'Aide & FAQ'),
             _tile(Icons.info_outline, 'À propos'),
@@ -100,7 +149,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _switchTile(IconData icon, String label, bool value) {
+  Widget _switchTile(IconData icon, String label, bool value, ValueChanged<bool> onChanged) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -111,7 +160,7 @@ class SettingsScreen extends StatelessWidget {
         title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 15)),
         value: value,
         activeColor: AppColors.gold,
-        onChanged: (_) {},
+        onChanged: onChanged,
       ),
     );
   }
