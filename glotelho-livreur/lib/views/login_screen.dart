@@ -4,11 +4,13 @@ import 'package:dio/dio.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/api_service.dart';
-import '../models/driver_model.dart'; // Ajout de l'import pour DriverStatus
+import '../models/driver_model.dart';
 import 'main_navigation_screen.dart';
 import 'pending_verification_screen.dart';
 import 'signup/signup_screen.dart';
 import '../services/google_auth_service.dart';
+import 'auth/forgot_password_screen.dart';
+import '../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,6 +30,50 @@ class _LoginScreenState extends State<LoginScreen> {
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
+  }
+
+  /// Navigation post-connexion selon le statut du livreur.
+  void _goAfterLogin(DriverState driverState) {
+    if (driverState.driver?.status == DriverStatus.approved) {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
+    } else {
+      Navigator.pushAndRemoveUntil(
+          context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
+    }
+  }
+
+  /// Propose d'activer la biométrie après une connexion réussie (une seule fois).
+  Future<void> _maybeOfferBiometrics(String token) async {
+    if (await BiometricService.isAvailable() && !await BiometricService.isEnabled()) {
+      if (!mounted) return;
+      final activer = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.cardNavy,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('Connexion rapide', style: TextStyle(color: Colors.white, fontSize: 18)),
+          content: const Text(
+            'Voulez-vous activer la connexion par empreinte digitale pour les prochaines fois ?',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Plus tard', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold),
+              child: const Text('Activer', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      if (activer == true) {
+        await BiometricService.enable(token);
+      }
+    }
   }
 
   Future<void> _login() async {
@@ -59,14 +105,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Correction ici : Utilisation de DriverStatus.approved au lieu de isVerified
-      if (driverState.driver?.status == DriverStatus.approved) {
-        Navigator.pushAndRemoveUntil(
-            context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
-      } else {
-        Navigator.pushAndRemoveUntil(
-            context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
-      }
+      // Proposer la biométrie avant de naviguer
+      await _maybeOfferBiometrics(token);
+      if (!mounted) return;
+
+      _goAfterLogin(driverState);
     } on DioException catch (e) {
       final msg = e.response?.data is Map
           ? (e.response?.data['message'] ?? 'Identifiants incorrects')
@@ -98,14 +141,32 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
     if (!mounted) return;
 
-    // Correction ici : Utilisation de DriverStatus.approved au lieu de isVerified
-    if (driverState.driver?.status == DriverStatus.approved) {
-      Navigator.pushAndRemoveUntil(
-          context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()), (r) => false);
-    } else {
-      Navigator.pushAndRemoveUntil(
-          context, MaterialPageRoute(builder: (_) => const PendingVerificationScreen()), (r) => false);
+    // Proposer la biométrie avant de naviguer
+    await _maybeOfferBiometrics(token);
+    if (!mounted) return;
+
+    _goAfterLogin(driverState);
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    final ok = await BiometricService.authenticate(
+      reason: 'Déverrouillez pour accéder à votre compte',
+    );
+    if (!ok) return;
+
+    final token = await BiometricService.getSavedToken();
+    if (token == null) {
+      _showError('Aucune session enregistrée. Connectez-vous manuellement.');
+      return;
     }
+
+    final driverState = context.read<DriverState>();
+    await driverState.saveSession(token);
+    ApiService.setToken(token);
+    await driverState.refreshProfile();
+
+    if (!mounted) return;
+    _goAfterLogin(driverState);
   }
 
   void _showError(String message) {
@@ -120,148 +181,246 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.navy,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MainNavigationScreen()));
-                  },
-                  child: const Text('🧪 Accès test (sans backend)', style: TextStyle(color: Colors.white38, fontSize: 12)),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Center(
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12)],
-                  ),
-                  child: Image.asset('assets/images/glotelho_delivery_logo_high_contrast.png', fit: BoxFit.contain),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text('Connexion',
-                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
-              const Text('Connectez-vous pour commencer vos livraisons',
-                  style: TextStyle(color: Colors.white54, fontSize: 13)),
-              const SizedBox(height: 32),
+      body: Container(
+        // Léger dégradé pour donner de la profondeur
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF102A43), AppColors.navy],
+          ),
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 40),
 
-              _buildField(_phoneCtrl, 'Téléphone ou e-mail', Icons.person_outline),
-              const SizedBox(height: 16),
-              _buildField(_passwordCtrl, 'Mot de passe', Icons.lock_outline, isPassword: true),
+                          // ---- Logo arrondi ----
+                          Center(
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/glotelho_delivery_logo_high_contrast.png',
+                                width: 110,
+                                height: 110,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 28),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text('Mot de passe oublié ?', style: TextStyle(color: AppColors.gold, fontSize: 12)),
-                ),
-              ),
-              const SizedBox(height: 12),
+                          // ---- Titre ----
+                          const Text('Bienvenue 👋',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          const Text('Connectez-vous pour commencer vos livraisons',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white54, fontSize: 14)),
+                          const SizedBox(height: 40),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                      height: 20, width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Se connecter',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Expanded(child: Divider(color: Colors.white24)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('ou', style: TextStyle(color: Colors.white38, fontSize: 12)),
-                  ),
-                  const Expanded(child: Divider(color: Colors.white24)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _loginWithGoogle,
-                  icon: Image.network(
-                    'https://www.google.com/favicon.ico',
-                    width: 18, height: 18,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, color: Colors.white),
-                  ),
-                  label: const Text('Continuer avec Google', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: Colors.white24),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+                          // ---- Champs ----
+                          _label('Téléphone ou e-mail'),
+                          const SizedBox(height: 8),
+                          _buildField(_phoneCtrl, 'Ex : 6XX XXX XXX', Icons.person_outline),
+                          const SizedBox(height: 20),
 
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const SignupScreen())),
-                  child: const Text.rich(
-                    TextSpan(
-                      text: 'Pas encore livreur ? ',
-                      style: TextStyle(color: Colors.white54, fontSize: 13),
-                      children: [
-                        TextSpan(text: 'Inscrivez-vous', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold)),
-                      ],
+                          _label('Mot de passe'),
+                          const SizedBox(height: 8),
+                          _buildField(_passwordCtrl, '••••••••', Icons.lock_outline, isPassword: true),
+
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                              ),
+                              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 4)),
+                              child: const Text('Mot de passe oublié ?',
+                                  style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w500)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ---- Bouton connexion ----
+                          SizedBox(
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                disabledBackgroundColor: AppColors.gold.withOpacity(0.5),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                  height: 22, width: 22,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                  : const Text('Se connecter',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ---- Bouton biométrie (visible seulement si activée) ----
+                          FutureBuilder<bool>(
+                            future: BiometricService.isEnabled(),
+                            builder: (context, snap) {
+                              if (snap.data != true) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: OutlinedButton.icon(
+                                  onPressed: _isLoading ? null : _loginWithBiometrics,
+                                  icon: const Icon(Icons.fingerprint, color: AppColors.gold, size: 24),
+                                  label: const Text('Se connecter avec empreinte',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(double.infinity, 54),
+                                    side: const BorderSide(color: AppColors.gold),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+
+                          // ---- Séparateur ----
+                          Row(
+                            children: const [
+                              Expanded(child: Divider(color: Colors.white24)),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 14),
+                                child: Text('ou', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                              ),
+                              Expanded(child: Divider(color: Colors.white24)),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // ---- Bouton Google ----
+                          SizedBox(
+                            height: 54,
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _loginWithGoogle,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.white24),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _googleG(),
+                                  const SizedBox(width: 12),
+                                  const Text('Continuer avec Google',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const Spacer(),
+
+                          // ---- Inscription ----
+                          Center(
+                            child: TextButton(
+                              onPressed: () => Navigator.push(
+                                  context, MaterialPageRoute(builder: (_) => const SignupScreen())),
+                              child: const Text.rich(
+                                TextSpan(
+                                  text: 'Pas encore livreur ? ',
+                                  style: TextStyle(color: Colors.white54, fontSize: 14),
+                                  children: [
+                                    TextSpan(text: 'Inscrivez-vous',
+                                        style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // ---- Accès test (discret) ----
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (_) => const MainNavigationScreen()));
+                              },
+                              child: const Text('Accès test (sans backend)',
+                                  style: TextStyle(color: Colors.white24, fontSize: 12)),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildField(TextEditingController ctrl, String label, IconData icon, {bool isPassword = false}) {
+  Widget _label(String text) {
+    return Text(text,
+        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500));
+  }
+
+  // Petit "G" Google dessiné (pas de chargement réseau)
+  Widget _googleG() {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: const Text('G',
+          style: TextStyle(
+            color: Color(0xFF4285F4),
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            height: 1,
+          )),
+    );
+  }
+
+  Widget _buildField(TextEditingController ctrl, String hint, IconData icon, {bool isPassword = false}) {
     return TextField(
       controller: ctrl,
       obscureText: isPassword ? _obscure : false,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white30, fontSize: 14),
         prefixIcon: Icon(icon, color: Colors.white54, size: 20),
         suffixIcon: isPassword
             ? IconButton(
-          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white54, size: 20),
+          icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              color: Colors.white54, size: 20),
           onPressed: () => setState(() => _obscure = !_obscure),
         )
             : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.06),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
       ),
     );
   }

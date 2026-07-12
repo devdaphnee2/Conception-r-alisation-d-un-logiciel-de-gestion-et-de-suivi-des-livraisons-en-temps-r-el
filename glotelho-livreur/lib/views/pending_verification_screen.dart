@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import 'login_screen.dart';
+import '../models/driver_model.dart';
 
 /// Écran affiché tant que le manager n'a pas validé le compte du livreur.
 /// Ne redirige vers aucune autre interface tant que le statut n'est pas "approved".
@@ -24,7 +25,7 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> {
 
     if (!mounted) return;
 
-    if (state.driver?.isVerified == true) {
+    if (state.driver?.status == DriverStatus.approved) {
       // La vérification côté app principale (main.dart / splash) gère
       // la redirection vers HomeScreen dès que le statut est "approved".
       // Ici on informe simplement l'utilisateur.
