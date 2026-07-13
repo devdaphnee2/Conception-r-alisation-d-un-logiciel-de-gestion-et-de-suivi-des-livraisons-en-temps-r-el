@@ -9,8 +9,8 @@ const P = {
     onSurface: '#1a1c1c',
     outline: '#817564',
     outlineVariant: '#d3c4b0',
-    primary: '#2e7d32', // Vert pour valider
-    error: '#b71c1c',   // Rouge pour suspendre
+    primary: '#2e7d32', 
+    error: '#b71c1c',   
 };
 
 // --- COMPOSANTS DE MISE EN PAGE ---
@@ -81,6 +81,14 @@ export default function LivreurShow() {
     const [livreur, setLivreur] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // 🎯 AJOUT : État pour la notification temporaire
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+    function showToast(message, type = 'success') {
+        setToast({ visible: true, message, type });
+        setTimeout(() => setToast({ visible: false, message: '', type }), 3000);
+    }
+
     function charger() {
         api.get('/livreurs/' + id)
             .then(res => setLivreur(res.data))
@@ -93,9 +101,19 @@ export default function LivreurShow() {
         if (!window.confirm('Confirmer cette action ?')) return;
         try {
             await api.post(`/livreurs/${id}/${route}`);
+            
+            // 🎯 AJOUT : Déclenchement de la notification selon l'action
+            if (route === 'caution-payee') {
+                showToast('Caution marquée comme payée avec succès !');
+            } else if (route === 'suspendre') {
+                showToast('Le livreur a été suspendu.', 'error');
+            } else if (route === 'reactiver') {
+                showToast('Le livreur a été réactivé.');
+            }
+            
             charger();
         } catch (error) {
-            alert('Erreur lors de l\'action');
+            showToast('Erreur lors de l\'action', 'error');
         }
     }
 
@@ -103,6 +121,13 @@ export default function LivreurShow() {
     if (!livreur) return <p style={{ fontFamily: 'Poppins, sans-serif', padding: '20px', color: P.error }}>Livreur introuvable.</p>;
 
     const user = livreur?.users || livreur?.user;
+    const p = Array.isArray(livreur?.photos) ? livreur?.photos[0] : livreur?.photos;
+
+    const photoProfil = livreur?.photo_profil_url || livreur?.photo_profil || p?.photo_profil_url || p?.photo_profil;
+    const cniRecto = livreur?.cni_recto_url || p?.cni_recto_url || p?.cni_photo_avant || p?.cni_recto;
+    const cniVerso = livreur?.cni_verso_url || p?.cni_verso_url || p?.cni_photo_arriere || p?.cni_verso;
+    const permis = livreur?.permis_url || p?.permis_url || p?.permis_photo || p?.permis;
+    const vehiculePhoto = livreur?.vehicule_photo_url || p?.vehicule_photo_url || p?.photo_vehicule;
 
     return (
         <div style={{ maxWidth: '980px', fontFamily: 'Poppins, sans-serif', paddingBottom: '40px' }}>
@@ -111,8 +136,8 @@ export default function LivreurShow() {
             {/* SECTION 1 : INFORMATIONS PERSONNELLES */}
             <Section title="Informations Personnelles">
                 <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start' }}>
-                    {livreur?.photo_profil_url ? (
-                        <img src={livreur.photo_profil_url} alt="Profil" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
+                    {photoProfil ? (
+                        <img src={photoProfil} alt="Profil" style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
                     ) : (
                         <div style={{ width: '80px', height: '80px', borderRadius: '8px', backgroundColor: P.surfaceContainerHigh, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <span style={{ fontSize: '12px', color: P.outline, fontWeight: 600 }}>Profil</span>
@@ -137,10 +162,10 @@ export default function LivreurShow() {
                     <Field label="Immatriculation" value={livreur?.vehicule_immatriculation} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
-                    <DocPhoto label="CNI Recto" url={livreur?.cni_recto_url} />
-                    <DocPhoto label="CNI Verso" url={livreur?.cni_verso_url} />
-                    <DocPhoto label="Permis" url={livreur?.permis_url} />
-                    <DocPhoto label="Photo Véhicule" url={livreur?.vehicule_photo_url} />
+                    <DocPhoto label="CNI Recto" url={cniRecto} />
+                    <DocPhoto label="CNI Verso" url={cniVerso} />
+                    <DocPhoto label="Permis" url={permis} />
+                    <DocPhoto label="Photo Véhicule" url={vehiculePhoto} />
                 </div>
             </Section>
 
@@ -152,38 +177,69 @@ export default function LivreurShow() {
                         <Field label="Numéro Mobile Money" value={livreur?.mobile_money_numero} />
                     </div>
                 </Section>
+                
+                {/* 🛠️ FIX ULTIME DU PARSING JSON DOUBLE ENCODÉ */}
                 <Section title="Disponibilités">
-                    <Field label="Horaires et Jours" value={livreur?.disponibilites} />
+                    <p style={{ margin: '0 0 6px 0', fontSize: '10px', fontWeight: 700, color: P.outline, textTransform: 'uppercase' }}>Horaires et Jours</p>
+                    {(() => {
+                        if (!livreur?.disponibilites) return <p style={{ margin: 0, fontSize: '14px', color: P.outline, fontStyle: 'italic' }}>Non renseigné</p>;
+                        
+                        let list = null;
+                        try {
+                            if (typeof livreur.disponibilites === 'object') {
+                                list = livreur.disponibilites;
+                            } else {
+                                // Premier décodage
+                                list = JSON.parse(livreur.disponibilites);
+                                // Deuxième décodage si c'est encore une string (double stringification)
+                                if (typeof list === 'string') {
+                                    list = JSON.parse(list);
+                                }
+                            }
+                        } catch(e) {
+                            console.error("Échec du décodage des disponibilités:", e);
+                        }
+
+                        if (Array.isArray(list)) {
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {list.map((d, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: P.surfaceContainerLow, borderRadius: '6px', fontSize: '13px' }}>
+                                            <strong style={{ color: P.onSurface }}>{d.jour || '—'}</strong>
+                                            <span style={{ fontWeight: 500, color: P.outline }}>
+                                                {d.heureDebut || d.heure_debut || '—'} - {d.heureFin || d.heure_fin || '—'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        }
+
+                        // Fallback de secours si tout échoue
+                        return <p style={{ margin: 0, fontSize: '14px', color: P.onSurface }}>{String(livreur.disponibilites)}</p>;
+                    })()}
                 </Section>
             </div>
             
             {/* BOUTONS D'ACTION */}
             <div style={{ display: 'flex', gap: '12px' }}>
                 {livreur?.caution_payee !== 1 && (
-                    <button 
-                        onClick={() => handleAction('caution-payee')} 
-                        style={{ padding: '12px 24px', backgroundColor: P.primary, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}
-                    >
+                    <button onClick={() => handleAction('caution-payee')} style={{ padding: '12px 24px', backgroundColor: P.primary, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
                         Marquer caution payée
                     </button>
                 )}
                 
                 {livreur?.status !== 'Suspendu' ? (
-                    <button 
-                        onClick={() => handleAction('suspendre')} 
-                        style={{ padding: '12px 24px', backgroundColor: P.error, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}
-                    >
+                    <button onClick={() => handleAction('suspendre')} style={{ padding: '12px 24px', backgroundColor: P.error, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
                         Suspendre
                     </button>
                 ) : (
-                    <button 
-                        onClick={() => handleAction('reactiver')} 
-                        style={{ padding: '12px 24px', backgroundColor: P.outline, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}
-                    >
+                    <button onClick={() => handleAction('reactiver')} style={{ padding: '12px 24px', backgroundColor: P.outline, color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
                         Réactiver
                     </button>
                 )}
             </div>
+            
         </div>
     );
 }
