@@ -99,7 +99,7 @@ export default function ProfilDetail() {
 
     return (
         <div style={{ maxWidth: '960px', fontFamily: 'Poppins, sans-serif' }}>
-            <BackButton to="/livreurs/profils" />
+          <BackButton to="/livreurs" />
 
             {alertes.length > 0 && (
                 <div style={{ backgroundColor: P.errorContainer, padding: '14px 18px', borderRadius: '12px', marginBottom: '16px' }}>
