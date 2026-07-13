@@ -266,17 +266,91 @@ async function toggleDisponibilite(req, res) {
     }
 }
 
+// ── HELPER — mapper une deliveryorder vers le format Flutter ──
+function mapCourseToFlutter(c) {
+    var customer = c.customers || {};
+    var customerUser = customer.users || {};
+    var confirmations = c.confirmations || [];
+
+    // Nom du client : depuis la table customers ou directement sur la commande
+    var clientNom = c.client_nom
+        || (customerUser.first_name ? customerUser.first_name + ' ' + (customerUser.last_name || '') : null)
+        || customer.name
+        || 'Client';
+
+    var clientTel = c.client_telephone
+        || customerUser.phone
+        || customer.phone
+        || '';
+
+    // OTP depuis confirmations
+    var otp = null;
+    if (confirmations.length > 0) {
+        otp = confirmations[0].otp_code ? String(confirmations[0].otp_code) : null;
+    }
+
+    // Mapping statut BDD → Flutter
+    var statusMap = {
+        'En_attente' : 'pending',
+        'Assign_'    : 'assigned',
+        'En_cours'   : 'in_progress',
+        'Livr_'      : 'delivered',
+        'Annul_'     : 'cancelled',
+        'Suspendu'   : 'suspended',
+    };
+
+    return {
+        id                  : String(c.id),
+        _id                 : String(c.id),
+        client_nom          : clientNom,
+        clientNom           : clientNom,
+        client_telephone    : clientTel,
+        clientTelephone     : clientTel,
+        delivery_address    : c.delivery_address || c.adresse_livraison || '',
+        adresseLivraison    : c.delivery_address || c.adresse_livraison || '',
+        latitude            : Number(c.latitude  || 0),
+        longitude           : Number(c.longitude || 0),
+        amount_to_collect   : Number(c.amount_to_collect || c.montant || 0),
+        montant             : Number(c.amount_to_collect || c.montant || 0),
+        fraisLivraison      : Number(c.frais_livraison   || 0),
+        status              : statusMap[c.status] || 'pending',
+        creation_date       : c.creation_date ? new Date(c.creation_date).toISOString() : new Date().toISOString(),
+        dateCreation        : c.creation_date ? new Date(c.creation_date).toISOString() : new Date().toISOString(),
+        delivery_date       : c.delivery_date ? new Date(c.delivery_date).toISOString() : null,
+        dateLivraison       : c.delivery_date ? new Date(c.delivery_date).toISOString() : null,
+        zone_bloc           : c.zone_bloc || null,
+        delivery_instructions: c.delivery_instructions || null,
+        instructions        : c.delivery_instructions || null,
+        confirmations       : confirmations.map(function(conf) {
+            return { otp_code: conf.otp_code ? String(conf.otp_code) : null };
+        }),
+        signatureUrl        : c.signature_url || null,
+        commercant_nom      : c.commercant_nom || null,
+        commercant_telephone: c.commercant_telephone || null,
+        commercant_adresse  : c.commercant_adresse || null,
+    };
+}
+
 // ── COURSES ───────────────────────────────────────────────────
 async function getCourses(req, res) {
     try {
         var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id } });
         if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
+
         var courses = await prisma.deliveryorders.findMany({
-            where: { delivery_person_id: livreur.id, status: { in: ['Assign_', 'En_cours'] } },
-            include: { customers: { include: { users: true } }, delivery_items: true, confirmations: true },
+            where: {
+                delivery_person_id: livreur.id,
+                status: { in: ['En_attente', 'Assign_', 'En_cours'] }
+            },
+            include: {
+                customers    : { include: { users: true } },
+                delivery_items: true,
+                confirmations : true,
+            },
             orderBy: { creation_date: 'desc' }
         });
-        res.json(courses);
+
+        res.json(courses.map(mapCourseToFlutter));
     } catch (err) {
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
@@ -286,13 +360,21 @@ async function getHistorique(req, res) {
     try {
         var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id } });
         if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
+
         var courses = await prisma.deliveryorders.findMany({
-            where: { delivery_person_id: livreur.id, status: { in: ['Livr_', 'Annul_'] } },
-            include: { customers: { include: { users: true } } },
+            where: {
+                delivery_person_id: livreur.id,
+                status: { in: ['Livr_', 'Annul_', 'Suspendu'] }
+            },
+            include: {
+                customers    : { include: { users: true } },
+                confirmations: true,
+            },
             orderBy: { creation_date: 'desc' },
             take: 50
         });
-        res.json(courses);
+
+        res.json(courses.map(mapCourseToFlutter));
     } catch (err) {
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
