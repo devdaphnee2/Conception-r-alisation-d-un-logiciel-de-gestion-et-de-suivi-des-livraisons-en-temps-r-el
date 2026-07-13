@@ -394,7 +394,7 @@ class _SignupScreenState extends State<SignupScreen> {
             }).toList(),
           ),
           const SizedBox(height: 16),
-          Row(
+          /*Row(
             children: [
               Expanded(
                 child: InkWell(
@@ -435,9 +435,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
             ],
-          ),
+          ),*/
           const SizedBox(height: 28),
-          _sectionTitle('Mobile Money'),
+          _sectionTitle('Mobile Money / Orange money'),
           buildTextField(_mobileMoneyNumeroCtrl, 'Numéro Mobile Money', Icons.phone_android, keyboardType: TextInputType.phone),
           const SizedBox(height: 12),
           buildTextField(_mobileMoneyTitulaireCtrl, 'Nom du titulaire du compte', Icons.person_outline),
