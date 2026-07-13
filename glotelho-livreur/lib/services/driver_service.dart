@@ -80,7 +80,12 @@ class DriverService {
       });
 
       // On utilise le Dio centralisé (ApiService.dio)
-      final response = await ApiService.dio.post('/drivers/register', data: formData);
+      final dio = Dio(BaseOptions(
+    baseUrl: AppStrings.baseUrl,
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+));
+final response = await dio.post('/drivers/register', data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
