@@ -14,6 +14,16 @@ const P = {
     secondary: '#475e8b', secondaryContainer: '#b5ccff', onSecondaryContainer: '#3e5682',
 };
 
+// 🛠️ FIX IMAGES : Redressement automatique des urls relatives locales vers le serveur backend
+const getFullImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const backendBase = api.defaults?.baseURL || 'http://localhost:5000';
+    const rootUrl = backendBase.replace(/\/api\/?$/, ''); 
+    const cleanPath = url.replace(/\\/g, '/');
+    return `${rootUrl}/${cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath}`;
+};
+
 function KpiCard({ icon: Icon, label, value, iconColor, iconBg }) {
     return (
         <div style={{ backgroundColor: P.inverseS, borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -61,22 +71,33 @@ export default function ProfilsEnAttente() {
         finally { setActionLoading(false); }
     }
 
-    const filtered = livreurs.filter(l =>
-        !search || [l.users?.first_name, l.users?.last_name, l.users?.phone, l.zone_affectee].some(v => v?.toLowerCase().includes(search.toLowerCase()))
-    );
+    const filtered = livreurs.filter(l => {
+        const u = l.user || l.users;
+        return !search || [u?.first_name, u?.last_name, u?.phone, l.zone_affectee].some(v => v?.toLowerCase().includes(search.toLowerCase()));
+    });
 
     const stats = {
         total: livreurs.length,
-        photoOk: livreurs.filter(l => l.photo_profil).length,
+        photoOk: livreurs.filter(l => {
+            const p = Array.isArray(l.photos) ? l.photos[0] : l.photos;
+            return l.photo_profil_url || l.photo_profil || p?.photo_profil_url || p?.photo_profil;
+        }).length,
         cautionOk: livreurs.filter(l => l.caution_payee).length,
     };
 
-    function getDossierStatus(l) {
+    function getDossierStatus(l) { 
+        const p = Array.isArray(l.photos) ? l.photos[0] : l.photos;
+        
+        const photoProfil = l.photo_profil_url || l.photo_profil || p?.photo_profil_url || p?.photo_profil;
+        const cniRecto = l.cni_recto_url || l.cni_photo_avant || p?.cni_recto_url || p?.cni_photo_avant || p?.cni_recto;
+        const cniVerso = l.cni_verso_url || l.cni_photo_arriere || p?.cni_verso_url || p?.cni_photo_arriere || p?.cni_verso;
+        const permis = l.permis_url || l.permis_photo || p?.permis_url || p?.permis_photo || p?.permis;
+
         const manquants = [];
-        if (!l.photo_profil) manquants.push('Photo profil');
-        if (!l.cni_photo_avant) manquants.push('CNI recto');
-        if (!l.cni_photo_arriere) manquants.push('CNI verso');
-        if (!l.permis_photo) manquants.push('Permis');
+        if (!photoProfil) manquants.push('Photo profil');
+        if (!cniRecto) manquants.push('CNI recto');
+        if (!cniVerso) manquants.push('CNI verso');
+        if (!permis) manquants.push('Permis');
         return manquants;
     }
 
@@ -85,7 +106,6 @@ export default function ProfilsEnAttente() {
 
     return (
         <div style={{ fontFamily: 'Poppins, sans-serif' }}>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '18px' }}>
                 <KpiCard icon={IconUser}  label="Profils en attente"      value={stats.total}    iconColor={P.primaryContainer} iconBg="rgba(201,149,46,0.15)" />
                 <KpiCard icon={IconCheck} label="Photo de profil fournie" value={stats.photoOk}  iconColor="#81c784"            iconBg="rgba(129,199,132,0.15)" />
@@ -96,7 +116,7 @@ export default function ProfilsEnAttente() {
                 <div style={{ backgroundColor: P.primaryFixed, border: '1px solid ' + P.primaryContainer, borderRadius: '10px', padding: '11px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <IconAlert style={{ width: '15px', height: '15px', color: P.primary, flexShrink: 0 }} />
                     <p style={{ margin: 0, fontSize: '13px', color: P.onPrimaryContainer, fontWeight: 500 }}>
-                        <strong>{livreurs.length} profil{livreurs.length > 1 ? 's' : ''}</strong> en attente. La photo de profil (visage net, bien cadre) est obligatoire — un dossier sans cette photo risque le rejet.
+                        <strong>{livreurs.length} profil{livreurs.length > 1 ? 's' : ''}</strong> en attente.
                     </p>
                 </div>
             )}
@@ -123,35 +143,45 @@ export default function ProfilsEnAttente() {
                         ) : filtered.length === 0 ? (
                             <tr><td colSpan={6} style={{ ...tdStyle, textAlign: 'center', color: P.outline, padding: '40px' }}>Aucun profil en attente.</td></tr>
                         ) : filtered.map(l => {
-                            const nom = l.users?.first_name + ' ' + l.users?.last_name;
+                            const u = l.user || l.users;
+                            const nom = (u?.first_name || '') + ' ' + (u?.last_name || '');
                             const cautionOk = l.caution_payee;
                             const docsManquants = getDossierStatus(l);
                             const dossierOk = docsManquants.length === 0;
+                            
+                            const p = Array.isArray(l.photos) ? l.photos[0] : l.photos;
+                            const photoUrl = l.photo_profil_url || l.photo_profil || p?.photo_profil_url || p?.photo_profil;
+                            
+                            const veh = Array.isArray(l.vehicules) ? l.vehicules[0] : l.vehicules;
+                            const vType = l.vehicule_type || veh?.type || 'Véhicule';
+                            const vMarque = l.vehicule_marque || veh?.brand || veh?.marque || '';
+                            const vPlaque = l.vehicule_immatriculation || veh?.plate_number || veh?.immatriculation || 'Sans plaque';
 
                             return (
                                 <tr key={l.id} onMouseEnter={e => e.currentTarget.style.backgroundColor = P.surfaceContainerLow} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'} style={{ transition: 'background 0.1s' }}>
                                     <td style={tdStyle}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            {/* Miniature photo de profil */}
-                                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid ' + (l.photo_profil ? '#a5d6a7' : P.error), backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {l.photo_profil
-                                                    ? <img src={l.photo_profil} alt={nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    : <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>{l.users?.first_name?.[0]}</span>
+                                            <div style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid ' + (photoUrl ? '#a5d6a7' : P.error), backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {photoUrl
+                                                    ? <img src={getFullImageUrl(photoUrl)} alt={nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    : <span style={{ fontSize: '12px', fontWeight: 700, color: '#fff' }}>{u?.first_name?.[0] || u?.prenom?.[0] || 'L'}</span>
                                                 }
                                             </div>
                                             <div>
-                                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>{nom}</p>
+                                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>{nom.trim() || 'Sans Nom'}</p>
                                                 <p style={{ margin: 0, fontSize: '11px', color: P.outline }}>#{String(l.id).padStart(3,'0')} — {l.date_candidature ? new Date(l.date_candidature).toLocaleDateString('fr-FR') : '—'}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td style={tdStyle}>
-                                        <p style={{ margin: 0, fontSize: '13px' }}>{l.users?.phone}</p>
-                                        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>{l.users?.email}</p>
+                                        <p style={{ margin: 0, fontSize: '13px' }}>{u?.phone || u?.telephone || '—'}</p>
+                                        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>{u?.email || '—'}</p>
                                     </td>
                                     <td style={tdStyle}>
                                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 500 }}>{l.zone_affectee || '—'}</p>
-                                        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>{l.vehicules?.brand} {l.vehicules?.type} — {l.vehicules?.plate_number}</p>
+                                        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>
+                                            {vMarque} {vType} — {vPlaque}
+                                        </p>
                                     </td>
                                     <td style={tdStyle}>
                                         <div>

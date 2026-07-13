@@ -108,20 +108,14 @@ export default function DashboardLayout() {
     const navLinks = [
         { to: '/dashboard',     label: 'Dashboard',      icon: IconDashboard },
         { to: '/livraisons',    label: 'Livraisons',      icon: IconPackage },
-        { to: '/tracking',      label: 'Tracking GPS',    icon: IconMap },
-        {
-            label: 'Livreurs', icon: IconTruck,
-            children: [
-                { to: '/livreurs',         label: 'Liste livreurs' },
-                { to: '/livreurs/profils', label: 'Profils en attente' },
-            ]
-        },
+        { to: '/livraisons/create', label: 'Commandes recues', icon: IconPackage },
+        { to: '/livreurs',    label: 'Livreurs',        icon: IconTruck },
         { to: '/litiges',       label: 'Litiges',         icon: IconAlert },
         { to: '/recouvrements', label: 'Recouvrements',   icon: IconMoney },
     ];
 
     function isActive(link) {
-        if (link.to) return location.pathname === link.to || (link.to !== '/dashboard' && location.pathname.startsWith(link.to));
+        if (link.to) return location.pathname === link.to || (link.to !== '/dashboard' && link.to !== '/livraisons' && location.pathname.startsWith(link.to + '/'));
         if (link.children) return link.children.some(c => location.pathname === c.to || location.pathname.startsWith(c.to + '/'));
         return false;
     }
