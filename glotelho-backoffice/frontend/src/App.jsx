@@ -59,7 +59,6 @@ export default function App() {
                         <Route path="/tracking" element={<Tracking />} />
                         <Route path="/livreurs" element={<LivreurList />} />
                         <Route path="/livreurs/create" element={<LivreurCreate />} />
-                        <Route path="/livreurs/profils" element={<ProfilsEnAttente />} />
                         <Route path="/livreurs/profils/:id" element={<ProfilDetail />} />
                         <Route path="/livreurs/:id" element={<LivreurShow />} />
                         <Route path="/livreurs/:id/edit" element={<LivreurEdit />} />
