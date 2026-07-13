@@ -358,8 +358,8 @@ import '../../config/app_state.dart';
 import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../widgets/kpi_card.dart';
-import 'nouvelle_livraison_screen.dart';
-import 'livraison_detail_screen.dart';
+import 'nouvelle_commande_screen.dart';
+import 'commande_detail_screen.dart';
 
 /// Écran Livraisons — reprend LivraisonList.jsx : 5 KPI, recherche,
 /// filtre par statut, liste des livraisons avec statut coloré.
