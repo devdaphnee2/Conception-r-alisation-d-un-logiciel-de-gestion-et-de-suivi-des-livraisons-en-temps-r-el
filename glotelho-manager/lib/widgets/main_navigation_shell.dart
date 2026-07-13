@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_strings.dart';
 import '../config/app_routes.dart';
 import '../views/dashboard/dashboard_screen.dart';
-import '../views/livraisons/livraisons_screen.dart';
 import '../views/tracking/tracking_screen.dart';
-import '../views/livreurs/livreurs_screen.dart';
 import '../views/parametres/parametres_screen.dart';
 
 /// Coquille principale de navigation : 5 icônes en bas, toutes au même
@@ -27,9 +25,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   static const _tabRoots = [
     DashboardScreen(),
-    LivraisonsScreen(),
     TrackingScreen(),
-    LivreursScreen(),
     ParametresScreen(),
   ];
 
