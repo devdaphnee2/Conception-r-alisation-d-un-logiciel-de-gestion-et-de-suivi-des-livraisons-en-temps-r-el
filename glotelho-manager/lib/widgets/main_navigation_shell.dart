@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
-import '../config/app_strings.dart';
-import '../config/app_routes.dart';
-import '../views/dashboard/dashboard_screen.dart';
-import '../views/tracking/tracking_screen.dart';
+import '../views/home/home_screen.dart';
+import '../views/livraisons/livraisons_screen.dart';
+import '../views/commandes/commandes_screen.dart';
+import '../views/litiges/litiges_screen.dart';
 import '../views/parametres/parametres_screen.dart';
 
-/// Coquille principale de navigation : 5 icônes en bas, toutes au même
-/// niveau (Accueil, Livraisons, Suivi, Livreurs, Paramètres).
-///
-/// Chaque onglet a son propre Navigator imbriqué : quand un écran est
-/// "poussé" depuis un onglet (ex: Notifications depuis Accueil, ou
-/// Nouvelle livraison depuis Livraisons), il s'affiche AU-DESSUS du
-/// contenu de l'onglet mais la barre du bas reste visible, car elle
-/// vit dans le Scaffold englobant, pas dans le Navigator de l'onglet.
 class MainNavigationShell extends StatefulWidget {
   const MainNavigationShell({super.key});
 
@@ -21,130 +13,53 @@ class MainNavigationShell extends StatefulWidget {
 }
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _index = 0;
+  int _currentIndex = 0;
 
-  static const _tabRoots = [
-    DashboardScreen(),
-    TrackingScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    LivraisonsScreen(),
+    CommandesScreen(),
+    LitigesScreen(),
     ParametresScreen(),
   ];
-
-  final List<GlobalKey<NavigatorState>> _navigatorKeys =
-  List.generate(5, (_) => GlobalKey<NavigatorState>());
-
-  Widget _buildTabNavigator(int index) {
-    return Navigator(
-      key: _navigatorKeys[index],
-      onGenerateRoute: (settings) {
-        // Racine de l'onglet
-        if (settings.name == '/' || settings.name == null) {
-          return MaterialPageRoute(builder: (_) => _tabRoots[index]);
-        }
-        // Routes nommées partagées (Notifications, Litiges, etc.)
-        final builder = appRoutes[settings.name];
-        if (builder != null) {
-          return MaterialPageRoute(builder: builder, settings: settings);
-        }
-        return MaterialPageRoute(builder: (_) => _tabRoots[index]);
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: List.generate(5, _buildTabNavigator),
-      ),
-      bottomNavigationBar: SizedBox(
-        height: 88,
-        child: BottomAppBar(
-          padding: EdgeInsets.zero,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.home_outlined, AppStrings.t(context, 'nav_home'), 0),
-              _navItem(Icons.local_shipping_outlined,
-                  AppStrings.t(context, 'nav_deliveries'), 1),
-              _navItem(Icons.map_outlined, 'Suivi', 2),
-              _navItem(Icons.badge_outlined, AppStrings.t(context, 'nav_drivers'), 3),
-              _navItem(
-                  Icons.settings_outlined, AppStrings.t(context, 'nav_settings'), 4),
-            ],
+      body: IndexedStack(index: _currentIndex, children: _screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) => setState(() => _currentIndex = i),
+        backgroundColor: const Color(0xFF0D1B2A),
+        indicatorColor: const Color(0xFFC9952E).withOpacity(0.2),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.home, color: Color(0xFFC9952E)),
+            label: 'Accueil',
           ),
-        ),
-      ),
-    );
-  }
-
-  void _onTapIndex(int i) {
-    if (_index == i) {
-      // Re-tap sur l'onglet déjà actif : revenir à sa racine.
-      _navigatorKeys[i].currentState?.popUntil((route) => route.isFirst);
-    } else {
-      setState(() => _index = i);
-    }
-  }
-
-  Widget _navItem(IconData icon, String label, int i) {
-    final active = _index == i;
-    final primary = Theme.of(context).colorScheme.primary;
-    final onPrimary = Theme.of(context).colorScheme.onPrimary;
-    final inactiveColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
-
-    return InkWell(
-      onTap: () => _onTapIndex(i),
-      borderRadius: BorderRadius.circular(30),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 42,
-              child: Center(
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: active ? 1 : 0),
-                  duration: const Duration(milliseconds: 320),
-                  curve: Curves.easeOutBack,
-                  builder: (context, t, child) {
-                    return Transform.translate(
-                      offset: Offset(0, -8 * t),
-                      child: Container(
-                        width: 30 + 10 * t,
-                        height: 30 + 10 * t,
-                        decoration: BoxDecoration(
-                          color: Color.lerp(Colors.transparent, primary, t),
-                          shape: BoxShape.circle,
-                          boxShadow: t > 0.5
-                              ? [
-                            BoxShadow(
-                                color: primary.withOpacity(0.35 * t),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3)),
-                          ]
-                              : null,
-                        ),
-                        child: Icon(
-                          icon,
-                          color: Color.lerp(inactiveColor, onPrimary, t),
-                          size: 20 + 2 * t,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    color: active ? primary : inactiveColor,
-                    fontSize: 11,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
-          ],
-        ),
+          NavigationDestination(
+            icon: Icon(Icons.local_shipping_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.local_shipping, color: Color(0xFFC9952E)),
+            label: 'Livraisons',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFFC9952E)),
+            label: 'Commandes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.gavel_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.gavel, color: Color(0xFFC9952E)),
+            label: 'Litiges',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined, color: Colors.white54),
+            selectedIcon: Icon(Icons.settings, color: Color(0xFFC9952E)),
+            label: 'Paramètres',
+          ),
+        ],
       ),
     );
   }
