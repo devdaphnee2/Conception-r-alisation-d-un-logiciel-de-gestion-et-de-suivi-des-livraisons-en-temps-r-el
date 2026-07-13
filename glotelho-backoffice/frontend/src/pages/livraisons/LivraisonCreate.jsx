@@ -20,104 +20,76 @@ export default function LivraisonCreate() {
     const [client, setClient] = useState({
         nom: '', telephone: '', whatsapp: '', adresse_livraison: '', zone_bloc: '', instructions: ''
     });
-
+    const [commercant, setCommercant] = useState({
+        nom: '', telephone: '', adresse: ''
+    });
     const [articles, setArticles] = useState([{ ...ARTICLE_VIDE }]);
-
     const [livraison, setLivraison] = useState({
         montant_livraison: '500', date_souhaitee: '', livreur_id: ''
     });
+    const [livreurs, setLivreurs]   = useState([]);
+    const [loading, setLoading]     = useState(false);
+    const [error, setError]         = useState('');
 
-    const [livreurs, setLivreurs] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        api.get('/livreurs').then(res => setLivreurs(res.data || [])).catch(() => {});
+    useEffect(function() {
+        api.get('/livreurs?status=Disponible').then(function(res) { setLivreurs(res.data || []); }).catch(function() {});
     }, []);
 
-    function handleClientChange(e) {
-        setClient({ ...client, [e.target.name]: e.target.value });
-    }
-
-    function handleLivraisonChange(e) {
-        setLivraison({ ...livraison, [e.target.name]: e.target.value });
-    }
+    function handleClientChange(e) { setClient({ ...client, [e.target.name]: e.target.value }); }
+    function handleCommercantChange(e) { setCommercant({ ...commercant, [e.target.name]: e.target.value }); }
+    function handleLivraisonChange(e) { setLivraison({ ...livraison, [e.target.name]: e.target.value }); }
 
     function handleArticleChange(index, field, value) {
-        const updated = articles.map((a, i) => i === index ? { ...a, [field]: value } : a);
-        setArticles(updated);
+        setArticles(articles.map(function(a, i) { return i === index ? { ...a, [field]: value } : a; }));
     }
+    function addArticle() { setArticles([...articles, { ...ARTICLE_VIDE }]); }
+    function removeArticle(index) { if (articles.length > 1) setArticles(articles.filter(function(_, i) { return i !== index; })); }
 
-    function addArticle() {
-        setArticles([...articles, { ...ARTICLE_VIDE }]);
-    }
-
-    function removeArticle(index) {
-        if (articles.length === 1) return;
-        setArticles(articles.filter((_, i) => i !== index));
-    }
-
-    const totalArticles = articles.reduce((sum, a) => {
-        const qty = parseInt(a.quantite) || 0;
-        const prix = parseFloat(a.prix_unitaire) || 0;
-        return sum + qty * prix;
+    var totalArticles = articles.reduce(function(sum, a) {
+        return sum + (parseInt(a.quantite) || 0) * (parseFloat(a.prix_unitaire) || 0);
     }, 0);
-
-    const fraisLivraison = parseFloat(livraison.montant_livraison) || 0;
-    const totalGeneral = totalArticles + fraisLivraison;
+    var fraisLivraison = parseFloat(livraison.montant_livraison) || 0;
+    var totalGeneral   = totalArticles + fraisLivraison;
 
     async function handleSubmit(e) {
         e.preventDefault();
         setError('');
-
-        const articlesValides = articles.filter(a => a.nom.trim());
-        if (articlesValides.length === 0) {
-            setError('Ajoutez au moins un article.');
-            return;
-        }
+        var articlesValides = articles.filter(function(a) { return a.nom.trim(); });
+        if (articlesValides.length === 0) { setError('Ajoutez au moins un article.'); return; }
+        if (!client.nom || !client.telephone || !client.adresse_livraison) { setError('Nom client, téléphone et adresse requis.'); return; }
 
         setLoading(true);
         try {
-            const payload = {
-                client_nom: client.nom,
-                client_telephone: client.telephone,
-                client_whatsapp: client.whatsapp || client.telephone,
-                delivery_address: client.adresse_livraison,
-                zone_bloc: client.zone_bloc,
+            var payload = {
+                client_nom          : client.nom,
+                client_telephone    : client.telephone,
+                client_whatsapp     : client.whatsapp || client.telephone,
+                delivery_address    : client.adresse_livraison,
+                zone_bloc           : client.zone_bloc,
                 delivery_instructions: client.instructions,
-                amount_to_collect: totalGeneral,
-                collected_amount: 0,
-                montant_livraison: fraisLivraison,
-                articles: articlesValides,
-                delivery_person_id: livraison.livreur_id || null,
-                delivery_date: livraison.date_souhaitee || null,
+                amount_to_collect   : totalGeneral,
+                collected_amount    : 0,
+                montant_livraison   : fraisLivraison,
+                articles            : articlesValides,
+                delivery_person_id  : livraison.livreur_id || null,
+                delivery_date       : livraison.date_souhaitee || null,
+                // Infos commerçant source
+                commercant_nom      : commercant.nom,
+                commercant_telephone: commercant.telephone,
+                commercant_adresse  : commercant.adresse,
+                source              : 'admin',
             };
-
             await api.post('/livraisons', payload);
             navigate('/livraisons');
         } catch (err) {
-            setError(
-                (err.response && err.response.data && err.response.data.message)
-                    ? err.response.data.message
-                    : 'Erreur lors de la creation.'
-            );
+            setError(err.response && err.response.data && err.response.data.message ? err.response.data.message : 'Erreur lors de la création.');
         } finally {
             setLoading(false);
         }
     }
 
-    const inputStyle = {
-        width: '100%', padding: '11px 14px', borderRadius: '10px',
-        border: '1.5px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow,
-        fontSize: '13px', color: P.onSurface, outline: 'none',
-        boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif'
-    };
-
-    const labelStyle = {
-        display: 'block', fontSize: '11px', fontWeight: 600,
-        color: P.onSurfaceVariant, textTransform: 'uppercase',
-        letterSpacing: '0.07em', marginBottom: '7px'
-    };
+    var inputStyle = { width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, fontSize: '13px', color: P.onSurface, outline: 'none', boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif' };
+    var labelStyle = { display: 'block', fontSize: '11px', fontWeight: 600, color: P.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '7px' };
 
     function SectionTitle({ children }) {
         return (
@@ -129,16 +101,28 @@ export default function LivraisonCreate() {
     }
 
     return (
-        <div style={{ maxWidth: '800px', fontFamily: 'Poppins, sans-serif' }}>
+        <div style={{ maxWidth: '820px', fontFamily: 'Poppins, sans-serif' }}>
             <BackButton to="/livraisons" />
-            <div style={{ marginBottom: '20px' }}>
-                <Link to="/livraisons" style={{ color: P.outline, textDecoration: 'none', fontSize: '13px' }}>Livraisons</Link>
-                <span style={{ color: P.outlineVariant, margin: '0 6px' }}>/</span>
-                <span style={{ color: P.onSurface, fontSize: '13px', fontWeight: 500 }}>Nouvelle livraison</span>
+            <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                    <Link to="/livraisons" style={{ color: P.outline, textDecoration: 'none', fontSize: '13px' }}>Livraisons</Link>
+                    <span style={{ color: P.outlineVariant, margin: '0 6px' }}>/</span>
+                    <span style={{ color: P.onSurface, fontSize: '13px', fontWeight: 500 }}>Nouvelle course</span>
+                </div>
+                <div style={{ backgroundColor: P.primaryFixed, color: P.onPrimaryContainer, padding: '5px 14px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>
+                    Saisie manuelle admin
+                </div>
+            </div>
+
+            {/* Bandeau info */}
+            <div style={{ backgroundColor: '#e3f2fd', border: '1px solid #90caf9', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>ℹ️</span>
+                <p style={{ margin: 0, fontSize: '12px', color: '#1565c0', lineHeight: 1.5 }}>
+                    Cette page permet de créer une course manuellement. Normalement, le commerçant crée la commande depuis son app mobile — elle apparaît automatiquement dans la liste avec le statut <strong>En attente</strong>.
+                </p>
             </div>
 
             <div style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-
                 {error && (
                     <div style={{ backgroundColor: P.errorContainer, color: P.error, padding: '10px 14px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px', fontWeight: 500 }}>
                         {error}
@@ -147,101 +131,92 @@ export default function LivraisonCreate() {
 
                 <form onSubmit={handleSubmit}>
 
-                    {/* INFORMATIONS CLIENT */}
+                    {/* COMMERCANT SOURCE */}
+                    <SectionTitle>Commerçant source</SectionTitle>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '20px' }}>
+                        <div>
+                            <label style={labelStyle}>Nom du commerçant</label>
+                            <input type="text" name="nom" value={commercant.nom} onChange={handleCommercantChange} style={inputStyle} placeholder="Ex: Boutique Elegance" />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Téléphone</label>
+                            <input type="text" name="telephone" value={commercant.telephone} onChange={handleCommercantChange} style={inputStyle} placeholder="655 000 111" />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Adresse de collecte</label>
+                            <input type="text" name="adresse" value={commercant.adresse} onChange={handleCommercantChange} style={inputStyle} placeholder="Ex: Akwa, marché central" />
+                        </div>
+                    </div>
+
+                    {/* CLIENT */}
                     <SectionTitle>Informations client</SectionTitle>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                         <div>
                             <label style={labelStyle}>Nom complet du client *</label>
-                            <input type="text" name="nom" value={client.nom} onChange={handleClientChange}
-                                style={inputStyle} placeholder="Ex: Marie Ngono" required />
+                            <input type="text" name="nom" value={client.nom} onChange={handleClientChange} style={inputStyle} placeholder="Ex: Marie Ngono" required />
                         </div>
                         <div>
-                            <label style={labelStyle}>Telephone *</label>
-                            <input type="text" name="telephone" value={client.telephone} onChange={handleClientChange}
-                                style={inputStyle} placeholder="655 112 233" required />
+                            <label style={labelStyle}>Téléphone *</label>
+                            <input type="text" name="telephone" value={client.telephone} onChange={handleClientChange} style={inputStyle} placeholder="655 112 233" required />
                         </div>
                         <div>
-                            <label style={labelStyle}>
-                                Numero WhatsApp
-                                <span style={{ fontWeight: 400, textTransform: 'none', marginLeft: '4px' }}>(si different)</span>
-                            </label>
-                            <input type="text" name="whatsapp" value={client.whatsapp} onChange={handleClientChange}
-                                style={inputStyle} placeholder="655 112 233" />
+                            <label style={labelStyle}>Numéro WhatsApp <span style={{ fontWeight: 400, textTransform: 'none' }}>(si différent)</span></label>
+                            <input type="text" name="whatsapp" value={client.whatsapp} onChange={handleClientChange} style={inputStyle} placeholder="655 112 233" />
                         </div>
                     </div>
 
-                    {/* ADRESSE LIVRAISON */}
+                    {/* ADRESSE */}
                     <SectionTitle>Adresse de livraison</SectionTitle>
                     <div style={{ marginBottom: '14px' }}>
-                        <label style={labelStyle}>Adresse complete *</label>
-                        <input type="text" name="adresse_livraison" value={client.adresse_livraison} onChange={handleClientChange}
-                            style={inputStyle} placeholder="Ex: Bonamoussadi, Rue des Manguiers" required />
+                        <label style={labelStyle}>Adresse complète *</label>
+                        <input type="text" name="adresse_livraison" value={client.adresse_livraison} onChange={handleClientChange} style={inputStyle} placeholder="Ex: Bonamoussadi, Rue des Manguiers" required />
                     </div>
                     <div style={{ marginBottom: '14px' }}>
-                        <label style={labelStyle}>Description du lieu / Repere</label>
-                        <input type="text" name="zone_bloc" value={client.zone_bloc} onChange={handleClientChange}
-                            style={inputStyle} placeholder="Ex: Apres le carrefour Shell, portail rouge" />
+                        <label style={labelStyle}>Repère / Description du lieu</label>
+                        <input type="text" name="zone_bloc" value={client.zone_bloc} onChange={handleClientChange} style={inputStyle} placeholder="Ex: Après le carrefour Shell, portail rouge" />
                     </div>
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={labelStyle}>Instructions speciales</label>
-                        <textarea name="instructions" value={client.instructions} onChange={handleClientChange}
-                            rows={2} style={{ ...inputStyle, resize: 'vertical' }}
-                            placeholder="Ex: Colis fragile, appeler avant d'arriver..." />
+                        <label style={labelStyle}>Instructions spéciales</label>
+                        <textarea name="instructions" value={client.instructions} onChange={handleClientChange} rows={2} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Ex: Colis fragile, appeler avant d'arriver..." />
                     </div>
 
                     {/* ARTICLES */}
                     <SectionTitle>Articles de la commande</SectionTitle>
-
-                    {articles.map((article, i) => (
-                        <div key={i} style={{ padding: '14px', backgroundColor: P.surfaceContainerLow, borderRadius: '10px', border: '1px solid ' + P.outlineVariant, marginBottom: '10px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
-                                <div>
-                                    <label style={{ ...labelStyle, marginBottom: '5px' }}>Designation *</label>
-                                    <input type="text" value={article.nom}
-                                        onChange={e => handleArticleChange(i, 'nom', e.target.value)}
-                                        style={inputStyle} placeholder="Ex: Creme Balea 125ml" />
+                    {articles.map(function(article, i) {
+                        return (
+                            <div key={i} style={{ padding: '14px', backgroundColor: P.surfaceContainerLow, borderRadius: '10px', border: '1px solid ' + P.outlineVariant, marginBottom: '10px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
+                                    <div>
+                                        <label style={{ ...labelStyle, marginBottom: '5px' }}>Désignation *</label>
+                                        <input type="text" value={article.nom} onChange={function(e) { handleArticleChange(i, 'nom', e.target.value); }} style={inputStyle} placeholder="Ex: Crème Balea 125ml" />
+                                    </div>
+                                    <div>
+                                        <label style={{ ...labelStyle, marginBottom: '5px' }}>Quantité</label>
+                                        <input type="number" value={article.quantite} onChange={function(e) { handleArticleChange(i, 'quantite', e.target.value); }} style={inputStyle} min="1" />
+                                    </div>
+                                    <div>
+                                        <label style={{ ...labelStyle, marginBottom: '5px' }}>Prix unitaire (FCFA)</label>
+                                        <input type="number" value={article.prix_unitaire} onChange={function(e) { handleArticleChange(i, 'prix_unitaire', e.target.value); }} style={inputStyle} min="0" placeholder="0" />
+                                    </div>
+                                    <button type="button" onClick={function() { removeArticle(i); }} disabled={articles.length === 1}
+                                        style={{ padding: '11px 14px', borderRadius: '8px', border: '1px solid ' + P.outlineVariant, backgroundColor: articles.length === 1 ? P.surfaceContainerLow : P.errorContainer, color: articles.length === 1 ? P.outline : P.error, cursor: articles.length === 1 ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', fontSize: '16px' }}>
+                                        ×
+                                    </button>
                                 </div>
-                                <div>
-                                    <label style={{ ...labelStyle, marginBottom: '5px' }}>Quantite</label>
-                                    <input type="number" value={article.quantite}
-                                        onChange={e => handleArticleChange(i, 'quantite', e.target.value)}
-                                        style={inputStyle} min="1" />
-                                </div>
-                                <div>
-                                    <label style={{ ...labelStyle, marginBottom: '5px' }}>Prix unitaire (FCFA)</label>
-                                    <input type="number" value={article.prix_unitaire}
-                                        onChange={e => handleArticleChange(i, 'prix_unitaire', e.target.value)}
-                                        style={inputStyle} min="0" placeholder="0" />
-                                </div>
-                                <button type="button" onClick={() => removeArticle(i)}
-                                    disabled={articles.length === 1}
-                                    style={{
-                                        padding: '11px 14px', borderRadius: '8px',
-                                        border: '1px solid ' + P.outlineVariant,
-                                        backgroundColor: articles.length === 1 ? P.surfaceContainerLow : P.errorContainer,
-                                        color: articles.length === 1 ? P.outline : P.error,
-                                        cursor: articles.length === 1 ? 'not-allowed' : 'pointer',
-                                        fontFamily: 'Poppins, sans-serif', fontSize: '16px'
-                                    }}>
-                                    ×
-                                </button>
+                                {article.nom && article.prix_unitaire && (
+                                    <p style={{ margin: '8px 0 0', fontSize: '11px', color: P.outline, textAlign: 'right' }}>
+                                        Sous-total : <strong style={{ color: P.primary }}>{((parseInt(article.quantite) || 1) * (parseFloat(article.prix_unitaire) || 0)).toLocaleString('fr-FR')} FCFA</strong>
+                                    </p>
+                                )}
                             </div>
-                            {article.nom && article.prix_unitaire && (
-                                <p style={{ margin: '8px 0 0', fontSize: '11px', color: P.outline, textAlign: 'right' }}>
-                                    Sous-total : <strong style={{ color: P.primary }}>
-                                        {((parseInt(article.quantite) || 1) * (parseFloat(article.prix_unitaire) || 0)).toLocaleString('fr-FR')} FCFA
-                                    </strong>
-                                </p>
-                            )}
-                        </div>
-                    ))}
-
+                        );
+                    })}
                     <button type="button" onClick={addArticle}
                         style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px dashed ' + P.outlineVariant, backgroundColor: 'transparent', color: P.primary, fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Poppins, sans-serif', marginBottom: '20px' }}>
                         + Ajouter un article
                     </button>
 
-                    {/* RECAPITULATIF MONTANTS */}
+                    {/* RECAPITULATIF */}
                     <div style={{ backgroundColor: P.surfaceContainerLow, borderRadius: '10px', padding: '14px 16px', border: '1px solid ' + P.outlineVariant, marginBottom: '20px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                             <span style={{ fontSize: '12px', color: P.outline }}>Sous-total articles</span>
@@ -249,12 +224,11 @@ export default function LivraisonCreate() {
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                             <span style={{ fontSize: '12px', color: P.outline }}>Frais de livraison</span>
-                            <input type="number" name="montant_livraison" value={livraison.montant_livraison}
-                                onChange={handleLivraisonChange}
+                            <input type="number" name="montant_livraison" value={livraison.montant_livraison} onChange={handleLivraisonChange}
                                 style={{ width: '130px', padding: '6px 10px', borderRadius: '8px', border: '1px solid ' + P.outlineVariant, fontSize: '12px', fontFamily: 'Poppins, sans-serif', textAlign: 'right', outline: 'none', backgroundColor: P.surface }} />
                         </div>
                         <div style={{ borderTop: '1px solid ' + P.outlineVariant, paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '14px', fontWeight: 700, color: P.onSurface }}>Total a collecter</span>
+                            <span style={{ fontSize: '14px', fontWeight: 700, color: P.onSurface }}>Total à collecter</span>
                             <span style={{ fontSize: '20px', fontWeight: 800, color: P.primary }}>{totalGeneral.toLocaleString('fr-FR')} FCFA</span>
                         </div>
                     </div>
@@ -263,45 +237,35 @@ export default function LivraisonCreate() {
                     <SectionTitle>Assignation livreur</SectionTitle>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '24px' }}>
                         <div>
-                            <label style={labelStyle}>
-                                Livreur
-                                <span style={{ fontWeight: 400, textTransform: 'none', marginLeft: '4px' }}>(optionnel)</span>
-                            </label>
+                            <label style={labelStyle}>Livreur <span style={{ fontWeight: 400, textTransform: 'none' }}>(optionnel)</span></label>
                             <select name="livreur_id" value={livraison.livreur_id} onChange={handleLivraisonChange} style={inputStyle}>
                                 <option value="">-- Assigner plus tard --</option>
-                                {livreurs.map(l => (
-                                    <option key={l.id} value={l.id}>
-                                        {l.users && l.users.first_name} {l.users && l.users.last_name} — {l.zone_affectee || 'Sans zone'}
-                                    </option>
-                                ))}
+                                {livreurs.map(function(l) {
+                                    return (
+                                        <option key={l.id} value={l.id}>
+                                            {l.users && l.users.first_name} {l.users && l.users.last_name} — {l.zone_affectee || 'Sans zone'}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                         <div>
-                            <label style={labelStyle}>Date souhaitee</label>
-                            <input type="datetime-local" name="date_souhaitee" value={livraison.date_souhaitee}
-                                onChange={handleLivraisonChange} style={inputStyle} />
+                            <label style={labelStyle}>Date souhaitée</label>
+                            <input type="datetime-local" name="date_souhaitee" value={livraison.date_souhaitee} onChange={handleLivraisonChange} style={inputStyle} />
                         </div>
                     </div>
 
                     {/* BOUTONS */}
                     <div style={{ display: 'flex', gap: '12px', paddingTop: '8px', borderTop: '1px solid ' + P.outlineVariant }}>
                         <button type="submit" disabled={loading}
-                            style={{
-                                backgroundColor: loading ? P.outline : P.primary,
-                                color: '#fff', padding: '12px 28px', borderRadius: '10px',
-                                border: 'none', fontSize: '13px', fontWeight: 600,
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                fontFamily: 'Poppins, sans-serif',
-                                boxShadow: loading ? 'none' : '0 4px 12px rgba(125,87,0,0.28)'
-                            }}>
-                            {loading ? 'Creation en cours...' : 'Creer la livraison'}
+                            style={{ backgroundColor: loading ? P.outline : P.primary, color: '#fff', padding: '12px 28px', borderRadius: '10px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', boxShadow: loading ? 'none' : '0 4px 12px rgba(125,87,0,0.28)' }}>
+                            {loading ? 'Création en cours...' : '🚀 Créer la course'}
                         </button>
                         <Link to="/livraisons"
                             style={{ padding: '12px 24px', borderRadius: '10px', border: '1px solid ' + P.outlineVariant, backgroundColor: P.surfaceContainerLow, color: P.onSurface, fontSize: '13px', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                             Annuler
                         </Link>
                     </div>
-
                 </form>
             </div>
         </div>

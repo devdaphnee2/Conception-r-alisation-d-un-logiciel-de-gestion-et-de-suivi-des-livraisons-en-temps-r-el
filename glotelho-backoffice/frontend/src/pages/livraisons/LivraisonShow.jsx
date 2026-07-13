@@ -394,6 +394,14 @@ export default function LivraisonShow() {
                         Bordereau PDF
                     </button>
 
+                    {/* Bouton Tracking GPS — visible si livraison en cours */}
+                    {livraison && ['Assign_', 'En_cours'].includes(livraison.status) && (
+                        <Link to={'/suivi/' + id}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', backgroundColor: '#2f3131', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 700, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+                            📍 Tracking GPS
+                        </Link>
+                    )}
+
                     {/* Bouton WhatsApp toujours visible si livraison active */}
                     {livraison && ['Assign_','En_cours'].includes(livraison.status) && finalWaLink && (
                         <a href={finalWaLink} target="_blank" rel="noreferrer"

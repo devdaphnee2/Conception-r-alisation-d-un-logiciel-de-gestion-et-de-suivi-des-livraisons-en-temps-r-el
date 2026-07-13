@@ -1,31 +1,28 @@
 {
     "name": "glotelho-backend",
-    "version": "1.0.0",
+    "version": "2.0.0",
+    "description": "Backend unifie Glotelho — Administration, Livreur, Commercant, Livraison",
     "main": "src/server.js",
     "scripts": {
-        "dev": "nodemon src/server.js",
-        "start": "node src/server.js"
+        "start": "node src/server.js",
+        "dev": "nodemon src/server.js"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",
-        "africastalking": "^0.7.9",
         "bcrypt": "^5.1.1",
+        "bcryptjs": "^2.4.3",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
-        "express": "^4.21.0",
-        "firebase-admin": "^14.1.0",
-        "google-auth-library": "^10.9.0",
-        "jsonwebtoken": "^9.0.3",
-        "multer": "^2.2.0",
-        "mysql2": "^3.11.0",
-        "nodemailer": "^9.0.3",
-        "pdfkit": "^0.19.1",
-        "prisma": "^5.22.0"
+        "express": "^4.18.3",
+        "firebase-admin": "^12.0.0",
+        "google-auth-library": "^9.6.3",
+        "jsonwebtoken": "^9.0.2",
+        "multer": "^1.4.5-lts.1",
+        "nodemailer": "^6.9.13",
+        "pdfkit": "^0.19.1"
     },
     "devDependencies": {
-        "nodemon": "^3.1.14"
-    },
-    "prisma": {
-        "seed": "node prisma/seed.js"
+        "nodemon": "^3.1.0",
+        "prisma": "^5.22.0"
     }
 }

@@ -4,5 +4,4 @@ function livreurOnly(req, res, next) {
     }
     next();
 }
-
 module.exports = livreurOnly;
