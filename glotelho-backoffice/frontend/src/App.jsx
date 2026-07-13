@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import LivraisonList from './pages/livraisons/LivraisonList';
 import LivraisonCreate from './pages/livraisons/LivraisonCreate';
 import LivraisonShow from './pages/livraisons/LivraisonShow';
+import CommandesList from './pages/livraisons/CommandesList';
 import LivraisonEdit from './pages/livraisons/LivraisonEdit';
 import Tracking from './pages/Tracking';
 import LivreurList from './pages/livreurs/LivreurList';
@@ -52,7 +53,7 @@ export default function App() {
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/livraisons" element={<LivraisonList />} />
-                        <Route path="/livraisons/create" element={<LivraisonCreate />} />
+                        <Route path="/livraisons/create" element={<CommandesList />} />
                         <Route path="/livraisons/:id" element={<LivraisonShow />} />
                         <Route path="/livraisons/:id/edit" element={<LivraisonEdit />} />
                         <Route path="/tracking" element={<Tracking />} />
