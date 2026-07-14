@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../views/home/home_screen.dart';
+import '../views/dashboard/dashboard_screen.dart';
 import '../views/livraisons/livraisons_screen.dart';
 import '../views/commandes/commandes_screen.dart';
 import '../views/litiges/litiges_screen.dart';
@@ -15,12 +15,12 @@ class MainNavigationShell extends StatefulWidget {
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    LivraisonsScreen(),
-    CommandesScreen(),
-    LitigesScreen(),
-    ParametresScreen(),
+  final List<Widget> _screens = [
+    const DashboardScreen(),
+    const LivraisonsScreen(),
+    const CommandesScreen(),
+    const LitigesScreen(),
+    const ParametresScreen(),
   ];
 
   @override
