@@ -5,10 +5,13 @@ import 'config/app_theme.dart';
 import 'config/app_routes.dart';
 import 'widgets/main_navigation_shell.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final appState = AppState();
+  await appState.loadSession(); // Charger le token persisté
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppState(),
+    ChangeNotifierProvider.value(
+      value: appState,
       child: const GlotelhoManagerApp(),
     ),
   );
@@ -25,7 +28,7 @@ class GlotelhoManagerApp extends StatelessWidget {
       title: 'Glotelho Manager',
       debugShowCheckedModeBanner: false,
       themeMode: appState.themeMode,
-      theme: AppTheme.lightTheme,
+      theme    : AppTheme.lightTheme,
       darkTheme: AppTheme.navyTheme,
       initialRoute: appState.isAuthenticated ? '/home' : '/login',
       routes: {
