@@ -30,7 +30,8 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> register({required String firstName, required String lastName,
-    required String email, required String phone, required String password}) async {
+    required String email, required String phone, required String password,
+    String? confirmPassword}) async {
     final r = await dio.post('/auth/register', data: {
       'first_name': firstName, 'last_name': lastName,
       'email': email, 'phone': phone, 'password': password,
@@ -46,6 +47,11 @@ class ApiService {
 
   Future<Response> changePassword(String current, String newPwd) =>
       dio.post('/auth/change-password', data: {'old_password': current, 'new_password': newPwd});
+
+  // COMPAT — anciennes methodes toujours utilisees par dashboard et nouvelle_commande
+  Future<Response> getLivraisons({String? status}) => getMesCommandes();
+  Future<Response> getLivreurs({bool disponiblesOnly = false}) => getLivreursDisponibles();
+  Future<Response> createLivraison(Map<String, dynamic> payload) => creerCommande(payload);
 
   // COMMANDES (créées par le commerçant)
   Future<Response> getMesCommandes() => dio.get('/v1/commercant/livraisons');
