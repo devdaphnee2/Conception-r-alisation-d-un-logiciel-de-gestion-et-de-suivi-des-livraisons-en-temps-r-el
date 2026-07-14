@@ -9,7 +9,8 @@ import 'activities_screen.dart';
 import 'widgets/donut_chart.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(int)? onNavigationTab;
+  const HomeScreen({super.key, this.onNavigationTab, required void Function(int i) onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -396,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildActivityTile(ActivityModel a, bool isLast) {
+  /*Widget _buildActivityTile(ActivityModel a, bool isLast) {
     final isPositive = a.amount >= 0;
     IconData icon;
     Color iconColor;
@@ -438,6 +439,64 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(a.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                 Text(a.subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${isPositive ? '+' : ''}${a.amount.toStringAsFixed(1)} XAF',
+                  style: TextStyle(color: isPositive ? Colors.tealAccent : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(dateStr, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }*/
+
+  Widget _buildActivityTile(ActivityModel a, bool isLast) {
+    final isPositive = a.amount >= 0;
+    IconData icon;
+    Color iconColor;
+    Color iconBg;
+
+    if (a.type == ActivityType.commission) {
+      icon = Icons.arrow_downward;
+      iconColor = Colors.tealAccent;
+      iconBg = Colors.teal.withOpacity(0.15);
+    } else {
+      icon = Icons.local_shipping;
+      iconColor = Colors.white;
+      iconBg = Colors.blue;
+    }
+
+    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
+        '${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        border: isLast ? null : const Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(a.isCommission ? 'Commission' : 'Livraison',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  a.isCommission ? a.manager : '${a.clientName ?? '—'} · ${a.clientPhone ?? ''}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
               ],
             ),
           ),

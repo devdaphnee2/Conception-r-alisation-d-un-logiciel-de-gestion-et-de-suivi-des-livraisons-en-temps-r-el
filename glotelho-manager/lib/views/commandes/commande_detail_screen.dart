@@ -8,172 +8,183 @@ import '../../services/api_service.dart';
 class CommandeDetailScreen extends StatefulWidget {
   final int id;
   const CommandeDetailScreen({super.key, required this.id});
-
   @override
   State<CommandeDetailScreen> createState() => _CommandeDetailScreenState();
 }
 
 class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
-  bool _loading  = true;
-  Map? _livraison;
-  List  _livreurs = [];
-  int?  _livreurId;
-  bool  _assigning = false;
+  bool _loading = true;
+  Map? _cmd;
+  bool _actionLoading = false;
   String? _error;
   String? _success;
 
+  static const _statusColors = <String, Color>{
+    'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
+    'En_cours': Color(0xFF20619E), 'Livr_': Color(0xFF1B5E20),
+    'Suspendu': Color(0xFFBA1A1A), 'Annul_': Color(0xFF817564),
+  };
+  static const _statusLabels = <String, String>{
+    'En_attente': 'En attente', 'Assign_': 'Assigné',
+    'En_cours': 'En cours', 'Livr_': 'Livré',
+    'Suspendu': 'Suspendu', 'Annul_': 'Annulé',
+  };
+
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final api = ApiService(context.read<AppState>());
-      final res = await api.getLivraison(widget.id);
-      final liv = await api.getLivreurs(disponiblesOnly: true);
-      setState(() {
-        _livraison = res.data;
-        _livreurs  = liv.data ?? [];
-      });
+      final res = await api.getCommande(widget.id);
+      setState(() => _cmd = res.data);
     } catch (_) {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  Future<void> _assigner() async {
-    if (_livreurId == null) { setState(() => _error = 'Sélectionnez un livreur.'); return; }
-    setState(() { _assigning = true; _error = null; });
+  Future<void> _commanderCourse() async {
+    setState(() { _actionLoading = true; _error = null; });
     try {
       final api = ApiService(context.read<AppState>());
-      final res = await api.assignerLivreur(widget.id, _livreurId!);
-      final waLink = res.data['whatsapp_link'] as String?;
-      if (waLink != null) {
-        final uri = Uri.parse(waLink);
-        if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-      setState(() => _success = 'Livreur assigné ! Client notifié via WhatsApp.');
+      await api.commanderCourse(widget.id);
+      setState(() => _success = 'Course commandée ! L\'admin va assigner un livreur.');
       await _load();
-    } catch (e) {
-      setState(() => _error = 'Erreur lors de l\'assignation.');
+    } catch (_) {
+      setState(() => _error = 'Erreur lors de la commande.');
     } finally {
-      if (mounted) setState(() => _assigning = false);
+      if (mounted) setState(() => _actionLoading = false);
     }
   }
 
   Future<void> _annuler() async {
-    final confirm = await showDialog<bool>(
+    final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Annuler la livraison ?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Annuler la commande ?'),
         content: const Text('Cette action est irréversible.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Non')),
-          TextButton(onPressed: () => Navigator.pop(context, true),
-              child: const Text('Oui, annuler', style: TextStyle(color: Colors.red))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text('Oui, annuler')),
         ],
       ),
     );
-    if (confirm != true) return;
+    if (ok != true) return;
     try {
       final api = ApiService(context.read<AppState>());
-      await api.annulerLivraison(widget.id);
-      setState(() => _success = 'Livraison annulée.');
+      await api.annulerCommande(widget.id);
+      setState(() => _success = 'Commande annulée.');
       await _load();
-    } catch (_) {
-      setState(() => _error = 'Erreur lors de l\'annulation.');
-    }
+    } catch (_) { setState(() => _error = 'Erreur lors de l\'annulation.'); }
   }
 
-  Future<void> _ouvrirTracking() async {
-    final url = 'http://192.168.1.145:5173/suivi/${widget.id}';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _declarerLitige() async {
+    final motifCtrl = TextEditingController();
+    final descCtrl  = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Déclarer un litige'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: motifCtrl,
+                decoration: const InputDecoration(labelText: 'Motif', border: OutlineInputBorder())),
+            const SizedBox(height: 10),
+            TextField(controller: descCtrl, maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D1B2A), foregroundColor: Colors.white),
+              child: const Text('Soumettre')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final api = ApiService(context.read<AppState>());
+      await api.declarerLitige(widget.id, motifCtrl.text, descCtrl.text);
+      setState(() => _success = 'Litige déclaré. L\'admin va traiter votre demande.');
+    } catch (_) { setState(() => _error = 'Erreur lors de la déclaration.'); }
+  }
+
+  Future<void> _ouvrirSuivi() async {
+    final url = Uri.parse('http://192.168.1.145:5173/suivi/${widget.id}');
+    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    final l = _livraison ?? {};
-    const statusLabels = {
-      'En_attente': 'En attente', 'Assign_': 'Assigné',
-      'En_cours': 'En cours', 'Livr_': 'Livré',
-      'Suspendu': 'Suspendu', 'Annul_': 'Annulé',
-    };
-    const statusColors = {
-      'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
-      'En_cours': Color(0xFF20619E), 'Livr_': Color(0xFF1B5E20),
-      'Suspendu': Color(0xFFBA1A1A), 'Annul_': Color(0xFF817564),
-    };
-    final status      = l['status'] as String? ?? '';
-    final statusLabel = statusLabels[status] ?? status;
-    final statusColor = statusColors[status] ?? Colors.grey;
-    final numFormate  = '#${widget.id.toString().padLeft(5, '0')}';
-    final articles    = (l['delivery_items'] as List?) ?? [];
-    final otp         = (l['confirmations'] as List?)?.isNotEmpty == true
-        ? l['confirmations'][0]['otp_code'] : null;
+    final l          = _cmd ?? {};
+    final status     = l['status'] as String? ?? '';
+    final color      = _statusColors[status] ?? Colors.grey;
+    final label      = _statusLabels[status] ?? status;
+    final articles   = (l['delivery_items'] as List?) ?? [];
     final livreurInfo = l['delivery_persons'];
-    final livreurNom  = livreurInfo != null
-        ? '${livreurInfo['users']?['first_name'] ?? ''} ${livreurInfo['users']?['last_name'] ?? ''}'
+    final livreurNom = livreurInfo?['users'] != null
+        ? '${livreurInfo['users']['first_name'] ?? ''} ${livreurInfo['users']['last_name'] ?? ''}'.trim()
         : null;
+    final otp = (l['confirmations'] as List?)?.isNotEmpty == true
+        ? l['confirmations'][0]['otp_code']?.toString() : null;
+    final id = '#${widget.id.toString().padLeft(5,'0')}';
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF2F4F7),
       appBar: AppBar(
-        backgroundColor: AppTheme.navy,
+        backgroundColor: const Color(0xFF0D1B2A),
         foregroundColor: Colors.white,
-        title: Text('Livraison $numFormate'),
+        title: Text('Commande $id'),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+            child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         children: [
-          // Messages
-          if (_success != null) _banner(_success!, Colors.green.shade50, Colors.green),
-          if (_error   != null) _banner(_error!,   Colors.red.shade50,   Colors.red),
+          if (_success != null) _banner(_success!, const Color(0xFFC8E6C9), const Color(0xFF1B5E20)),
+          if (_error   != null) _banner(_error!,   const Color(0xFFFFDAD6), const Color(0xFFBA1A1A)),
 
-          // Bouton tracking
-          if (['Assign_', 'En_cours'].contains(status))
-            Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              child: ElevatedButton.icon(
-                onPressed: _ouvrirTracking,
-                icon: const Icon(Icons.location_on, size: 18),
-                label: const Text('📍 Suivre la livraison en direct'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2F3131),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+          // Bouton suivi en direct
+          if (['Assign_','En_cours'].contains(status)) ...[
+            ElevatedButton.icon(
+              onPressed: _ouvrirSuivi,
+              icon: const Icon(Icons.location_on),
+              label: const Text('📍 Suivre la livraison en direct'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF20619E), foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
+            const SizedBox(height: 12),
+          ],
 
           // Client
-          _card('Client', [
-            _row('Nom', l['client_nom'] ?? '—'),
-            _row('Téléphone', l['client_telephone'] ?? '—'),
+          _card('Informations client', [
+            _row('Nom', l['client_nom']),
+            _row('Téléphone', l['client_telephone']),
             if (l['client_whatsapp'] != null && l['client_whatsapp'] != l['client_telephone'])
               _row('WhatsApp', l['client_whatsapp']),
-            _row('Adresse', l['delivery_address'] ?? '—'),
+            _row('Adresse', l['delivery_address']),
             if (l['zone_bloc'] != null) _row('Repère', l['zone_bloc']),
             if (l['delivery_instructions'] != null) _row('Instructions', l['delivery_instructions']),
           ]),
-
           const SizedBox(height: 12),
 
           // Articles
@@ -185,8 +196,8 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
                 children: [
                   Expanded(child: Text('${a["product_name"]} x${a["quantity"] ?? 1}',
                       style: const TextStyle(fontSize: 13))),
-                  Text('${((a["unit_price"] ?? 0) as num * (a["quantity"] ?? 1)).toStringAsFixed(0)} FCFA',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navy, fontSize: 12)),
+                  Text('${(((a["unit_price"] ?? 0) as num) * ((a["quantity"] ?? 1) as num)).toStringAsFixed(0)} FCFA',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D1B2A), fontSize: 12)),
                 ],
               ),
             )).toList(),
@@ -196,96 +207,94 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
               children: [
                 const Text('Total à collecter', style: TextStyle(fontWeight: FontWeight.bold)),
                 Text('${l['amount_to_collect'] ?? 0} FCFA',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppTheme.navy)),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0D1B2A))),
               ],
             ),
           ]),
 
-          const SizedBox(height: 12),
-
-          // Livreur assigné
-          if (livreurNom != null)
+          // Livreur
+          if (livreurNom != null) ...[
+            const SizedBox(height: 12),
             _card('Livreur assigné', [
               _row('Nom', livreurNom),
               if (livreurInfo?['users']?['phone'] != null)
                 _row('Téléphone', livreurInfo['users']['phone']),
               if (livreurInfo?['vehicules'] != null)
-                _row('Véhicule', '${livreurInfo['vehicules']['type']} — ${livreurInfo['vehicules']['plate_number']}'),
+                _row('Véhicule', '${livreurInfo['vehicules']['type'] ?? ''} — ${livreurInfo['vehicules']['plate_number'] ?? ''}'),
             ]),
+          ],
 
           // OTP
-          if (otp != null && status == 'En_cours') ...[
+          if (otp != null) ...[
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2F3131),
-                borderRadius: BorderRadius.circular(14),
-              ),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(color: const Color(0xFF0D1B2A), borderRadius: BorderRadius.circular(14)),
               child: Column(
                 children: [
-                  const Text('Code OTP — à donner au livreur',
-                      style: TextStyle(color: Colors.white60, fontSize: 11, letterSpacing: 1)),
-                  const SizedBox(height: 10),
-                  Text(otp.toString(),
-                      style: TextStyle(color: AppTheme.gold, fontSize: 40,
-                          fontWeight: FontWeight.w900, letterSpacing: 8, fontFamily: 'monospace')),
+                  const Text('Code OTP à communiquer au client',
+                      style: TextStyle(color: Colors.white54, fontSize: 11)),
                   const SizedBox(height: 8),
-                  const Text('Communiquez ce code à votre client',
+                  Text(otp, style: const TextStyle(color: Color(0xFFC9952E), fontSize: 42,
+                      fontWeight: FontWeight.w900, letterSpacing: 10, fontFamily: 'monospace')),
+                  const SizedBox(height: 6),
+                  const Text('Le livreur demandera ce code à votre client',
                       style: TextStyle(color: Colors.white38, fontSize: 11)),
                 ],
               ),
             ),
           ],
 
-          // Assignation
+          // Actions
+          const SizedBox(height: 16),
+
+          // Commander une course
           if (status == 'En_attente') ...[
-            const SizedBox(height: 16),
-            const Text('Assigner un livreur', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<int>(
-              value: _livreurId,
-              decoration: InputDecoration(
-                filled: true, fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              ),
-              hint: const Text('-- Sélectionner un livreur --', style: TextStyle(fontSize: 12)),
-              items: _livreurs.map<DropdownMenuItem<int>>((lv) => DropdownMenuItem(
-                value: lv['id'] as int,
-                child: Text('${lv['users']?['first_name'] ?? ''} ${lv['users']?['last_name'] ?? ''} — ${lv['zone_affectee'] ?? 'Sans zone'}',
-                    style: const TextStyle(fontSize: 12)),
-              )).toList(),
-              onChanged: (v) => setState(() => _livreurId = v),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _assigning ? null : _assigner,
+            ElevatedButton.icon(
+              onPressed: _actionLoading ? null : _commanderCourse,
+              icon: const Icon(Icons.send),
+              label: Text(_actionLoading ? 'Envoi en cours...' : 'Commander une course'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.navy, foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFF0D1B2A), foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text(_assigning ? 'Assignation...' : '🛵 Assigner et notifier le client'),
             ),
+            const SizedBox(height: 10),
           ],
 
-          // Annulation
-          if (['En_attente', 'Assign_'].contains(status)) ...[
+          // Declarer litige
+          if (['Assign_','En_cours','Suspendu'].contains(status)) ...[
+            OutlinedButton.icon(
+              onPressed: _declarerLitige,
+              icon: const Icon(Icons.gavel_outlined),
+              label: const Text('Déclarer un litige'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFC9952E),
+                side: const BorderSide(color: Color(0xFFC9952E)),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
             const SizedBox(height: 10),
-            OutlinedButton(
+          ],
+
+          // Annuler
+          if (['En_attente','Assign_'].contains(status)) ...[
+            OutlinedButton.icon(
               onPressed: _annuler,
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Annuler la commande'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Annuler la livraison'),
             ),
           ],
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 30),
         ],
       ),
     );
@@ -303,24 +312,19 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-        const Divider(height: 16),
-        ...children,
-      ],
-    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+      const Divider(height: 16),
+      ...children,
+    ]),
   );
 
   Widget _row(String label, String? value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(width: 110, child: Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600))),
-        Expanded(child: Text(value ?? '—', style: const TextStyle(fontSize: 13))),
-      ],
-    ),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 110, child: Text(label,
+          style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600))),
+      Expanded(child: Text(value ?? '—', style: const TextStyle(fontSize: 13))),
+    ]),
   );
 }

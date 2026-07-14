@@ -7,7 +7,8 @@ import 'settings_screen.dart';
 import 'deliveries_list_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final void Function(int)? onNavigateTab;
+  const MainNavigationScreen({super.key, this.onNavigateTab});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();

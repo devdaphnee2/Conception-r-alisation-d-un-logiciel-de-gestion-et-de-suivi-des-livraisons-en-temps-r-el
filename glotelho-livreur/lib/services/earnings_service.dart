@@ -48,6 +48,7 @@ class EarningsService {
         type          : ActivityType.livraison,
         amount        : (json['amount_to_collect'] ?? 0).toDouble(),
         date          : DateTime.tryParse(json['creation_date'] ?? '') ?? DateTime.now(),
+        manager       : json['manager']?.toString() ??'',
         clientName    : json['client_nom'] ?? '',
         clientPhone   : json['client_telephone'] ?? '',
         clientAddress : json['delivery_address'] ?? '',
