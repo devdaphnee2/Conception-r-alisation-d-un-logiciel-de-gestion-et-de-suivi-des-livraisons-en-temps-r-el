@@ -45,6 +45,9 @@ class ApiService {
     appState.logout();
   }
 
+  Future<Response> supprimerCommande(int id) =>
+      dio.delete('/v1/commercant/livraisons/$id');
+
   Future<Response> changePassword(String current, String newPwd) =>
       dio.post('/auth/change-password', data: {'old_password': current, 'new_password': newPwd});
 
@@ -72,7 +75,7 @@ class ApiService {
 
   // LIVRAISONS EN COURS du jour
   Future<Response> getLivraisonsEnCours() =>
-      dio.get('/v1/commercant/livraisons', queryParameters: {'status': 'En_cours'});
+      dio.get('/v1/commercant/livraisons/en-cours');
 
   // LITIGES
   Future<Response> getMesLitiges() => dio.get('/litiges');

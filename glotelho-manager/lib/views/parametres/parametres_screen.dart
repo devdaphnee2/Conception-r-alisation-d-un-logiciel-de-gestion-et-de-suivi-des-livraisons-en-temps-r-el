@@ -69,7 +69,7 @@ class _ParametresScreenState extends State<ParametresScreen> {
                             color: const Color(0xFFC9952E).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('E-commerçant',
+                          child: const Text('Commerçant',
                               style: TextStyle(color: Color(0xFFC9952E), fontSize: 10, fontWeight: FontWeight.bold)),
                         ),
                       ],

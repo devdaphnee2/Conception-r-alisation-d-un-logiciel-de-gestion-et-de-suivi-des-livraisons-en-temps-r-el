@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:glotelho_manager/widgets/dashboard_header.dart';
 import 'package:provider/provider.dart';
 import '../../config/app_state.dart';
+import '../../config/app_theme.dart';
 import '../../services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -10,13 +12,10 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  bool   _loading      = true;
-  int    _total        = 0;
-  int    _enAttente    = 0;
-  int    _enCours      = 0;
-  int    _livrees      = 0;
+  bool _loading = true;
+  Map<String, int> _stats = {};
   double _montantTotal = 0;
-  List   _dernieres    = [];
+  List _dernieres = [];
 
   @override
   void initState() { super.initState(); _load(); }
@@ -28,11 +27,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final res = await api.getMesCommandes();
       final all = (res.data as List?) ?? [];
       setState(() {
-        _total        = all.length;
-        _enAttente    = all.where((l) => l['status'] == 'En_attente').length;
-        _enCours      = all.where((l) => l['status'] == 'En_cours').length;
-        _livrees      = all.where((l) => l['status'] == 'Livr_').length;
-        _montantTotal = all.fold(0.0, (s, l) => s + ((l['amount_to_collect'] ?? 0) as num).toDouble());
+        _stats = {
+          'total'     : all.length,
+          'en_attente': all.where((l) => l['status'] == 'En_attente').length,
+          'en_cours'  : all.where((l) => l['status'] == 'En_cours').length,
+          'livrees'   : all.where((l) => l['status'] == 'Livr_').length,
+        };
+        _montantTotal = all.fold(0.0, (s, l) => s + (double.tryParse(l['amount_to_collect']?.toString() ?? '0') ?? 0));
         _dernieres    = all.take(5).toList();
       });
     } catch (_) {
@@ -43,24 +44,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark   = Theme.of(context).brightness == Brightness.dark;
-    final txtColor = isDark ? Colors.white : const Color(0xFF0D1B2A);
-    final manager  = context.watch<AppState>().currentManager;
-    final prenom   = manager?['first_name'] ?? 'Commerçant';
-    final heure    = DateTime.now().hour;
-    final salut    = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir';
+    final manager = context.watch<AppState>().currentManager;
+    final prenom  = manager?['first_name'] ?? 'Commerçant';
+    final heure   = DateTime.now().hour;
+    final salut   = heure < 12 ? 'Bonjour' : heure < 18 ? 'Bon après-midi' : 'Bonsoir';
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F4F7),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
           slivers: [
-            // HEADER
+            // Header gradient
             SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 52, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft, end: Alignment.bottomRight,
@@ -70,43 +70,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      // Avatar à gauche
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: const Color(0xFFC9952E).withOpacity(0.2),
-                        child: Text(prenom[0].toUpperCase(),
-                            style: const TextStyle(color: Color(0xFFC9952E),
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('$salut, $prenom 👋',
-                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text(_dateAujourdhui(),
-                              style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                        ],
-                      )),
-                      // Cloche notifications
-                      Stack(children: [
-                        IconButton(
-                          onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                          icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 26),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('$salut, $prenom 👋',
+                                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text(_dateAujourdhui(),
+                                style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                          ],
                         ),
-                        if (_enAttente > 0)
-                          Positioned(right: 8, top: 8,
-                              child: Container(
-                                width: 16, height: 16,
-                                decoration: const BoxDecoration(color: Color(0xFFC9952E), shape: BoxShape.circle),
-                                child: Center(child: Text('$_enAttente',
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))),
-                              )),
-                      ]),
-                    ]),
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: const Color(0xFFC9952E).withOpacity(0.2),
+                          child: Text(prenom[0].toUpperCase(),
+                              style: const TextStyle(color: Color(0xFFC9952E), fontWeight: FontWeight.bold, fontSize: 18)),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 20),
-                    // Total
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -117,13 +102,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            const Text('Total à collecter', style: TextStyle(color: Colors.white60, fontSize: 12)),
-                            const Text('Cumul de toutes vos commandes', style: TextStyle(color: Colors.white38, fontSize: 10)),
-                            const SizedBox(height: 6),
-                            Text('${_montantTotal.toStringAsFixed(0)} XAF',
-                                style: const TextStyle(color: Color(0xFFC9952E), fontSize: 28, fontWeight: FontWeight.w900)),
-                          ]),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Total à collecter', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                              const SizedBox(height: 4),
+                              Text('${_montantTotal.toStringAsFixed(0)} FCFA',
+                                  style: const TextStyle(color: Color(0xFFC9952E), fontSize: 26, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
                           const Icon(Icons.account_balance_wallet_outlined, color: Colors.white24, size: 36),
                         ],
                       ),
@@ -138,10 +125,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
               sliver: SliverGrid(
                 delegate: SliverChildListDelegate([
-                  _kpi('Total',      '$_total',    Icons.inbox_outlined,          const Color(0xFF0D1B2A), isDark),
-                  _kpi('En attente', '$_enAttente',Icons.hourglass_empty,         const Color(0xFFC9952E), isDark),
-                  _kpi('En cours',   '$_enCours',  Icons.delivery_dining,         const Color(0xFF20619E), isDark),
-                  _kpi('Livrées',    '$_livrees',  Icons.check_circle_outline,    const Color(0xFF1B5E20), isDark),
+                  _kpiCard('Total', '${_stats['total'] ?? 0}', Icons.inbox_outlined, const Color(0xFF0D1B2A)),
+                  _kpiCard('En attente', '${_stats['en_attente'] ?? 0}', Icons.hourglass_empty, const Color(0xFFC9952E)),
+                  _kpiCard('En cours', '${_stats['en_cours'] ?? 0}', Icons.delivery_dining, const Color(0xFF20619E)),
+                  _kpiCard('Livrées', '${_stats['livrees'] ?? 0}', Icons.check_circle_outline, const Color(0xFF1B5E20)),
                 ]),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.2,
@@ -156,23 +143,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Dernières commandes',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: txtColor)),
+                    const Text('Dernières commandes',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
-                    ..._dernieres.map((l) => _commandeTile(l, isDark, txtColor)).toList(),
+                    ..._dernieres.map((l) => _commandeTile(l)).toList(),
                     if (_dernieres.isEmpty)
                       Container(
-                        padding: const EdgeInsets.all(30),
+                        padding: const EdgeInsets.all(24),
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1C3D56) : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(children: [
-                          Icon(Icons.inbox_outlined, size: 40, color: isDark ? Colors.white38 : Colors.grey.shade400),
-                          const SizedBox(height: 8),
-                          Text('Aucune commande.', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
-                        ]),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                        child: const Text('Aucune commande.', style: TextStyle(color: Colors.grey)),
                       ),
                   ],
                 ),
@@ -184,34 +164,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _kpi(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _kpiCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C3D56) : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
       ),
-      child: Row(children: [
-        Container(width: 36, height: 36,
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 18)),
-        const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
-          Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : Colors.grey)),
-        ]),
-      ]),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _commandeTile(Map l, bool isDark, Color txtColor) {
-    const statusColors = <String, Color>{
+  Widget _commandeTile(Map l) {
+    const statusColors = {
       'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
       'En_cours': Color(0xFF20619E), 'Livr_': Color(0xFF1B5E20),
       'Suspendu': Color(0xFFBA1A1A), 'Annul_': Color(0xFF817564),
     };
-    const statusLabels = <String, String>{
+    const statusLabels = {
       'En_attente': 'En attente', 'Assign_': 'Assigné',
       'En_cours': 'En cours', 'Livr_': 'Livré',
       'Suspendu': 'Suspendu', 'Annul_': 'Annulé',
@@ -219,38 +207,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final status = l['status'] as String? ?? '';
     final color  = statusColors[status] ?? Colors.grey;
     final label  = statusLabels[status] ?? status;
-    final client = l['client_nom'] as String? ?? '—';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C3D56) : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
       ),
-      child: Row(children: [
-        CircleAvatar(radius: 16, backgroundColor: color.withOpacity(0.15),
-            child: Text(client.isNotEmpty ? client[0] : '?',
-                style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13))),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('#${l['id'].toString().padLeft(5,'0')} — $client',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: txtColor)),
-          Text(l['delivery_address'] ?? '', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey),
-              overflow: TextOverflow.ellipsis),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      child: Row(
+        children: [
+          CircleAvatar(radius: 16, backgroundColor: color.withOpacity(0.1),
+              child: Text((l['client_nom'] as String? ?? '?')[0],
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13))),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('#${l['id'].toString().padLeft(5,'0')} — ${l['client_nom'] ?? '—'}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                Text(l['delivery_address'] ?? '',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
             child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
           ),
-          const SizedBox(height: 4),
-          Text('${l['amount_to_collect'] ?? 0} XAF',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: txtColor)),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 
