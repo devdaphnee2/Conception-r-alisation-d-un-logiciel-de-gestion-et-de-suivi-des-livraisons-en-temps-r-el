@@ -58,7 +58,13 @@ async function envoyerNotificationClient(livraisonId, clientNom, clientTel, clie
 async function index(req, res) {
     try {
         var where = {};
-        if (req.query.status) where.status = req.query.status;
+        var validStatuses = ['En_attente', 'Assign_', 'En_cours', 'Livr_', 'Suspendu', 'Annul_'];
+
+        if (req.query.status && validStatuses.includes(req.query.status.trim())) {
+            where.status = req.query.status.trim();
+        } else {
+            where.status = { in: validStatuses };
+        }
 
         var livraisons = await prisma.deliveryorders.findMany({
             where: where,

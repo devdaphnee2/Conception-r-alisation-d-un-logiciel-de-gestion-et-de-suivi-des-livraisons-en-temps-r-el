@@ -436,11 +436,12 @@ enum bordereaux_status {
 
 enum deliveryorders_status {
   En_attente
-  Assign_    @map("Assigné")
+  Assign_
   En_cours
-  Livr_      @map("Livré")
+  Livr_
   Suspendu
-  Annul_     @map("Annulé")
+  Annul_
+  Commande
 }
 
 enum vehicules_status {
