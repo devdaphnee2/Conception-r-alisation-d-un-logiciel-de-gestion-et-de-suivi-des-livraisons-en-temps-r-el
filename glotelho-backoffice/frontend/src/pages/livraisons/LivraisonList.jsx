@@ -173,9 +173,18 @@ export default function LivraisonList() {
                             var clientNom = l.client_nom || ((l.customers && l.customers.users) ? l.customers.users.first_name + ' ' + l.customers.users.last_name : '—');
                             var clientTel = l.client_telephone || ((l.customers && l.customers.users) ? l.customers.users.phone : '');
                             var clientInit = clientNom[0] || '?';
-                            var livreurNom = l.delivery_persons && l.delivery_persons.users
-                                ? l.delivery_persons.users.first_name + ' ' + l.delivery_persons.users.last_name
-                                : null;
+                            // users est un tableau — trouver le user dont l'id = user_id du livreur
+                            var livreurUser = null;
+                            if (l.delivery_persons) {
+                                var dp = l.delivery_persons;
+                                if (Array.isArray(dp.users)) {
+                                    livreurUser = dp.users.find(function(u) { return u.id === dp.user_id; }) || null;
+                                } else if (dp.users && typeof dp.users === 'object') {
+                                    livreurUser = dp.users;
+                                }
+                            }
+                            var livreurNom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : null;
+                            var livreurPhoto = l.delivery_persons ? l.delivery_persons.photo_profil_url : null;
 
                             return (
                                 <tr key={l.id}
@@ -203,8 +212,18 @@ export default function LivraisonList() {
                                     </td>
 
                                     {/* Livreur */}
-                                    <td style={{ ...tdStyle, fontSize: '12px' }}>
-                                        {livreurNom || <span style={{ color: P.outlineVariant, fontStyle: 'italic' }}>Non assigne</span>}
+                                    <td style={tdStyle}>
+                                        {livreurNom ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: '26px', height: '26px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, backgroundColor: P.primary }}>
+                                                    {livreurPhoto
+                                                        ? <img src={livreurPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff' }}>{livreurNom[0]}</div>
+                                                    }
+                                                </div>
+                                                <span style={{ fontSize: '12px' }}>{livreurNom}</span>
+                                            </div>
+                                        ) : <span style={{ color: P.outlineVariant, fontStyle: 'italic', fontSize: '12px' }}>Non assigne</span>}
                                     </td>
 
                                     {/* Adresse */}

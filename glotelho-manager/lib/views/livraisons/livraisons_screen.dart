@@ -81,11 +81,11 @@ class _LivraisonsScreenState extends State<LivraisonsScreen> {
     final id         = '#${l['id'].toString().padLeft(5, '0')}';
     final client     = l['client_nom'] as String? ?? '—';
     final adresse    = l['delivery_address'] as String? ?? '—';
-    final montant    = '${l['amount_to_collect'] ?? 0} FCFA';
+    final montant    = '${(double.tryParse(l['amount_to_collect']?.toString() ?? '0') ?? 0)} FCFA';
     final livreurInfo = l['delivery_persons'];
-    final livreurNom = livreurInfo?['users'] != null
+    final String livreurNom = livreurInfo != null && livreurInfo['users'] != null
         ? '${livreurInfo['users']['first_name'] ?? ''} ${livreurInfo['users']['last_name'] ?? ''}'.trim()
-        : 'En attente d\'assignation';
+        : "En attente d'assignation";
     final vehicule   = livreurInfo?['vehicules'];
     final vehiculeInfo = vehicule != null
         ? '${vehicule['type'] ?? ''} — ${vehicule['plate_number'] ?? ''}'
@@ -160,9 +160,9 @@ class _LivraisonsScreenState extends State<LivraisonsScreen> {
                       Text(vehiculeInfo, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     ]),
                   ],
-                  if (otp != null) ...[
+                  if (false) ...[ // OTP masqué côté commerçant
                     const SizedBox(height: 10),
-                    Container(
+                   /* Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D1B2A),
@@ -176,7 +176,7 @@ class _LivraisonsScreenState extends State<LivraisonsScreen> {
                               fontWeight: FontWeight.w900, letterSpacing: 6, fontFamily: 'monospace')),
                         ],
                       ),
-                    ),
+                    ),*/
                   ],
                   const SizedBox(height: 12),
                   Row(

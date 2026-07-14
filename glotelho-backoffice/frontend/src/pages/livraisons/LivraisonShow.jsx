@@ -265,22 +265,33 @@ export default function LivraisonShow() {
                     {/* Livreur */}
                     <div style={{ ...cardStyle, marginBottom: 0 }}>
                         <p style={{ fontSize: '13px', fontWeight: 700, color: P.onSurface, margin: '0 0 12px 0' }}>Livreur assigne</p>
-                        {livraison && livraison.delivery_persons ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: P.primaryContainer, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                                    {livraison.delivery_persons.users && livraison.delivery_persons.users.first_name ? livraison.delivery_persons.users.first_name[0] : '?'}
+                        {livraison && livraison.delivery_persons ? (function() {
+                            var dp = livraison.delivery_persons;
+                            var livreurUser = Array.isArray(dp.users)
+                                ? dp.users.find(function(u) { return u.id === dp.user_id; }) || null
+                                : (dp.users || null);
+                            var photo = dp.photo_profil_url;
+                            var nom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : '—';
+                            var initiale = livreurUser ? livreurUser.first_name[0] : '?';
+                            return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '2px solid ' + P.primaryContainer }}>
+                                        {photo
+                                            ? <img src={photo} alt={nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            : <div style={{ width: '100%', height: '100%', backgroundColor: P.primaryContainer, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, color: '#fff' }}>{initiale}</div>
+                                        }
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>{nom}</p>
+                                        <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>
+                                            {dp.vehicules ? dp.vehicules.brand + ' ' + dp.vehicules.type + ' — ' + dp.vehicules.plate_number : dp.vehicule_type + ' ' + dp.vehicule_marque}
+                                        </p>
+                                        {livreurUser && livreurUser.phone && <p style={{ margin: '1px 0 0 0', fontSize: '11px', color: P.outline }}>📞 {livreurUser.phone}</p>}
+                                    </div>
+                                    <Link to={'/livreurs/' + dp.id} style={{ marginLeft: 'auto', fontSize: '11px', color: P.primary, fontWeight: 600, textDecoration: 'none' }}>Voir fiche</Link>
                                 </div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: P.onSurface }}>
-                                        {livraison.delivery_persons.users ? livraison.delivery_persons.users.first_name + ' ' + livraison.delivery_persons.users.last_name : '—'}
-                                    </p>
-                                    <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: P.outline }}>
-                                        {livraison.delivery_persons.vehicules ? livraison.delivery_persons.vehicules.brand + ' ' + livraison.delivery_persons.vehicules.type + ' — ' + livraison.delivery_persons.vehicules.plate_number : ''}
-                                    </p>
-                                </div>
-                                <Link to={'/livreurs/' + livraison.delivery_persons.id} style={{ marginLeft: 'auto', fontSize: '11px', color: P.primary, fontWeight: 600, textDecoration: 'none' }}>Voir fiche</Link>
-                            </div>
-                        ) : <p style={{ color: P.outline, fontSize: '13px', margin: 0 }}>Non assigne</p>}
+                            );
+                        })() : <p style={{ color: P.outline, fontSize: '13px', margin: 0 }}>Non assigne</p>}
                     </div>
                 </div>
             </div>
@@ -422,7 +433,8 @@ export default function LivraisonShow() {
                                 style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1.5px solid ' + P.outlineVariant, fontSize: '13px', fontFamily: 'Poppins, sans-serif', color: P.onSurface, outline: 'none', backgroundColor: P.surface }}>
                                 <option value="">-- Selectionner --</option>
                                 {livreurs.filter(function(l) { return l.status === 'Disponible'; }).map(function(l) {
-                                    return <option key={l.id} value={l.id}>{l.users && l.users.first_name} {l.users && l.users.last_name} — {l.zone_affectee}</option>;
+                                    var u = Array.isArray(l.users) ? l.users.find(function(u) { return u.id === l.user_id; }) : l.users;
+                                    return <option key={l.id} value={l.id}>{u && u.first_name} {u && u.last_name} — {l.zone_affectee || 'Sans zone'}</option>;
                                 })}
                             </select>
                             <button onClick={function() { doAction('/livraisons/' + id + '/assigner', assignerForm, 'Livraison assignee. WhatsApp ouvert automatiquement.'); }}
@@ -447,7 +459,8 @@ export default function LivraisonShow() {
                                 style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1.5px solid rgba(186,26,26,0.3)', fontSize: '13px', fontFamily: 'Poppins, sans-serif', color: P.onSurface, outline: 'none', backgroundColor: P.surface }}>
                                 <option value="">-- Nouveau livreur --</option>
                                 {livreurs.filter(function(l) { return l.status === 'Disponible' && l.id !== (livraison && livraison.delivery_person_id); }).map(function(l) {
-                                    return <option key={l.id} value={l.id}>{l.users && l.users.first_name} {l.users && l.users.last_name} — {l.zone_affectee}</option>;
+                                    var u = Array.isArray(l.users) ? l.users.find(function(u) { return u.id === l.user_id; }) : l.users;
+                                    return <option key={l.id} value={l.id}>{u && u.first_name} {u && u.last_name} — {l.zone_affectee || 'Sans zone'}</option>;
                                 })}
                             </select>
                             <button onClick={function() { doAction('/livraisons/' + id + '/assigner', reassignerForm, 'Livraison reassignee.'); }}
