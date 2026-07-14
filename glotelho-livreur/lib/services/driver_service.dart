@@ -3,7 +3,7 @@ import 'dart:io';
 import 'api_service.dart';
 import '../models/driver_model.dart';
 import '../models/vehicle_model.dart';
-// import '../utils/constants.dart'; // Décommente si nécessaire
+import '../utils/constants.dart';
 
 class RegisterResult {
   final bool success;
@@ -15,7 +15,6 @@ class RegisterResult {
 }
 
 class DriverService {
-  /// Récupère le profil complet du livreur connecté
   static Future<DriverModel?> fetchProfile() async {
     try {
       final response = await ApiService.dio.get('/drivers/me');
@@ -29,7 +28,6 @@ class DriverService {
     }
   }
 
-  /// Soumet le dossier d'inscription avec les fichiers et les informations
   static Future<RegisterResult> register({
     required String nom,
     required String prenom,
@@ -51,48 +49,44 @@ class DriverService {
   }) async {
     try {
       final formData = FormData.fromMap({
-        'nom': nom,
-        'prenom': prenom,
-        'dateNaissance': dateNaissance.toIso8601String(),
-        'telephone': telephone,
-        'email': email,
-        'password': password,
-        'adresseResidence': adresseResidence,
-        'cniNumero': cniNumero,
-        'vehiculeType': vehicle.type,
-        'vehiculeMarque': vehicle.marque,
-        'vehiculeModele': vehicle.modele,
+        'nom'                 : nom,
+        'prenom'              : prenom,
+        'dateNaissance'       : dateNaissance.toIso8601String(),
+        'telephone'           : telephone,
+        'email'               : email,
+        'password'            : password,
+        'adresseResidence'    : adresseResidence,
+        'cniNumero'           : cniNumero,
+        'vehiculeType'        : vehicle.type,
+        'vehiculeMarque'      : vehicle.marque,
+        'vehiculeModele'      : vehicle.modele,
         'vehiculeImmatriculation': vehicle.immatriculation,
-        'assuranceNumero': vehicle.assuranceNumero,
-        'assuranceExpiration': vehicle.assuranceExpiration.toIso8601String(),
-        'mobileMoneyNumero': mobileMoneyNumero,
+        'assuranceNumero'     : vehicle.assuranceNumero,
+        'assuranceExpiration' : vehicle.assuranceExpiration.toIso8601String(),
+        'mobileMoneyNumero'   : mobileMoneyNumero,
         'mobileMoneyTitulaire': mobileMoneyTitulaire,
-        
-        // Envoi des disponibilités sous format JSON String pour le backend
-        'disponibilites': disponibilites.map((d) => d.toJson()).toList(), 
-
-        // Les fichiers images / documents
-        'photoProfil': await MultipartFile.fromFile(photoProfil.path),
-        'cniRecto': await MultipartFile.fromFile(cniRecto.path),
-        'cniVerso': await MultipartFile.fromFile(cniVerso.path),
-        'permis': await MultipartFile.fromFile(permis.path),
-        'photoVehicule': await MultipartFile.fromFile(photoVehicule.path),
+        'disponibilites'      : disponibilites.map((d) => d.toJson()).toList(),
+        'photoProfil'         : await MultipartFile.fromFile(photoProfil.path),
+        'cniRecto'            : await MultipartFile.fromFile(cniRecto.path),
+        'cniVerso'            : await MultipartFile.fromFile(cniVerso.path),
+        'permis'              : await MultipartFile.fromFile(permis.path),
+        'photoVehicule'       : await MultipartFile.fromFile(photoVehicule.path),
       });
 
-      // On utilise le Dio centralisé (ApiService.dio)
+      // Dio sans Content-Type force pour le multipart
       final dio = Dio(BaseOptions(
-    baseUrl: AppStrings.baseUrl,
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-));
-final response = await dio.post('/drivers/register', data: formData);
+        baseUrl        : AppStrings.baseUrl,
+        connectTimeout : const Duration(seconds: 60),
+        receiveTimeout : const Duration(seconds: 60),
+      ));
+
+      final response = await dio.post('/drivers/register', data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         return RegisterResult.success(token: data['token'] ?? data['data']?['token']);
       }
       return RegisterResult.failure('Erreur serveur (${response.statusCode})');
-      
     } on DioException catch (e) {
       final msg = e.response?.data is Map
           ? (e.response?.data['message'] ?? 'Erreur lors de l\'inscription')

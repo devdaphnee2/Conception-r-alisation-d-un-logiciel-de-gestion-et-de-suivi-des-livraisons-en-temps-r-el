@@ -9,7 +9,8 @@ import 'activities_screen.dart';
 import 'widgets/donut_chart.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(int)? onNavigateTab;
+  const HomeScreen({super.key, this.onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -30,13 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _load() async {
     setState(() => _isLoading = true);
-    final summary = await EarningsService.getSummary();
+    final summary    = await EarningsService.getSummary();
     final activities = await EarningsService.getActivities(limit: 4);
     if (!mounted) return;
     setState(() {
-      _summary = summary;
+      _summary    = summary;
       _activities = activities;
-      _isLoading = false;
+      _isLoading  = false;
     });
   }
 
@@ -48,20 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final ok = await EarningsService.repayDebt();
     setState(() => _isRepaying = false);
     if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Emprunt réglé avec succès ✓'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ));
-      _load();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Impossible de régler l\'emprunt pour le moment'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? 'Emprunt réglé avec succès ✓' : 'Impossible de régler l\'emprunt'),
+      backgroundColor: ok ? Colors.green : Colors.red,
+      behavior: SnackBarBehavior.floating,
+    ));
+    if (ok) _load();
   }
 
   void _withdraw() {
@@ -74,8 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final driverState = context.watch<DriverState>();
-    final prenom = driverState.driver?.prenom ?? '';
-    final driver = driverState.driver;
+    final prenom      = driverState.driver?.prenom ?? '';
+    final driver      = driverState.driver;
 
     return Scaffold(
       backgroundColor: AppColors.navy,
@@ -83,46 +76,41 @@ class _HomeScreenState extends State<HomeScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
             : RefreshIndicator(
-          onRefresh: _load,
-          color: AppColors.gold,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _buildHeader(prenom),
-              // Bannière caution — visible si caution non payée
-              _buildCautionBanner(driver),
-              const SizedBox(height: 20),
-              _buildCommissionCard(),
-              const SizedBox(height: 14),
-              if (_summary != null && _summary!.emprunt > 0) ...[
-                _buildEmpruntCard(),
-                const SizedBox(height: 20),
-              ] else
-                const SizedBox(height: 6),
-              _buildActivitiesSection(),
-              const SizedBox(height: 24),
-              _buildStatsSection(),
-            ],
-          ),
-        ),
+                onRefresh: _load,
+                color: AppColors.gold,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    _buildHeader(prenom),
+                    _buildCautionBanner(driver),
+                    const SizedBox(height: 20),
+                    _buildCommissionCard(),
+                    const SizedBox(height: 14),
+                    if (_summary != null && _summary!.emprunt > 0) ...[
+                      _buildEmpruntCard(),
+                      const SizedBox(height: 20),
+                    ] else
+                      const SizedBox(height: 6),
+                    _buildActivitiesSection(),
+                    const SizedBox(height: 24),
+                    _buildStatsSection(),
+                  ],
+                ),
+              ),
       ),
     );
   }
 
   // ── BANNIÈRE CAUTION ─────────────────────────────────────────
   Widget _buildCautionBanner(DriverModel? driver) {
-    // Masquer si pas de driver, caution déjà payée, ou compte pas encore activé
     if (driver == null) return const SizedBox.shrink();
     if (driver.cautionPayee) return const SizedBox.shrink();
     if (driver.dateActivation == null) return const SizedBox.shrink();
 
-    // Calculer jours restants
-    final now = DateTime.now();
-    final joursEcoules = now.difference(driver.dateActivation!).inDays;
+    final joursEcoules  = DateTime.now().difference(driver.dateActivation!).inDays;
     final joursRestants = driver.joursRestantsAvantSuspension ?? (14 - joursEcoules);
-    final montant = driver.cautionMontant.toStringAsFixed(0);
+    final montant       = driver.cautionMontant.toStringAsFixed(0);
 
-    // Délai dépassé
     if (joursRestants <= 0) {
       return Container(
         margin: const EdgeInsets.only(top: 14),
@@ -135,24 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Délai dépassé — Suspension imminente',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
+            const Row(children: [
+              Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text('Délai dépassé — Suspension imminente',
+                  style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14))),
+            ]),
             const SizedBox(height: 10),
-            Text(
-              'Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. '
-              'Votre compte risque la suspension immédiate. Réglez maintenant :',
-              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-            ),
+            Text('Vous n\'avez pas réglé votre caution de $montant FCFA dans les délais. Réglez maintenant :',
+                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
             const SizedBox(height: 10),
             _cautionInstructions(montant),
           ],
@@ -160,10 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Dans les délais
-    final isUrgent = joursRestants <= 3;
+    final isUrgent  = joursRestants <= 3;
     final borderColor = isUrgent ? Colors.redAccent : Colors.orange;
-    final bgColor = isUrgent ? Colors.red.withOpacity(0.12) : Colors.orange.withOpacity(0.12);
+    final bgColor     = isUrgent ? Colors.red.withOpacity(0.12) : Colors.orange.withOpacity(0.12);
 
     return Container(
       margin: const EdgeInsets.only(top: 14),
@@ -176,32 +154,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                isUrgent ? Icons.error_outline : Icons.warning_amber_rounded,
-                color: borderColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Caution requise — Plus que $joursRestants jour(s)',
-                  style: TextStyle(
-                    color: borderColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          Row(children: [
+            Icon(isUrgent ? Icons.error_outline : Icons.warning_amber_rounded, color: borderColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Caution requise — Plus que $joursRestants jour(s)',
+                style: TextStyle(color: borderColor, fontWeight: FontWeight.bold, fontSize: 14))),
+          ]),
           const SizedBox(height: 10),
-          Text(
-            'Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, '
-            'veuillez régler votre caution de $montant FCFA :',
-            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-          ),
+          Text('Pour éviter la suspension de votre compte et continuer à recevoir vos commissions, '
+              'veuillez régler votre caution de $montant FCFA :',
+              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
           const SizedBox(height: 10),
           _cautionInstructions(montant),
         ],
@@ -212,21 +174,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _cautionInstructions(String montant) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
             const Text('• OM : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            Text('*144*1*1*698000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+            Text('*144*1*1*698000000*$montant#',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
           ]),
           const SizedBox(height: 4),
           Row(children: [
             const Text('• MoMo : ', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            Text('*126*1*1*677000000*$montant#', style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
+            Text('*126*1*1*677000000*$montant#',
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: 'monospace')),
           ]),
         ],
       ),
@@ -238,31 +199,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 48, height: 48,
-              decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
-              child: const Icon(Icons.person_outline, color: Colors.white70),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Bonjour,', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                Text('$prenom 👋', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            Text('+${_fmt(_summary?.totalGains ?? 0)}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-          ],
-        ),
+        Row(children: [
+          Container(
+            width: 48, height: 48,
+            decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
+            child: const Icon(Icons.person_outline, color: Colors.white70),
+          ),
+          const SizedBox(width: 12),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Bonjour,', style: TextStyle(color: Colors.white60, fontSize: 13)),
+            Text('$prenom 👋', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          ]),
+        ]),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          const Text('Gains', style: TextStyle(color: Colors.white60, fontSize: 12)),
+          Text('+${_fmt(_summary?.totalGains ?? 0)}',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        ]),
       ],
     );
   }
@@ -278,46 +231,42 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Text('Solde commission', style: TextStyle(color: Colors.white60, fontSize: 14)),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
-                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: () => setState(() => _hideBalances = !_hideBalances),
-                child: Icon(_hideBalances ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.white54, size: 20),
-              ),
-            ],
-          ),
+          Row(children: [
+            Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
+                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () => setState(() => _hideBalances = !_hideBalances),
+              child: Icon(_hideBalances ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: Colors.white54, size: 20),
+            ),
+          ]),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: Colors.white24),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('VOIR PLUS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ActivitiesScreen())),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: Colors.white24),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: const Text('VOIR PLUS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _withdraw,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('RETIRER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _withdraw,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: const Text('RETIRER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-            ],
-          ),
+            ),
+          ]),
         ],
       ),
     );
@@ -336,13 +285,11 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
-              SizedBox(width: 8),
-              Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
-            ],
-          ),
+          const Row(children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
+            SizedBox(width: 8),
+            Text('Emprunt (dette)', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          ]),
           const SizedBox(height: 8),
           Text(_hideBalances ? '•••••• XAF' : _fmt(montant),
               style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
@@ -385,12 +332,17 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(16)),
-          child: Column(
-            children: _activities.asMap().entries.map((entry) {
-              final isLast = entry.key == _activities.length - 1;
-              return _buildActivityTile(entry.value, isLast);
-            }).toList(),
-          ),
+          child: _activities.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('Aucune activité récente', style: TextStyle(color: Colors.white38, fontSize: 13), textAlign: TextAlign.center),
+                )
+              : Column(
+                  children: _activities.asMap().entries.map((entry) {
+                    final isLast = entry.key == _activities.length - 1;
+                    return _buildActivityTile(entry.value, isLast);
+                  }).toList(),
+                ),
         ),
       ],
     );
@@ -398,25 +350,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildActivityTile(ActivityModel a, bool isLast) {
     final isPositive = a.amount >= 0;
-    IconData icon;
-    Color iconColor;
-    Color iconBg;
-
-    if (a.type == ActivityType.commission) {
-      icon = Icons.arrow_downward;
-      iconColor = Colors.tealAccent;
-      iconBg = Colors.teal.withOpacity(0.15);
-    } else if (a.provider == 'orange') {
-      icon = Icons.phone_android;
-      iconColor = Colors.white;
-      iconBg = Colors.orange;
-    } else {
-      icon = Icons.phone_android;
-      iconColor = Colors.white;
-      iconBg = Colors.blue;
-    }
-
-    final dateStr = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
+    final icon       = a.isCommission ? Icons.arrow_downward : Icons.local_shipping_outlined;
+    final iconColor  = a.isCommission ? Colors.tealAccent : Colors.white;
+    final iconBg     = a.isCommission ? Colors.teal.withOpacity(0.15) : Colors.blueGrey.withOpacity(0.3);
+    final label      = a.isCommission ? 'Commission reçue' : (a.clientName ?? 'Livraison');
+    final subLabel   = a.manager.isNotEmpty ? 'Via ${a.manager}' : (a.clientAddress ?? '');
+    final dateStr    = '${a.date.day} ${_moisAbrege(a.date.month)} ${a.date.year.toString().substring(2)}, '
         '${a.date.hour.toString().padLeft(2, '0')}:${a.date.minute.toString().padLeft(2, '0')}';
 
     return Container(
@@ -436,8 +375,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(a.subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(subLabel, style: const TextStyle(color: Colors.white54, fontSize: 12)),
               ],
             ),
           ),
@@ -458,19 +397,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── STATS ────────────────────────────────────────────────────
   Widget _buildStatsSection() {
-    final gains = _summary?.totalGains ?? 0;
+    final gains  = _summary?.totalGains ?? 0;
     final ventes = _summary?.totalVentes ?? 0;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: const Color(0xFF16324A), borderRadius: BorderRadius.circular(20)),
       child: Row(
         children: [
-          DonutChart(
-            value1: ventes,
-            value2: gains,
-            centerLabel: 'Total Gain',
-            centerValue: _compact(gains),
-          ),
+          DonutChart(value1: ventes, value2: gains, centerLabel: 'Total Gain', centerValue: _compact(gains)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -487,10 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _compact(double v) {
-    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-    return v.toStringAsFixed(0);
-  }
+  String _compact(double v) => v >= 1000 ? '${(v / 1000).toStringAsFixed(1)}K' : v.toStringAsFixed(0);
 
   Widget _legendDot(Color color, String label, String value) {
     return Row(

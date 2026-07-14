@@ -20,11 +20,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
+    final List<Widget> screens = [
       HomeScreen(onNavigateTab: _goToTab),
       const ActivitiesScreen(),
       const DeliveryMapScreen(),
-    const DeliveriesListScreen(),
+      DeliveriesListScreen(),
       const SettingsScreen(),
     ];
 
@@ -34,7 +34,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppColors.cardNavy,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, -2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            )
+          ],
         ),
         child: SafeArea(
           child: Padding(
@@ -62,24 +68,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: active ? AppColors.gold : Colors.white38, size: 22),
+            Icon(icon,
+                color: active ? AppColors.gold : Colors.white38, size: 22),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: active ? AppColors.gold : Colors.white38, fontSize: 10)),
+            Text(label,
+                style: TextStyle(
+                    color: active ? AppColors.gold : Colors.white38,
+                    fontSize: 10)),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _PlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('$title — à construire', style: const TextStyle(color: Colors.white38)),
     );
   }
 }

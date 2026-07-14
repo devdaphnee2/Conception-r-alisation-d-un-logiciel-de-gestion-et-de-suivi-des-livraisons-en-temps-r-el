@@ -1,40 +1,108 @@
-/// Service de récupération de mot de passe.
-/// MODE MOCK activé en attendant les routes backend.
-/// Quand le backend sera prêt : passer _useMock à false et compléter les TODO.
+import 'package:dio/dio.dart';
+import 'api_service.dart';
+
+/// Service de récupération et modification de mot de passe.
+/// Branché sur le backend fusionné (port 5000).
 class PasswordService {
-  static const bool _useMock = true;
 
-  // Code accepté en mode démo
-  static const String _mockCode = '123456';
-
-  /// Étape 1 : envoyer le code OTP au téléphone/e-mail du livreur.
+  // ─────────────────────────────────────────────────────────────
+  // Étape 1 — Envoyer le lien de réinitialisation par email
+  //
+  // Backend : POST /api/v1/drivers/forgot-password
+  // Body    : { "email": "..." }
+  // Réponse : { "message": "..." }
+  // ─────────────────────────────────────────────────────────────
   static Future<bool> sendResetCode(String identifiant) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (_useMock) {
-      // En démo, on considère l'envoi toujours réussi.
+    try {
+      await ApiService.dio.post(
+        '/drivers/forgot-password',
+        data: {'email': identifiant},
+      );
       return true;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Erreur lors de l\'envoi.')
+          : 'Erreur réseau, vérifiez votre connexion.';
+      throw Exception(msg.toString());
+    } catch (_) {
+      throw Exception('Une erreur inattendue est survenue.');
     }
-    // TODO backend : POST /drivers/forgot-password { identifiant }
-    throw UnimplementedError();
   }
 
-  /// Étape 2 : vérifier le code saisi.
+  // ─────────────────────────────────────────────────────────────
+  // Étape 2 — Vérifier le token reçu par email
+  //
+  // Backend : GET /api/v1/auth/verify-reset-token?token=...
+  // Réponse : { "valid": true } ou 400
+  // ─────────────────────────────────────────────────────────────
   static Future<bool> verifyCode(String identifiant, String code) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (_useMock) {
-      return code.trim() == _mockCode;
+    try {
+      final response = await ApiService.dio.get(
+        '/auth/verify-reset-token',
+        queryParameters: {'token': code},
+      );
+      return response.data['valid'] == true;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) return false;
+      throw Exception('Erreur réseau, vérifiez votre connexion.');
+    } catch (_) {
+      throw Exception('Une erreur inattendue est survenue.');
     }
-    // TODO backend : POST /drivers/verify-otp { identifiant, code }
-    throw UnimplementedError();
   }
 
-  /// Étape 3 : enregistrer le nouveau mot de passe.
-  static Future<bool> resetPassword(String identifiant, String code, String newPassword) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (_useMock) {
+  // ─────────────────────────────────────────────────────────────
+  // Étape 3 — Réinitialiser le mot de passe avec le token
+  //
+  // Backend : POST /api/v1/drivers/reset-password
+  // Body    : { "token": "...", "newPassword": "..." }
+  // Réponse : { "message": "Mot de passe reinitialise avec succes." }
+  // ─────────────────────────────────────────────────────────────
+  static Future<bool> resetPassword(
+      String identifiant, String code, String newPassword) async {
+    try {
+      await ApiService.dio.post(
+        '/drivers/reset-password',
+        data: {
+          'token'      : code,
+          'newPassword': newPassword,
+        },
+      );
       return true;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Token invalide ou expiré.')
+          : 'Erreur réseau, vérifiez votre connexion.';
+      throw Exception(msg.toString());
+    } catch (_) {
+      throw Exception('Une erreur inattendue est survenue.');
     }
-    // TODO backend : POST /drivers/reset-password { identifiant, code, newPassword }
-    throw UnimplementedError();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Changer le mot de passe (livreur connecté)
+  //
+  // Backend : PATCH /api/v1/drivers/change-password
+  // Body    : { "old_password": "...", "new_password": "..." }
+  // Réponse : { "message": "Mot de passe modifie." }
+  // ─────────────────────────────────────────────────────────────
+  static Future<bool> changePassword(
+      String oldPassword, String newPassword) async {
+    try {
+      await ApiService.dio.patch(
+        '/drivers/change-password',
+        data: {
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        },
+      );
+      return true;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Erreur lors du changement.')
+          : 'Erreur réseau, vérifiez votre connexion.';
+      throw Exception(msg.toString());
+    } catch (_) {
+      throw Exception('Une erreur inattendue est survenue.');
+    }
   }
 }
