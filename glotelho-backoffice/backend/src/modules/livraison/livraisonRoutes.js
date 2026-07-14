@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../../middlewares/authMiddleware');
 const managerOnly = require('../../middlewares/managerOnly');
-const { index, create, show, update, assigner, annuler } = require('./livraisonController');
+const { index, create, show, update, assigner, annuler, demarrerCourse } = require('./livraisonController');
 
 router.use(authMiddleware, managerOnly);
 router.get('/', index);
@@ -11,5 +11,6 @@ router.get('/:id', show);
 router.put('/:id', update);
 router.post('/:id/assigner', assigner);
 router.post('/:id/annuler', annuler);
+router.post('/:id/demarrer', demarrerCourse);
 
 module.exports = router;
