@@ -375,10 +375,10 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle('Disponibilités'),
-          const Text('Jours disponibles', style: TextStyle(fontSize: 13, color: Colors.white70)),
-          const SizedBox(height: 8),
-          Wrap(
+          _sectionTitle('Indiquez vos coordonnées pour vos transactions'),
+          //const Text('Jours disponibles', style: TextStyle(fontSize: 13, color: Colors.white70)),
+          //const SizedBox(height: 1),
+          /*Wrap(
             spacing: 8, runSpacing: 8,
             children: _jours.map((j) {
               final selected = _joursDisponibles.contains(j);
@@ -392,8 +392,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 side: BorderSide(color: selected ? AppColors.gold : Colors.white24),
               );
             }).toList(),
-          ),
-          const SizedBox(height: 16),
+          ),*/
+          const SizedBox(height: 1),
           /*Row(
             children: [
               Expanded(
@@ -436,7 +436,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ],
           ),*/
-          const SizedBox(height: 28),
+          const SizedBox(height: 8),
           _sectionTitle('Mobile Money / Orange money'),
           buildTextField(_mobileMoneyNumeroCtrl, 'Numéro Mobile Money', Icons.phone_android, keyboardType: TextInputType.phone),
           const SizedBox(height: 12),

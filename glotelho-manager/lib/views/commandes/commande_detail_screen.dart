@@ -20,12 +20,12 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
   String? _success;
 
   static const _statusColors = <String, Color>{
-    'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
+    'Commande': Color(0xFF9E9E9E), 'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
     'En_cours': Color(0xFF20619E), 'Livr_': Color(0xFF1B5E20),
     'Suspendu': Color(0xFFBA1A1A), 'Annul_': Color(0xFF817564),
   };
   static const _statusLabels = <String, String>{
-    'En_attente': 'En attente', 'Assign_': 'Assigné',
+    'Commande': 'Brouillon', 'En_attente': 'En attente', 'Assign_': 'Assigné',
     'En_cours': 'En cours', 'Livr_': 'Livré',
     'Suspendu': 'Suspendu', 'Annul_': 'Annulé',
   };
@@ -196,7 +196,7 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
                 children: [
                   Expanded(child: Text('${a["product_name"]} x${a["quantity"] ?? 1}',
                       style: const TextStyle(fontSize: 13))),
-                  Text('${(((a["unit_price"] ?? 0) as num) * ((a["quantity"] ?? 1) as num)).toStringAsFixed(0)} FCFA',
+                  Text('${((double.tryParse(a["unit_price"]?.toString() ?? "0") ?? 0) * (int.tryParse(a["quantity"]?.toString() ?? "1") ?? 1)).toStringAsFixed(0)} FCFA',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D1B2A), fontSize: 12)),
                 ],
               ),
@@ -206,7 +206,7 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Total à collecter', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text('${l['amount_to_collect'] ?? 0} FCFA',
+                Text('${double.tryParse(l['amount_to_collect']?.toString() ?? '0')?.toStringAsFixed(0) ?? '0'} FCFA',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0D1B2A))),
               ],
             ),
@@ -224,26 +224,7 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
             ]),
           ],
 
-          // OTP
-          if (otp != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: const Color(0xFF0D1B2A), borderRadius: BorderRadius.circular(14)),
-              child: Column(
-                children: [
-                  const Text('Code OTP à communiquer au client',
-                      style: TextStyle(color: Colors.white54, fontSize: 11)),
-                  const SizedBox(height: 8),
-                  Text(otp, style: const TextStyle(color: Color(0xFFC9952E), fontSize: 42,
-                      fontWeight: FontWeight.w900, letterSpacing: 10, fontFamily: 'monospace')),
-                  const SizedBox(height: 6),
-                  const Text('Le livreur demandera ce code à votre client',
-                      style: TextStyle(color: Colors.white38, fontSize: 11)),
-                ],
-              ),
-            ),
-          ],
+          // OTP masque cote commercant
 
           // Actions
           const SizedBox(height: 16),
