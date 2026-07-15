@@ -5,7 +5,7 @@ class ApiService {
   final Dio dio;
   final AppState appState;
 
-  static const String _baseUrl = 'http://192.168.1.145:5000/api';
+  static const String _baseUrl = 'http://192.168.1.150:5000/api';
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(
@@ -59,6 +59,11 @@ class ApiService {
   // COMMANDES (créées par le commerçant)
   Future<Response> getMesCommandes() => dio.get('/v1/commercant/livraisons');
   Future<Response> getCommande(int id) => dio.get('/v1/commercant/livraisons/$id');
+
+  // TODO: confirmer avec le backend l'endpoint exact et le format de
+  // réponse attendu (actuellement suppose /auth/forgot-password).
+  Future<Response> forgotPassword(String email) =>
+      dio.post('/auth/forgot-password', data: {'email': email});
 
   Future<Response> creerCommande(Map<String, dynamic> payload) =>
       dio.post('/v1/commercant/livraisons', data: payload);
