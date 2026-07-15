@@ -107,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: [
                               const Text('Total à collecter', style: TextStyle(color: Colors.white60, fontSize: 12)),
                               const SizedBox(height: 4),
-                              Text('${_montantTotal.toStringAsFixed(0)} FCFA',
+                              Text('${_montantTotal.toStringAsFixed(0)} XAF',
                                   style: const TextStyle(color: Color(0xFFC9952E), fontSize: 26, fontWeight: FontWeight.w900)),
                             ],
                           ),
@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 delegate: SliverChildListDelegate([
                   _kpiCard('Total', '${_stats['total'] ?? 0}', Icons.inbox_outlined, const Color(0xFF0D1B2A)),
                   _kpiCard('En attente', '${_stats['en_attente'] ?? 0}', Icons.hourglass_empty, const Color(0xFFC9952E)),
-                  _kpiCard('En cours', '${_stats['en_cours'] ?? 0}', Icons.delivery_dining, const Color(0xFF20619E)),
+                  _kpiCard('En cours', '${_stats['en_cours'] ?? 0}', Icons.delivery_dining_rounded, const Color(0xFF20619E)),
                   _kpiCard('Livrées', '${_stats['livrees'] ?? 0}', Icons.check_circle_outline, const Color(0xFF1B5E20)),
                 ]),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
