@@ -19,11 +19,7 @@ async function livraisonsEnCours(req, res) {
         if (!manager) return res.status(403).json({ message: 'Compte introuvable.' });
         var livraisons = await prisma.deliveryorders.findMany({
             where: { manager_id: manager.id, status: 'En_cours' },
-            include: {
-                delivery_persons: { include: { users: true, vehicules: true } },
-                delivery_items: true,
-                confirmations: { take: 1 },
-            },
+            include: { delivery_persons: { include: { users: true, vehicules: true } }, delivery_items: true, confirmations: { take: 1 } },
             orderBy: { creation_date: 'desc' }
         });
         res.json(livraisons);
@@ -64,7 +60,7 @@ async function creerLivraison(req, res) {
             });
             customer = await prisma.customers.create({ data: { user_id: newUser.id } });
         }
-        var otp = Math.floor(100000 + Math.random() * 900000).toString();
+
         var livraison = await prisma.deliveryorders.create({
             data: {
                 manager_id: manager.id,
@@ -82,19 +78,24 @@ async function creerLivraison(req, res) {
                 client_whatsapp: body.client_whatsapp || body.client_telephone,
             }
         });
+
+        // Articles
         if (body.articles && body.articles.length > 0) {
-            var articlesData = body.articles.filter(a => a.nom).map(a => ({
-                deliveryorder_id: livraison.id,
-                order_id: null,
-                product_name: a.nom,
-                quantity: parseInt(a.quantite) || 1,
-                unit_price: parseFloat(a.prix_unitaire) || 0,
-                status: 'Disponible',
-            }));
+            var articlesData = body.articles.filter(function(a) { return a.nom; }).map(function(a) {
+                return {
+                    deliveryorder_id: livraison.id,
+                    product_name: a.nom,
+                    quantity: parseInt(a.quantite) || 1,
+                    price: parseFloat(a.prix_unitaire) || 0,
+                    status: 'Disponible',
+                };
+            });
             if (articlesData.length > 0) await prisma.delivery_items.createMany({ data: articlesData });
         }
-        await prisma.confirmations.create({ data: { deliveryorder_id: livraison.id, otp_code: otp, methode: 'OTP' } });
-        res.status(201).json({ message: 'Commande enregistrée.', livraison, otp });
+
+        // PAS de confirmation ici — elle sera créée lors de l'assignation du livreur
+
+        res.status(201).json({ message: 'Commande enregistrée.', livraison });
     } catch (err) {
         console.error('[creerLivraison]', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
@@ -108,7 +109,7 @@ async function commanderCourse(req, res) {
         if (!livraison) return res.status(404).json({ message: 'Commande introuvable.' });
         if (livraison.status !== 'Commande') return res.status(400).json({ message: 'Déjà envoyée.' });
         await prisma.deliveryorders.update({ where: { id }, data: { status: 'En_attente' } });
-        res.json({ message: 'Course commandée ! L\'admin va assigner un livreur.' });
+        res.json({ message: "Course commandée ! L'admin va assigner un livreur." });
     } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
 }
 

@@ -24,15 +24,19 @@ export default function CommandesList() {
     const [error, setError] = useState('');
 
     function charger() {
-        Promise.all([
-            api.get('/livraisons?status=En_attente'),
-            api.get('/livreurs?status=Disponible'),
-        ]).then(function([cmdRes, livRes]) {
-            setCommandes(cmdRes.data || []);
-            setLivreurs(livRes.data || []);
-        }).catch(function() {
-            setError('Impossible de charger les commandes.');
-        }).finally(function() { setLoading(false); });
+        setLoading(true);
+        setError('');
+
+        api.get('/livraisons?status=En_attente')
+            .then(function(res) { setCommandes(res.data || []); })
+            .catch(function(err) {
+                setError('Erreur chargement commandes : ' + (err.response && err.response.data ? err.response.data.message : err.message));
+            });
+
+        api.get('/livreurs')
+            .then(function(res) { setLivreurs(res.data || []); })
+            .catch(function() {})
+            .finally(function() { setLoading(false); });
     }
 
     useEffect(function() { charger(); }, []);
@@ -45,7 +49,7 @@ export default function CommandesList() {
             var res = await api.post('/livraisons/' + commandeId + '/assigner', {
                 delivery_person_id: assignForm.livreurId
             });
-            setSuccessMsg('Course créée et livreur assigné !');
+            setSuccessMsg('Livreur assigné avec succès !');
             if (res.data && res.data.whatsapp_link) {
                 window.open(res.data.whatsapp_link, '_blank');
             }
@@ -54,7 +58,8 @@ export default function CommandesList() {
         } catch (err) {
             setError(err.response && err.response.data && err.response.data.message ? err.response.data.message : 'Erreur.');
         } finally {
-            setActionLoading(false); }
+            setActionLoading(false);
+        }
     }
 
     var inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid ' + P.outlineVariant, fontSize: '12px', fontFamily: 'Poppins, sans-serif', color: P.onSurface, outline: 'none', boxSizing: 'border-box', backgroundColor: P.surface };
@@ -62,7 +67,6 @@ export default function CommandesList() {
     return (
         <div style={{ fontFamily: 'Poppins, sans-serif', maxWidth: '1100px' }}>
 
-            {/* Header */}
             <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                     <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: 800, color: P.onSurface }}>Commandes en attente</h2>
@@ -106,12 +110,10 @@ export default function CommandesList() {
                         var clientTel = cmd.client_telephone || (cmd.customers && cmd.customers.users ? cmd.customers.users.phone : '');
                         var numFormate = '#' + String(cmd.id).padStart(5, '0');
                         var isAssigning = assignForm.commandeId === cmd.id;
-                        var totalArticles = cmd.delivery_items ? cmd.delivery_items.reduce(function(s, a) { return s + (Number(a.unit_price) * (a.quantity || 1)); }, 0) : 0;
 
                         return (
                             <div key={cmd.id} style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
 
-                                {/* Header carte */}
                                 <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + P.surfaceContainerLow, display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: P.surfaceContainerLow }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <span style={{ fontSize: '20px', fontWeight: 900, color: P.primary }}>{numFormate}</span>
@@ -124,7 +126,6 @@ export default function CommandesList() {
                                     </span>
                                 </div>
 
-                                {/* Contenu */}
                                 <div style={{ padding: '16px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
 
                                     {/* Client */}
@@ -156,7 +157,7 @@ export default function CommandesList() {
                                                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                                                         <span style={{ color: P.onSurface }}>{item.product_name} x{item.quantity || 1}</span>
                                                         <span style={{ color: P.primary, fontWeight: 600 }}>
-                                                            {item.unit_price ? (Number(item.unit_price) * (item.quantity || 1)).toLocaleString('fr-FR') + ' F' : ''}
+                                                            {item.price ? (Number(item.price) * (item.quantity || 1)).toLocaleString('fr-FR') + ' F' : ''}
                                                         </span>
                                                     </div>
                                                 );
@@ -182,10 +183,13 @@ export default function CommandesList() {
                                                     onChange={function(e) { setAssignForm({ livreurId: e.target.value, commandeId: cmd.id }); }}
                                                     style={inputStyle}>
                                                     <option value="">-- Sélectionner --</option>
-                                                    {livreurs.filter(function(l) { return l.status === 'Disponible'; }).map(function(l) {
+                                                    {livreurs.filter(function(l) { return l.status === 'Disponible' && l.caution_payee; }).map(function(l) {
+                                                        var u = Array.isArray(l.users)
+                                                            ? l.users.find(function(u) { return u.id === l.user_id; })
+                                                            : l.users;
                                                         return (
-                                                            <option key={l.id} value={l.id}>
-                                                                {l.users && l.users.first_name} {l.users && l.users.last_name} — {l.zone_affectee || 'Sans zone'}
+                                                            <option key={l.id} value={l.id} disabled={!l.caution_payee}>
+                                                                {u && u.first_name} {u && u.last_name} — {l.zone_affectee || 'Sans zone'}
                                                             </option>
                                                         );
                                                     })}
@@ -216,7 +220,6 @@ export default function CommandesList() {
                                     </div>
                                 </div>
 
-                                {/* Instructions si presentes */}
                                 {cmd.delivery_instructions && (
                                     <div style={{ padding: '10px 18px', borderTop: '1px solid ' + P.surfaceContainerLow, backgroundColor: P.primaryFixed }}>
                                         <p style={{ margin: 0, fontSize: '11px', color: P.onPrimaryContainer }}>
