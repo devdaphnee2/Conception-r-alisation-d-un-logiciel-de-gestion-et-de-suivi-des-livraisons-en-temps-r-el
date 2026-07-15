@@ -74,8 +74,12 @@ async function register(req, res) {
         var user = await prisma.users.create({ data: { first_name, last_name, email, phone: phone || '', password: hashed, role: 'manager' } });
         try { await prisma.managers.create({ data: { user_id: user.id } }); } catch (e) {}
         var token = genToken(user, '8h');
+        console.log('[REGISTER] user created:', user.id);
         res.status(201).json({ message: 'Compte cree.', token, user: { id: user.id, first_name: user.first_name, email: user.email, role: user.role } });
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
+    } catch (err) {
+        console.error('[REGISTER ERROR]', err.message);
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
 }
 
 async function me(req, res) {
@@ -90,28 +94,22 @@ async function forgotPassword(req, res) {
     try {
         var email = req.body.email;
         if (!email) return res.status(400).json({ message: 'Email requis.' });
-
         var user = await prisma.users.findUnique({ where: { email } });
         if (!user) return res.json({ message: 'Si ce compte existe, un email a ete envoye.' });
-
         var resetToken = crypto.randomBytes(32).toString('hex');
         var resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-        var resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
-
+        var resetExpires = new Date(Date.now() + 60 * 60 * 1000);
         await prisma.users.update({
             where: { id: user.id },
             data: { reset_password_token: resetTokenHash, reset_password_expires: resetExpires }
         });
-
         var resetUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/reset-password?token=' + resetToken;
-
         try {
             await sendResetPasswordEmail(user.email, resetUrl, user.first_name);
             console.log('[EMAIL] Envoyé à', user.email);
         } catch (emailErr) {
             console.error('[EMAIL] Erreur envoi:', emailErr.message);
         }
-
         res.json({ message: 'Email de reinitialisation envoye.' });
     } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
 }
@@ -122,20 +120,17 @@ async function resetPassword(req, res) {
         var password = req.body.password || req.body.newPassword;
         if (!token || !password) return res.status(400).json({ message: 'Token et mot de passe requis.' });
         if (password.length < 6) return res.status(400).json({ message: 'Mot de passe minimum 6 caracteres.' });
-
         var tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         var user = await prisma.users.findFirst({
             where: { reset_password_token: tokenHash, reset_password_expires: { gt: new Date() } }
         });
         if (!user) return res.status(400).json({ message: 'Lien invalide ou expire.' });
-
         var hashed = await bcrypt.hash(password, 10);
         await prisma.users.update({
             where: { id: user.id },
             data: { password: hashed, reset_password_token: null, reset_password_expires: null }
         });
         try { await prisma.password_resets.deleteMany({ where: { user_id: user.id } }); } catch (e) {}
-
         res.json({ message: 'Mot de passe reinitialise avec succes.' });
     } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
 }

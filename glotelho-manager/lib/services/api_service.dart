@@ -51,17 +51,13 @@ class ApiService {
   Future<Response> changePassword(String current, String newPwd) =>
       dio.post('/auth/change-password', data: {'old_password': current, 'new_password': newPwd});
 
-  // COMPAT — anciennes methodes toujours utilisees par dashboard et nouvelle_commande
   Future<Response> getLivraisons({String? status}) => getMesCommandes();
   Future<Response> getLivreurs({bool disponiblesOnly = false}) => getLivreursDisponibles();
   Future<Response> createLivraison(Map<String, dynamic> payload) => creerCommande(payload);
 
-  // COMMANDES (créées par le commerçant)
   Future<Response> getMesCommandes() => dio.get('/v1/commercant/livraisons');
   Future<Response> getCommande(int id) => dio.get('/v1/commercant/livraisons/$id');
 
-  // TODO: confirmer avec le backend l'endpoint exact et le format de
-  // réponse attendu (actuellement suppose /auth/forgot-password).
   Future<Response> forgotPassword(String email) =>
       dio.post('/auth/forgot-password', data: {'email': email});
 
@@ -78,14 +74,11 @@ class ApiService {
       dio.post('/v1/commercant/livraisons/$id/litige',
           data: {'motif': motif, 'description': description});
 
-  // LIVRAISONS EN COURS du jour
   Future<Response> getLivraisonsEnCours() =>
       dio.get('/v1/commercant/livraisons/en-cours');
 
-  // LITIGES
   Future<Response> getMesLitiges() => dio.get('/litiges');
 
-  // LIVREURS DISPONIBLES
   Future<Response> getLivreursDisponibles() =>
       dio.get('/v1/commercant/livreurs-disponibles');
 }
