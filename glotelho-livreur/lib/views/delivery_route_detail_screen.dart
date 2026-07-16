@@ -34,6 +34,8 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
         return AppColors.statusInProgress;
       case DeliveryStatus.suspended:
         return AppColors.amber;
+      case DeliveryStatus.assigned:
+        return AppColors.blue;
       case DeliveryStatus.pending:
         return AppColors.statusPending;
     }
@@ -49,6 +51,8 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
         return 'En cours';
       case DeliveryStatus.suspended:
         return 'Suspendue';
+      case DeliveryStatus.assigned:
+        return 'Assignée';
       case DeliveryStatus.pending:
         return 'En attente';
     }

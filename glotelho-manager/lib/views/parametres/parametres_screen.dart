@@ -69,7 +69,7 @@ class _ParametresScreenState extends State<ParametresScreen> {
                             color: const Color(0xFFC9952E).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('E-commerçant',
+                          child: const Text('Commerçant',
                               style: TextStyle(color: Color(0xFFC9952E), fontSize: 10, fontWeight: FontWeight.bold)),
                         ),
                       ],
@@ -178,9 +178,9 @@ class _ParametresScreenState extends State<ParametresScreen> {
               _SettingsRow(
                 icon: Icons.info_outline,
                 title: 'À propos',
-                subtitle: 'Glotelho Manager v1.0',
+                subtitle: 'Glotelho Commerçant v1.0',
                 trailing: const Icon(Icons.chevron_right, size: 20),
-                onTap: () => _showInfo(context, 'À propos', 'Glotelho Manager\nVersion 1.0.0\n\nPlateforme de gestion des livraisons à Douala.'),
+                onTap: () => _showInfo(context, 'À propos', 'Glotelho Commerçant\nVersion 1.0.0\n\nPlateforme de gestion, et de suivi des livraisons.'),
               ),
             ]),
 

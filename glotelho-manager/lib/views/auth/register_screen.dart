@@ -71,7 +71,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
       }
     } catch (e) {
-      setState(() => _error = 'Erreur lors de la création du compte.');
+      final dio = e as dynamic;
+      final msg = dio?.response?.data?['message'];
+      setState(() => _error = msg ?? 'Erreur lors de la création du compte.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -101,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 8),
-                Text('Votre compte manager a été créé. Redirection en cours...',
+                Text('Votre compte commerçant a été créé. Redirection en cours...',
                     style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                     textAlign: TextAlign.center),
               ],
@@ -112,7 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer un compte manager')),
+      appBar: AppBar(title: const Text('Créer un compte commerçant')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -155,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 14),
                 _field('Email', _email,
-                    hint: 'manager@glotelho.com',
+                    hint: 'commerçant@glotelho.com',
                     keyboardType: TextInputType.emailAddress),
                 const SizedBox(height: 14),
                 _field('Numéro de téléphone', _phone,
