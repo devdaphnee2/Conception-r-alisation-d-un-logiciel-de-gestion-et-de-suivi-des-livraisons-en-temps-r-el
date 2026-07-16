@@ -18,14 +18,22 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   String _search = '';
 
   static const _statusColors = <String, Color>{
-    'En_attente': Color(0xFFC9952E), 'Assign_': Color(0xFF3E5682),
-    'En_cours': Color(0xFF20619E), 'Livr_': Color(0xFF1B5E20),
-    'Suspendu': Color(0xFFBA1A1A), 'Annul_': Color(0xFF817564),
+    'Commande'  : Color(0xFF9E9E9E),
+    'En_attente': Color(0xFFE65100),
+    'Assign_'   : Color(0xFF3E5682),
+    'En_cours'  : Color(0xFF20619E),
+    'Livr_'     : Color(0xFF1B5E20),
+    'Suspendu'  : Color(0xFFBA1A1A),
+    'Annul_'    : Color(0xFF817564),
   };
   static const _statusLabels = <String, String>{
-    'En_attente': 'En attente', 'Assign_': 'Assigné',
-    'En_cours': 'En cours', 'Livr_': 'Livré',
-    'Suspendu': 'Suspendu', 'Annul_': 'Annulé',
+    'Commande'  : 'Brouillon',
+    'En_attente': 'En attente assignation',
+    'Assign_'   : 'Assigné',
+    'En_cours'  : "En cours de livraison",
+    'Livr_'     : 'Livré',
+    'Suspendu'  : 'Suspendu',
+    'Annul_'    : 'Annulé',
   };
 
   @override
@@ -50,7 +58,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     }
   }
 
-  List get _enAttente => _all.where((l) => l['status'] == 'En_attente').toList();
+  List get _enAttente => _all.where((l) => ['Commande', 'En_attente'].contains(l['status'])).toList();
   List get _actives   => _all.where((l) => ['Assign_','En_cours'].contains(l['status'])).toList();
   List get _historique=> _all.where((l) => ['Livr_','Annul_','Suspendu'].contains(l['status'])).toList();
 
@@ -107,7 +115,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                 unselectedLabelColor: Colors.white54,
                 labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 tabs: [
-                  Tab(text: 'En attente (${_enAttente.length})'),
+                  Tab(text: 'Brouillons (${_enAttente.length})'),
                   Tab(text: 'En cours (${_actives.length})'),
                   Tab(text: 'Historique'),
                 ],
@@ -226,8 +234,8 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                       Text(montant, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0D1B2A))),
                       Row(
                         children: [
-                          // Bouton Commander une course
-                          if (showCourseBtn)
+                          // Bouton Commander une course (seulement si brouillon)
+                          if (showCourseBtn && status == 'Commande')
                             ElevatedButton.icon(
                               onPressed: () => _commanderCourse(l['id'] as int),
                               icon: const Icon(Icons.send, size: 14),
@@ -238,6 +246,13 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
+                            ),
+                          // Bouton supprimer (seulement si brouillon)
+                          if (showCourseBtn && status == 'Commande')
+                            IconButton(
+                              onPressed: () => _supprimerCommande(l['id'] as int),
+                              icon: const Icon(Icons.delete_outline, color: Color(0xFFBA1A1A), size: 20),
+                              tooltip: 'Supprimer',
                             ),
                           // Bouton Suivre
                           if (showSuivreBtn)
@@ -298,6 +313,44 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Erreur lors de la commande.'),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  Future<void> _supprimerCommande(int id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Supprimer la commande ?'),
+        content: const Text('Cette action est irréversible.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      final api = ApiService(context.read<AppState>());
+      await api.supprimerCommande(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Commande supprimée.'),
+        backgroundColor: Color(0xFF1B5E20),
+        behavior: SnackBarBehavior.floating,
+      ));
+      _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Erreur lors de la suppression.'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ));

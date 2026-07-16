@@ -8,7 +8,7 @@ import 'widgets/main_navigation_shell.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final appState = AppState();
-  await appState.loadSession(); // Charger le token persisté
+  await appState.loadSession();
   runApp(
     ChangeNotifierProvider.value(
       value: appState,
@@ -30,7 +30,8 @@ class GlotelhoManagerApp extends StatelessWidget {
       themeMode: appState.themeMode,
       theme    : AppTheme.lightTheme,
       darkTheme: AppTheme.navyTheme,
-      initialRoute: appState.isAuthenticated ? '/home' : '/login',
+      // Toujours démarrer sur /onboarding — redirection gérée dans onboarding_screen
+      initialRoute: '/onboarding',
       routes: {
         ...appRoutes,
         '/home': (_) => const MainNavigationShell(),
