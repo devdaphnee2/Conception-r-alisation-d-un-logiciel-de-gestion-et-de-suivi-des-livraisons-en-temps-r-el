@@ -64,6 +64,7 @@ async function loginMobile(req, res) {
 }
 
 async function register(req, res) {
+    console.log('[REGISTER] requête reçue', req.body);
     try {
         var { first_name, last_name, email, phone, password } = req.body;
         if (!first_name || !last_name || !email || !password) return res.status(400).json({ message: 'Tous les champs obligatoires doivent etre remplis.' });
