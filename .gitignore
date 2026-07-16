@@ -32,3 +32,5 @@ glotelho-livreur/backend-livreur/node_modules/
 
 #.env
 *.env
+*.env.backup
+*.env.local.backup
