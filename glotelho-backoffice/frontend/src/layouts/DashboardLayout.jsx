@@ -108,7 +108,7 @@ export default function DashboardLayout() {
     const navLinks = [
         { to: '/dashboard',     label: 'Dashboard',      icon: IconDashboard },
         { to: '/livraisons',    label: 'Livraisons',      icon: IconPackage },
-        { to: '/livraisons/create', label: 'Commandes recues', icon: IconPackage },
+        { to: '/commandes-recues', label: 'Commandes reçues', icon: IconPackage },
         { to: '/livreurs',    label: 'Livreurs',        icon: IconTruck },
         { to: '/litiges',       label: 'Litiges',         icon: IconAlert },
         { to: '/recouvrements', label: 'Recouvrements',   icon: IconMoney },
@@ -186,7 +186,7 @@ export default function DashboardLayout() {
                         <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>{user?.first_name?.[0]}</div>
                         <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
                             <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: P.inverseSOn, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.first_name} {user?.last_name}</p>
-                            <p style={{ margin: 0, fontSize: '10px', color: 'rgba(241,241,241,0.3)' }}>E-commercant</p>
+                            <p style={{ margin: 0, fontSize: '10px', color: 'rgba(241,241,241,0.3)' }}>Administrateur</p>
                         </div>
                     </button>
                     {showUserMenu && (

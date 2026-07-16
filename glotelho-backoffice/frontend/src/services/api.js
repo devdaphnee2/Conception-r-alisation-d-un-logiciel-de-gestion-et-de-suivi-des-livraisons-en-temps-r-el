@@ -4,6 +4,7 @@ const api = axios.create({
     baseURL: 'http://localhost:3002/api/v1',
 });
 
+// Intercepteur requête — ajoute le token
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -11,5 +12,18 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Intercepteur réponse — si 401, token expiré → déconnecter
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api;

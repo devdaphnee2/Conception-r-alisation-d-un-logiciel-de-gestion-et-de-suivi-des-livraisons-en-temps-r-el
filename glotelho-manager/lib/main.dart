@@ -30,8 +30,8 @@ class GlotelhoManagerApp extends StatelessWidget {
       themeMode: appState.themeMode,
       theme    : AppTheme.lightTheme,
       darkTheme: AppTheme.navyTheme,
-      // Toujours démarrer sur /login — redirection gérée dans login_screen
-      initialRoute: '/login',
+      // Toujours démarrer sur /onboarding — redirection gérée dans onboarding_screen
+      initialRoute: '/onboarding',
       routes: {
         ...appRoutes,
         '/home': (_) => const MainNavigationShell(),
