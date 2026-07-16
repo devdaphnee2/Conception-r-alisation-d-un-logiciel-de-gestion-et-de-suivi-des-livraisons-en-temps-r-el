@@ -64,18 +64,22 @@ async function loginMobile(req, res) {
 }
 
 async function register(req, res) {
-    console.log('[REGISTER] requête reçue', req.body);
     try {
+        console.log('[REGISTER] requête reçue', req.body);
         var { first_name, last_name, email, phone, password } = req.body;
         if (!first_name || !last_name || !email || !password) return res.status(400).json({ message: 'Tous les champs obligatoires doivent etre remplis.' });
         if (password.length < 8) return res.status(400).json({ message: 'Mot de passe minimum 8 caracteres.' });
+        console.log('[REGISTER] vérification email existant...');
         var existing = await prisma.users.findUnique({ where: { email } });
+        console.log('[REGISTER] existing:', existing);
         if (existing) return res.status(400).json({ message: 'Un compte existe deja avec cet email.' });
+        console.log('[REGISTER] hashage mot de passe...');
         var hashed = await bcrypt.hash(password, 10);
+        console.log('[REGISTER] création user...');
         var user = await prisma.users.create({ data: { first_name, last_name, email, phone: phone || '', password: hashed, role: 'manager' } });
+        console.log('[REGISTER] user créé:', user.id);
         try { await prisma.managers.create({ data: { user_id: user.id } }); } catch (e) {}
         var token = genToken(user, '8h');
-        console.log('[REGISTER] user created:', user.id);
         res.status(201).json({ message: 'Compte cree.', token, user: { id: user.id, first_name: user.first_name, email: user.email, role: user.role } });
     } catch (err) {
         console.error('[REGISTER ERROR]', err.message);

@@ -35,6 +35,8 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
         return AppColors.statusInProgress;
       case DeliveryStatus.suspended:
         return AppColors.amber;
+      case DeliveryStatus.assigned:
+        return AppColors.blue;
       case DeliveryStatus.pending:
         return AppColors.statusPending;
     }
@@ -50,6 +52,8 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
         return BitmapDescriptor.hueAzure;
       case DeliveryStatus.suspended:
         return BitmapDescriptor.hueOrange;
+      case DeliveryStatus.assigned:
+        return BitmapDescriptor.hueBlue;
       case DeliveryStatus.pending:
         return BitmapDescriptor.hueYellow;
     }

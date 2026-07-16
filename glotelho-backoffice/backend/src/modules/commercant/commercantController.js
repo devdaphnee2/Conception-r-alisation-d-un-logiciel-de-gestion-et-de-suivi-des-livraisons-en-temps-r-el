@@ -28,13 +28,22 @@ async function livraisonsEnCours(req, res) {
 
 async function detailLivraison(req, res) {
     try {
+        console.log('[DETAIL] id:', req.params.id);
         var livraison = await prisma.deliveryorders.findUnique({
             where: { id: parseInt(req.params.id) },
-            include: { delivery_persons: { include: { users: true, vehicules: true } }, delivery_items: true, confirmations: true, litiges: true }
+            include: {
+                delivery_persons: { include: { users: true, vehicules: true } },
+                delivery_items: true,
+                confirmations: true
+            }
         });
+        console.log('[DETAIL] livraison trouvée:', livraison ? livraison.id : 'null');
         if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
         res.json(livraison);
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
+    } catch (err) {
+        console.error('[DETAIL ERROR]', err.message);
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
 }
 
 async function creerLivraison(req, res) {

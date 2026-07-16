@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 import '../models/activity_model.dart';
 
@@ -39,29 +38,33 @@ class EarningsService {
   }
 
   static Future<List<ActivityModel>> getActivities({int limit = 0}) async {
-    // Les activites seront chargees depuis l'historique des courses
     try {
       final response = await ApiService.dio.get('/drivers/historique');
       final List data = response.data ?? [];
-      final activities = data.map((json) => ActivityModel(
-        id            : json['id']?.toString() ?? '',
-        type          : ActivityType.livraison,
-        amount        : (json['amount_to_collect'] ?? 0).toDouble(),
-        date          : DateTime.tryParse(json['creation_date'] ?? '') ?? DateTime.now(),
-        manager       : json['manager']?.toString() ??'',
-        clientName    : json['client_nom'] ?? '',
-        clientPhone   : json['client_telephone'] ?? '',
-        clientAddress : json['delivery_address'] ?? '',
-        fraisLivraison: 0,
-      )).toList();
+      final List<ActivityModel> activities = data.map<ActivityModel>((json) {
+        final managerData = json['managers'];
+        final managerNom = managerData != null && managerData['users'] != null
+            ? '${managerData['users']['first_name'] ?? ''} ${managerData['users']['last_name'] ?? ''}'.trim()
+            : 'Admin';
+        return ActivityModel(
+          id           : json['id']?.toString() ?? '',
+          type         : ActivityType.livraison,
+          amount       : (json['amount_to_collect'] ?? 0).toDouble(),
+          date         : DateTime.tryParse(json['creation_date'] ?? '') ?? DateTime.now(),
+          manager      : managerNom,
+          clientName   : json['client_nom'] ?? '',
+          clientPhone  : json['client_telephone'] ?? '',
+          clientAddress: json['delivery_address'] ?? '',
+          fraisLivraison: 0,
+        );
+      }).toList();
       return limit > 0 ? activities.take(limit).toList() : activities;
     } catch (_) {
-      return [];
+      return <ActivityModel>[];
     }
   }
 
   static Future<bool> repayDebt() async {
-    // A implementer quand le module recouvrement sera connecte
     return false;
   }
 }
