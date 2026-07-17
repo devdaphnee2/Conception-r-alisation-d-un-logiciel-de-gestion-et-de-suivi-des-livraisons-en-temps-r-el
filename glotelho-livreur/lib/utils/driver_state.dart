@@ -3,11 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/driver_model.dart';
 import '../services/api_service.dart';
 import '../services/driver_service.dart';
+import '../services/polling_service.dart';
 
 class DriverState extends ChangeNotifier {
   DriverModel? _driver;
   String? _token;
-  bool _isOnline = false; // disponible / indisponible
+  bool _isOnline = false;
 
   DriverModel? get driver => _driver;
   String? get token => _token;
@@ -39,6 +40,7 @@ class DriverState extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    PollingService.stop(); // arrêter le polling à la déconnexion
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('driver_token');
     _driver = null;
@@ -46,7 +48,6 @@ class DriverState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Récupère le profil à jour du livreur (dont son statut de validation).
   Future<bool> refreshProfile() async {
     if (_token == null) return false;
     ApiService.setToken(_token!);

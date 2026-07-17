@@ -4,6 +4,7 @@ import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import 'login_screen.dart';
 import '../models/driver_model.dart';
+import 'main_navigation_screen.dart';
 
 /// Écran affiché tant que le manager n'a pas validé le compte du livreur.
 /// Ne redirige vers aucune autre interface tant que le statut n'est pas "approved".
@@ -26,12 +27,17 @@ class _PendingVerificationScreenState extends State<PendingVerificationScreen> {
     if (!mounted) return;
 
     if (state.driver?.status == DriverStatus.approved) {
-      // La vérification côté app principale (main.dart / splash) gère
-      // la redirection vers HomeScreen dès que le statut est "approved".
-      // Ici on informe simplement l'utilisateur.
+      // Rediriger directement vers l'app principale
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        (r) => false,
+      );
+    } else if (state.driver?.cautionPayee == true) {
+      // Caution payée mais pas encore approuvé
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Votre compte a été validé ! Reconnectez-vous.'),
-        backgroundColor: Colors.green,
+        content: Text('Caution reçue ! En attente d\'approbation finale.'),
+        backgroundColor: Colors.blue,
       ));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
