@@ -28,13 +28,22 @@ async function livraisonsEnCours(req, res) {
 
 async function detailLivraison(req, res) {
     try {
+        console.log('[DETAIL] id:', req.params.id);
         var livraison = await prisma.deliveryorders.findUnique({
             where: { id: parseInt(req.params.id) },
-            include: { delivery_persons: { include: { users: true, vehicules: true } }, delivery_items: true, confirmations: true, litiges: true }
+            include: {
+                delivery_persons: { include: { users: true, vehicules: true } },
+                delivery_items: true,
+                confirmations: true
+            }
         });
+        console.log('[DETAIL] livraison trouvée:', livraison ? livraison.id : 'null');
         if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
         res.json(livraison);
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
+    } catch (err) {
+        console.error('[DETAIL ERROR]', err.message);
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
 }
 
 async function creerLivraison(req, res) {
@@ -105,12 +114,70 @@ async function creerLivraison(req, res) {
 async function commanderCourse(req, res) {
     try {
         var id = parseInt(req.params.id);
-        var livraison = await prisma.deliveryorders.findUnique({ where: { id } });
+        var livraison = await prisma.deliveryorders.findUnique({
+            where: { id },
+            include: { managers: { include: { users: true } } }
+        });
         if (!livraison) return res.status(404).json({ message: 'Commande introuvable.' });
         if (livraison.status !== 'Commande') return res.status(400).json({ message: 'Déjà envoyée.' });
+
         await prisma.deliveryorders.update({ where: { id }, data: { status: 'En_attente' } });
+
+        // Récupérer le nom du commerçant
+        var commercantUser = null;
+        if (livraison.manager_id) {
+            var commercantRecord = await prisma.managers.findFirst({
+                where: { id: livraison.manager_id },
+                include: { users: true }
+            });
+            commercantUser = commercantRecord ? commercantRecord.users : null;
+        }
+        var commercantNom = commercantUser ?
+            commercantUser.first_name + ' ' + commercantUser.last_name :
+            'Un commerçant';
+
+        // ── Notifier tous les vrais managers (role = 'manager') ───────────
+        try {
+            var admins = await prisma.users.findMany({ where: { role: 'manager' } });
+            for (var admin of admins) {
+                await prisma.notifications.create({
+                    data: {
+                        recipient_id: admin.id,
+                        message: '🛒 Nouvelle commande #' + String(id).padStart(5, '0') +
+                            ' reçue de ' + commercantNom +
+                            (livraison.delivery_address ? ' · ' + livraison.delivery_address : '') +
+                            '. En attente d\'assignation.',
+                        type: 'Interne',
+                        is_read: false,
+                    }
+                });
+            }
+        } catch (e) { console.warn('[NOTIF COMMANDER COURSE] Echec:', e.message); }
+
+        // ── Notification FCM si token disponible ───────────────────────────
+        var managerUser = livraison.managers ? livraison.managers.users : null;
+        if (managerUser && managerUser.fcm_token) {
+            try {
+                var { getFirebaseDB } = require('../../config/firebaseAdmin');
+                var db = getFirebaseDB();
+                if (db) {
+                    await db.ref('notifications/' + Date.now()).set({
+                        token: managerUser.fcm_token,
+                        titre: '🛒 Nouvelle commande reçue',
+                        corps: 'Commande #' + String(id).padStart(5, '0') + ' de ' + commercantNom,
+                        lu: false,
+                        createdAt: Date.now()
+                    });
+                }
+            } catch (e) { console.warn('[FCM COMMANDER COURSE] Echec:', e.message); }
+        }
+
+        console.log('[COMMANDER COURSE] Commande #' + id + ' → En_attente, managers notifiés.');
         res.json({ message: "Course commandée ! L'admin va assigner un livreur." });
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
+    } catch (err) {
+        console.error('[COMMANDER COURSE] Erreur:', err.message);
+        res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    }
 }
 
 async function supprimerCommande(req, res) {
@@ -118,7 +185,7 @@ async function supprimerCommande(req, res) {
         var id = parseInt(req.params.id);
         var livraison = await prisma.deliveryorders.findUnique({ where: { id } });
         if (!livraison) return res.status(404).json({ message: 'Commande introuvable.' });
-        if (livraison.status !== 'Commande') return res.status(400).json({ message: 'Seules les commandes brouillon peuvent être supprimées.' });
+        if (!['Commande', 'En_attente'].includes(livraison.status)) return res.status(400).json({ message: 'Cette commande ne peut plus être annulée.' });
         await prisma.delivery_items.deleteMany({ where: { deliveryorder_id: id } });
         await prisma.confirmations.deleteMany({ where: { deliveryorder_id: id } });
         await prisma.deliveryorders.delete({ where: { id } });

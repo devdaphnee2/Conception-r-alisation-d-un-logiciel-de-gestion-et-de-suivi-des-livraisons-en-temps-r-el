@@ -77,7 +77,7 @@ class _SignupScreenState extends State<SignupScreen> {
     ));
   }
 
-  bool _validateStep() {
+bool _validateStep() {
     switch (_step) {
       case 0:
         if (_nomCtrl.text.trim().isEmpty || _prenomCtrl.text.trim().isEmpty || _telCtrl.text.trim().isEmpty ||
@@ -124,14 +124,6 @@ class _SignupScreenState extends State<SignupScreen> {
         }
         return true;
       case 3:
-        if (_joursDisponibles.isEmpty) {
-          _showError('Veuillez sélectionner au moins un jour de disponibilité');
-          return false;
-        }
-        if (_heureDebut == null || _heureFin == null) {
-          _showError('Veuillez indiquer vos horaires');
-          return false;
-        }
         if (_mobileMoneyNumeroCtrl.text.trim().isEmpty || _mobileMoneyTitulaireCtrl.text.trim().isEmpty) {
           _showError('Veuillez renseigner vos informations Mobile Money');
           return false;
@@ -166,9 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
 
-    final availabilities = _joursDisponibles
-        .map((jour) => Availability(jour: jour, heureDebut: _fmtTime(_heureDebut!), heureFin: _fmtTime(_heureFin!)))
-        .toList();
+    final availabilities = <Availability>[];
 
     final vehicle = VehicleModel(
       type: _typeVehicule,

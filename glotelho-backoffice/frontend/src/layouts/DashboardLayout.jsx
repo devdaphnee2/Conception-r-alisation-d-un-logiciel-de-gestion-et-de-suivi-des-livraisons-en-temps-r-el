@@ -39,6 +39,7 @@ const NOTIF_STYLE = {
     profil:       { color: '#c9952e', label: 'Profil livreur' },
     incident:     { color: '#ba1a1a', label: 'Incident' },
     recouvrement: { color: '#c9952e', label: 'Recouvrement' },
+    commande:     { color: '#7d5700', label: 'Commande' },
 };
 
 export default function DashboardLayout() {
@@ -63,8 +64,22 @@ export default function DashboardLayout() {
                 api.get('/profils/en-attente').catch(() => ({ data: [] })),
                 api.get('/livraisons').catch(() => ({ data: [] })),
                 api.get('/recouvrements').catch(() => ({ data: [] })),
-            ]).then(([litiges, profils, livraisons, recouvrements]) => {
+                api.get('/notifications').catch(() => ({ data: [] })),
+            ]).then(([litiges, profils, livraisons, recouvrements, notifsBDD]) => {
                 const notifs = [];
+
+                // Notifications BDD (commandes commerçants + assignations)
+                (notifsBDD.data || []).filter(n => !n.is_read).slice(0, 5).forEach(n => {
+                    notifs.push({
+                        id: 'notif-' + n.id,
+                        type: 'commande',
+                        msg: n.message,
+                        to: '/commandes-recues',
+                        date: n.sent_at,
+                        notifId: n.id,
+                    });
+                });
+
                 (litiges.data || []).filter(l => l.status === 'En_attente').slice(0, 5).forEach(l => {
                     notifs.push({ id: 'litige-' + l.id, type: 'litige', msg: 'Litige #' + l.id + ' non traite', to: '/litiges/' + l.id, date: l.created_at });
                 });
@@ -77,11 +92,12 @@ export default function DashboardLayout() {
                 (recouvrements.data || []).filter(r => Number(r.amount_collected || 0) < Number(r.amount_to_collect || 0)).slice(0, 3).forEach(r => {
                     notifs.push({ id: 'rec-' + r.id, type: 'recouvrement', msg: 'Dette livreur : ' + (r.delivery_persons?.users?.first_name || ''), to: '/recouvrements', date: null });
                 });
+
                 setNotifications(notifs.slice(0, 10));
             });
         }
         charger();
-        const interval = setInterval(charger, 60000);
+        const interval = setInterval(charger, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -104,14 +120,13 @@ export default function DashboardLayout() {
         }
     }, [search, navigate]);
 
-    // NAVIGATION — sans onglet Commandes
     const navLinks = [
-        { to: '/dashboard',     label: 'Dashboard',      icon: IconDashboard },
-        { to: '/livraisons',    label: 'Livraisons',      icon: IconPackage },
-        { to: '/commandes-recues', label: 'Commandes reçues', icon: IconPackage },
-        { to: '/livreurs',    label: 'Livreurs',        icon: IconTruck },
-        { to: '/litiges',       label: 'Litiges',         icon: IconAlert },
-        { to: '/recouvrements', label: 'Recouvrements',   icon: IconMoney },
+        { to: '/dashboard',        label: 'Dashboard',        icon: IconDashboard },
+        { to: '/livraisons',       label: 'Livraisons',        icon: IconPackage },
+        { to: '/commandes-recues', label: 'Commandes reçues',  icon: IconPackage },
+        { to: '/livreurs',         label: 'Livreurs',          icon: IconTruck },
+        { to: '/litiges',          label: 'Litiges',           icon: IconAlert },
+        { to: '/recouvrements',    label: 'Recouvrements',     icon: IconMoney },
     ];
 
     function isActive(link) {
@@ -122,6 +137,16 @@ export default function DashboardLayout() {
 
     function navStyle(active) {
         return { display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', borderRadius: '8px', fontSize: '13px', textDecoration: 'none', fontWeight: active ? 600 : 400, backgroundColor: active ? 'rgba(201,149,46,0.16)' : 'transparent', color: active ? P.primaryContainer : 'rgba(241,241,241,0.5)', borderLeft: active ? '3px solid ' + P.primaryContainer : '3px solid transparent', transition: 'all 0.15s' };
+    }
+
+    async function handleNotifClick(n) {
+        setShowNotifs(false);
+        // Marquer comme lue si c'est une notif BDD
+        if (n.notifId) {
+            try { await api.patch('/notifications/' + n.notifId + '/lire'); } catch (_) {}
+            setNotifications(prev => prev.filter(x => x.id !== n.id));
+        }
+        navigate(n.to);
     }
 
     return (
@@ -144,29 +169,6 @@ export default function DashboardLayout() {
                     <p style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(241,241,241,0.25)', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 8px', marginBottom: '8px' }}>Menu</p>
                     {navLinks.map((link, i) => {
                         const active = isActive(link);
-                        if (link.children) {
-                            const Icon = link.icon;
-                            return (
-                                <div key={i}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 10px', fontSize: '13px', fontWeight: 400, color: 'rgba(241,241,241,0.5)' }}>
-                                        <Icon style={{ width: '15px', height: '15px', flexShrink: 0 }} />
-                                        {link.label}
-                                    </div>
-                                    {link.children.map(child => {
-                                        const ca = location.pathname === child.to || location.pathname.startsWith(child.to + '/');
-                                        return (
-                                            <NavLink key={child.to} to={child.to}
-                                                style={{ display: 'block', padding: '7px 10px 7px 34px', borderRadius: '8px', fontSize: '12px', fontWeight: ca ? 600 : 400, textDecoration: 'none', backgroundColor: ca ? 'rgba(201,149,46,0.16)' : 'transparent', color: ca ? P.primaryContainer : 'rgba(241,241,241,0.45)', borderLeft: ca ? '3px solid ' + P.primaryContainer : '3px solid transparent', transition: 'all 0.15s' }}
-                                                onMouseEnter={e => { if (!ca) { e.currentTarget.style.backgroundColor = 'rgba(241,241,241,0.06)'; e.currentTarget.style.color = P.inverseSOn; }}}
-                                                onMouseLeave={e => { if (!ca) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(241,241,241,0.45)'; }}}
-                                            >
-                                                {child.label}
-                                            </NavLink>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        }
                         const Icon = link.icon;
                         return (
                             <NavLink key={link.to} to={link.to} style={navStyle(active)}
@@ -241,7 +243,7 @@ export default function DashboardLayout() {
                                             : notifications.map(n => {
                                                 const s = NOTIF_STYLE[n.type] || { color: P.outline, label: 'Info' };
                                                 return (
-                                                    <button key={n.id} onClick={() => { setShowNotifs(false); navigate(n.to); }}
+                                                    <button key={n.id} onClick={() => handleNotifClick(n)}
                                                         style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 16px', borderBottom: '1px solid ' + P.surfaceContainerLow, textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'Poppins, sans-serif' }}
                                                         onMouseEnter={e => e.currentTarget.style.backgroundColor = P.surfaceContainerLow}
                                                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/activity_model.dart';
 import '../services/earnings_service.dart';
-import 'delivery_detail_screen.dart';
 
 class CommissionDetailScreen extends StatelessWidget {
   final ActivityModel commission;
@@ -77,7 +76,7 @@ class CommissionDetailScreen extends StatelessWidget {
                 );
                 if (deliv.isLivraison && context.mounted) {
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => DeliveryDetailScreen(delivery: deliv)));
+                      MaterialPageRoute(builder: (_) => CommissionDetailScreen(commission: deliv)));
                 }
               },
             ),
