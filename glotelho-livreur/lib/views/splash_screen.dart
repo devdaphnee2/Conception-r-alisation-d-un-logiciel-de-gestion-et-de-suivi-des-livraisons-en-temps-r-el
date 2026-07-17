@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/images/glotelho_delivery_logo_high_contrast.png',
+              'assets/images/glotelho_driver_logo_high_contrast.png',
               width: 140,
             ),
             const SizedBox(height: 24),

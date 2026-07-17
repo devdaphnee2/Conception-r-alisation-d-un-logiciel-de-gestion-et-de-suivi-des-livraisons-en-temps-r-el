@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Center(
                             child: ClipOval(
                               child: Image.asset(
-                                'assets/images/glotelho_delivery_logo_high_contrast.png',
+                                'assets/images/glotelho_driver_logo_high_contrast.png',
                                 width: 110,
                                 height: 110,
                                 fit: BoxFit.cover,
