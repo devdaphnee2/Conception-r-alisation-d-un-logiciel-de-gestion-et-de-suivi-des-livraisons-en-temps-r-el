@@ -24,7 +24,7 @@ class AppColors {
 
 class AppStrings {
   static const String appName = 'Glotelho Delivery';
-  static const String baseUrl = 'http://localhost:3002/api/v1';
+  static const String baseUrl = 'http://192.168.1.166:5000/api';
 
   static String getGreeting() {
     final hour = DateTime.now().hour;

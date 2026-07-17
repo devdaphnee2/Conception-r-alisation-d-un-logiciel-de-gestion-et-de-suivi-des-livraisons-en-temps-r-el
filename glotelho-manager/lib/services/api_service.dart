@@ -5,12 +5,7 @@ class ApiService {
   final Dio dio;
   final AppState appState;
 
-<<<<<<< HEAD
-  static const String _baseUrl = 'http://192.168.1.166:3002/api';
-=======
-
- 
-
+  static const String _baseUrl = 'http://192.168.1.166:5000/api';
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(

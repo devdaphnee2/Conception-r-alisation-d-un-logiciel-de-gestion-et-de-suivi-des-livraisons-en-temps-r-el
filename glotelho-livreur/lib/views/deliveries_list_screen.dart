@@ -14,11 +14,7 @@ class DeliveriesListScreen extends StatefulWidget {
 class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
   List<DeliveryModel> _all = [];
   bool _loading = true;
-<<<<<<< Updated upstream
-  int _tab = 0; // 0 Toutes, 1 En cours, 2 Livrées, 3 Annulées
-=======
   int _tab = 0; // 0=Toutes 1=En cours 2=Livrées 3=Annulées
->>>>>>> Stashed changes
 
   @override
   void initState() {
@@ -28,14 +24,8 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-<<<<<<< Updated upstream
-    final data = await TrackingService.getTodayDeliveries();
-    if (!mounted) return;
-    setState(() {
-      _all = data;
-=======
     // Courses actives + historique fusionnés pour l'onglet "Toutes"
-    final actives   = await TrackingService.getTodayDeliveries();
+    final actives = await TrackingService.getTodayDeliveries();
     final historique = await TrackingService.getHistorique();
     if (!mounted) return;
     // On déduplique par id
@@ -46,21 +36,10 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
     setState(() {
       _all = map.values.toList()
         ..sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
->>>>>>> Stashed changes
       _loading = false;
     });
   }
 
-<<<<<<< Updated upstream
-  List<DeliveryModel> get _filtered {
-    switch (_tab) {
-      case 1:
-        return _all.where((d) => d.status == DeliveryStatus.inProgress).toList();
-      case 2:
-        return _all.where((d) => d.status == DeliveryStatus.delivered).toList();
-      case 3:
-        return _all.where((d) => d.status == DeliveryStatus.cancelled).toList();
-=======
   // ── Filtrage par onglet ──
   List<DeliveryModel> get _filtered {
     switch (_tab) {
@@ -74,46 +53,11 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
         return _all.where((d) =>
           d.status == DeliveryStatus.cancelled ||
           d.status == DeliveryStatus.suspended).toList();
->>>>>>> Stashed changes
       default:
         return _all;
     }
   }
 
-<<<<<<< Updated upstream
-  // ---- Helpers statut ----
-  Color _statusColor(DeliveryStatus s) {
-    switch (s) {
-      case DeliveryStatus.delivered:
-        return AppColors.statusDelivered;
-      case DeliveryStatus.cancelled:
-        return AppColors.statusCancelled;
-      case DeliveryStatus.inProgress:
-        return AppColors.statusInProgress;
-      case DeliveryStatus.suspended:
-        return AppColors.amber;
-      case DeliveryStatus.assigned:
-        return AppColors.blue;
-      case DeliveryStatus.pending:
-        return AppColors.statusPending;
-    }
-  }
-
-  String _statusLabel(DeliveryStatus s) {
-    switch (s) {
-      case DeliveryStatus.delivered:
-        return 'Livrée';
-      case DeliveryStatus.cancelled:
-        return 'Annulée';
-      case DeliveryStatus.inProgress:
-        return 'En cours';
-      case DeliveryStatus.suspended:
-        return 'Suspendue';
-      case DeliveryStatus.assigned:
-        return 'Assignée';
-      case DeliveryStatus.pending:
-        return 'En attente';
-=======
   // ── Nombre de courses actives (badge) ──
   int get _activeCount => _all.where((d) =>
     d.status == DeliveryStatus.inProgress ||
@@ -153,7 +97,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
       case DeliveryStatus.assigned:   return Icons.assignment_outlined;
       case DeliveryStatus.suspended:  return Icons.pause_circle_outline;
       case DeliveryStatus.pending:    return Icons.hourglass_empty_outlined;
->>>>>>> Stashed changes
     }
   }
 
@@ -163,10 +106,7 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
   String _heure(DateTime d) =>
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
-<<<<<<< Updated upstream
-=======
   // ── BUILD ──────────────────────────────────────────────────────
->>>>>>> Stashed changes
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,21 +115,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-<<<<<<< Updated upstream
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Livraisons',
-                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text('${_all.length} aujourd\'hui',
-                      style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                ],
-              ),
-            ),
-            // Onglets de filtre
-=======
             // ── En-tête ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
@@ -204,7 +129,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // Badge compteur actif
                   if (_activeCount > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -232,19 +156,12 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
             ),
 
             // ── Onglets filtres ──
->>>>>>> Stashed changes
             SizedBox(
               height: 44,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-<<<<<<< Updated upstream
-                  _tabChip('Toutes', 0),
-                  _tabChip('En cours', 1),
-                  _tabChip('Livrées', 2),
-                  _tabChip('Annulées', 3),
-=======
                   _tabChip('Toutes', 0, _all.length),
                   _tabChip('En cours', 1,
                     _all.where((d) =>
@@ -256,25 +173,28 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
                     _all.where((d) =>
                       d.status == DeliveryStatus.cancelled ||
                       d.status == DeliveryStatus.suspended).length),
->>>>>>> Stashed changes
                 ],
               ),
             ),
             const SizedBox(height: 8),
-<<<<<<< Updated upstream
+
+            // ── Contenu ──
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.gold),
+                    )
                   : _filtered.isEmpty
-                  ? const Center(child: Text('Aucune livraison', style: TextStyle(color: Colors.white38)))
-                  : RefreshIndicator(
-                onRefresh: _load,
-                color: AppColors.gold,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                  children: _filtered.map(_card).toList(),
-                ),
-              ),
+                      ? _emptyState()
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: AppColors.gold,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                            itemCount: _filtered.length,
+                            itemBuilder: (_, i) => _card(_filtered[i]),
+                          ),
+                        ),
             ),
           ],
         ),
@@ -282,7 +202,8 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
     );
   }
 
-  Widget _tabChip(String label, int i) {
+  // ── Onglet chip ──
+  Widget _tabChip(String label, int i, int count) {
     final active = _tab == i;
     return Padding(
       padding: const EdgeInsets.only(right: 10),
@@ -290,166 +211,49 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
         onTap: () => setState(() => _tab = i),
         child: Container(
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: active ? AppColors.gold : AppColors.cardNavy,
             borderRadius: BorderRadius.circular(24),
           ),
-          child: Text(label,
-              style: TextStyle(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
                   color: active ? Colors.white : Colors.white54,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13)),
-=======
-
- 
->>>>>>> Stashed changes
-        ),
-      ),
-    );
-  }
-
-<<<<<<< Updated upstream
-  Widget _card(DeliveryModel d) {
-    final color = _statusColor(d.status);
-    return GestureDetector(
-      onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => DeliveryRouteDetailScreen(delivery: d)),
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.cardNavy, borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
-                  child: Icon(Icons.inventory_2_outlined, color: color, size: 20),
+                  fontSize: 13,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(d.clientNom,
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 2),
-                      Text(d.adresseLivraison,
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                    ],
+              ),
+              if (count > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? Colors.white.withOpacity(0.25)
+                        : AppColors.gold.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      color: active ? Colors.white : AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                _badge(d.status),
               ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(color: Colors.white12, height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _miniInfo('Montant', _fmt(d.montant)),
-                _miniInfo('Frais', _fmt(d.fraisLivraison)),
-                _miniInfo('Heure', _heure(d.dateCreation)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _miniInfo(String k, String v) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(k, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-        const SizedBox(height: 2),
-        Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-      ],
-    );
-  }
-
-  Widget _badge(DeliveryStatus s) {
-    final color = _statusColor(s);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-      child: Text(_statusLabel(s),
-          style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 11)),
-    );
-  }
-
-  // ---- Feuille de détail ----
-  void _showDetail(DeliveryModel d) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.navy,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4)),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Livraison #${d.id}',
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                _badge(d.status),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _detailRow('Client', d.clientNom),
-            _detailRow('Téléphone', d.clientTelephone),
-            _detailRow('Adresse', d.adresseLivraison),
-            _detailRow('Montant produits', _fmt(d.montant)),
-            _detailRow('Frais de livraison', _fmt(d.fraisLivraison)),
-            _detailRow('Statut', _statusLabel(d.status)),
-            _detailRow('Créée à', _heure(d.dateCreation)),
-            if (d.dateLivraison != null) _detailRow('Livrée à', _heure(d.dateLivraison!)),
-            if (d.modifiedAddressNote != null && d.modifiedAddressNote!.isNotEmpty)
-              _detailRow('Note adresse', d.modifiedAddressNote!),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String k, String v) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Text(k, style: const TextStyle(color: Colors.white54, fontSize: 14)),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(v,
-                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-=======
+        ),
+      ),
+    );
+  }
+
   // ── État vide ──
   Widget _emptyState() {
     final msgs = [
@@ -475,17 +279,14 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
             style: const TextStyle(color: Colors.white38, fontSize: 16),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Tirez vers le bas pour actualiser',
-            style: const TextStyle(color: Colors.white24, fontSize: 13),
->>>>>>> Stashed changes
+            style: TextStyle(color: Colors.white24, fontSize: 13),
           ),
         ],
       ),
     );
   }
-<<<<<<< Updated upstream
-=======
 
   // ── Carte livraison ──
   Widget _card(DeliveryModel d) {
@@ -515,7 +316,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Ligne 1 : icône + nom client + badge ──
                   Row(
                     children: [
                       Container(
@@ -568,8 +368,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
                       _badge(d.status),
                     ],
                   ),
-
-                  // ── Infos commerçant (si disponible) ──
                   if (d.commercantNom != null) ...[
                     const SizedBox(height: 10),
                     Container(
@@ -604,12 +402,9 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
                       ),
                     ),
                   ],
-
                   const SizedBox(height: 12),
                   const Divider(color: Colors.white12, height: 1),
                   const SizedBox(height: 12),
-
-                  // ── Ligne 2 : montant / frais / heure ──
                   Row(
                     children: [
                       _miniInfo(Icons.payments_outlined, 'Montant', _fmt(d.montant)),
@@ -622,8 +417,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
                 ],
               ),
             ),
-
-            // ── Bouton d'action rapide pour courses assignées ──
             if (d.status == DeliveryStatus.assigned ||
                 d.status == DeliveryStatus.pending)
               Container(
@@ -702,5 +495,4 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
       ),
     );
   }
->>>>>>> Stashed changes
 }
