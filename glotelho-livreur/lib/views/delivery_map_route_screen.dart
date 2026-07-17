@@ -14,7 +14,6 @@ class DeliveryMapRouteScreen extends StatefulWidget {
 class _DeliveryMapRouteScreenState extends State<DeliveryMapRouteScreen> {
   GoogleMapController? _controller;
 
-  // Position (mock) du livreur. À remplacer par la géoloc réelle (package geolocator).
   static const LatLng _livreurPos = LatLng(4.0611, 9.7550);
 
   @override
@@ -31,20 +30,19 @@ class _DeliveryMapRouteScreenState extends State<DeliveryMapRouteScreen> {
       Marker(
         markerId: const MarkerId('client'),
         position: client,
-        infoWindow: InfoWindow(title: widget.delivery.clientNom, snippet: widget.delivery.adresseLivraison),
+        infoWindow: InfoWindow(
+            title: widget.delivery.clientNom,
+            snippet: widget.delivery.adresseLivraison),
       ),
     };
 
-    // Ligne directe livreur -> client.
-    // Pour un vrai itinéraire routier, remplacer ces 2 points par les points
-    // retournés par la Directions API (voir note en bas de réponse).
     final polylines = {
       Polyline(
         polylineId: const PolylineId('route'),
-        points: const [_livreurPos],
+        points: [_livreurPos, client],
         color: AppColors.gold,
         width: 5,
-      )..points.add(client),
+      ),
     };
 
     return Scaffold(
@@ -53,8 +51,11 @@ class _DeliveryMapRouteScreenState extends State<DeliveryMapRouteScreen> {
         backgroundColor: AppColors.navy,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Text('Itinéraire · ${widget.delivery.clientNom}',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          'Itinéraire · ${widget.delivery.clientNom}',
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(target: client, zoom: 13),
@@ -65,7 +66,6 @@ class _DeliveryMapRouteScreenState extends State<DeliveryMapRouteScreen> {
         zoomControlsEnabled: false,
         onMapCreated: (c) {
           _controller = c;
-          // Ajuste la caméra pour montrer les 2 points
           Future.delayed(const Duration(milliseconds: 300), () {
             final sw = LatLng(
               client.latitude < _livreurPos.latitude ? client.latitude : _livreurPos.latitude,
@@ -76,11 +76,18 @@ class _DeliveryMapRouteScreenState extends State<DeliveryMapRouteScreen> {
               client.longitude > _livreurPos.longitude ? client.longitude : _livreurPos.longitude,
             );
             _controller?.animateCamera(
-              CameraUpdate.newLatLngBounds(LatLngBounds(southwest: sw, northeast: ne), 80),
+              CameraUpdate.newLatLngBounds(
+                  LatLngBounds(southwest: sw, northeast: ne), 80),
             );
           });
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
   }
 }

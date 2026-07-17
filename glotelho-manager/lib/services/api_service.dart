@@ -5,7 +5,8 @@ class ApiService {
   final Dio dio;
   final AppState appState;
 
-  static const String _baseUrl = 'http://192.168.1.150:5000/api';
+  static const String _baseUrl = 'http://172.20.10.4:5000/api';
+  //'http://192.168.1.145:5000/api';
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(
@@ -35,6 +36,7 @@ class ApiService {
     final r = await dio.post('/auth/register', data: {
       'first_name': firstName, 'last_name': lastName,
       'email': email, 'phone': phone, 'password': password,
+      'role': 'commercant'
     });
     appState.setSession(r.data['token'], r.data['user']);
     return r.data['user'];
@@ -81,4 +83,8 @@ class ApiService {
 
   Future<Response> getLivreursDisponibles() =>
       dio.get('/v1/commercant/livreurs-disponibles');
+
+  Future<Response> getNotifications() => dio.get('/notifications');
+  Future<Response> supprimerNotification(int id) => dio.delete('/notifications/$id');
+  Future<Response> marquerNotificationLue(int id) => dio.patch('/notifications/$id/lire');
 }

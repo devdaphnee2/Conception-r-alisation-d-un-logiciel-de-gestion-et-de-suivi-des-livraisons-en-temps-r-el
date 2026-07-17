@@ -71,7 +71,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
       }
     } catch (e) {
-      setState(() => _error = 'Erreur lors de la création du compte.');
+      final dio = e as dynamic;
+      final msg = dio?.response?.data?['message'];
+      setState(() => _error = msg ?? 'Erreur lors de la création du compte.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

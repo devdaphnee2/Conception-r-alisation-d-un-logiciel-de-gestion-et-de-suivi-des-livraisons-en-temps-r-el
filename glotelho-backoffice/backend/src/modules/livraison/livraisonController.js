@@ -1,6 +1,6 @@
-const prisma  = require('../../utils/prismaClient');
-const crypto  = require('crypto');
-const bcrypt  = require('bcrypt');
+const prisma = require('../../utils/prismaClient');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 function genererOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -13,6 +13,7 @@ async function enrichirLivreur(livraison) {
             select: { id: true, first_name: true, last_name: true, phone: true, email: true }
         });
         livraison.delivery_persons.user = u;
+        livraison.delivery_persons.users = u;
     }
     return livraison;
 }
@@ -85,25 +86,31 @@ async function create(req, res) {
             customer = await prisma.customers.findFirst({ where: { user_id: existingUser.id } });
             if (!customer) customer = await prisma.customers.create({ data: { user_id: existingUser.id } });
         } else {
-            var parts   = body.client_nom.trim().split(' ');
+            var parts = body.client_nom.trim().split(' ');
             var newUser = await prisma.users.create({
                 data: { first_name: parts[0] || body.client_nom, last_name: parts.slice(1).join(' ') || '-', email: telClean + '@glotelho.cm', password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10), phone: body.client_telephone, role: 'customer' }
             });
             customer = await prisma.customers.create({ data: { user_id: newUser.id } });
         }
 
-        var otp       = genererOTP();
+        var otp = genererOTP();
         var livreurId = body.delivery_person_id ? parseInt(body.delivery_person_id) : null;
-        var statut    = livreurId ? 'Assign_' : 'En_attente';
+        var statut = livreurId ? 'Assign_' : 'En_attente';
 
         var livraison = await prisma.deliveryorders.create({
             data: {
-                manager_id: manager.id, customer_id: customer.id,
-                delivery_person_id: livreurId, delivery_address: body.delivery_address,
-                zone_bloc: body.zone_bloc || null, delivery_instructions: body.delivery_instructions || null,
-                amount_to_collect: parseFloat(body.amount_to_collect) || 0, collected_amount: 0,
-                status: statut, delivery_date: body.delivery_date ? new Date(body.delivery_date) : null,
-                client_nom: body.client_nom, client_telephone: body.client_telephone,
+                manager_id: manager.id,
+                customer_id: customer.id,
+                delivery_person_id: livreurId,
+                delivery_address: body.delivery_address,
+                zone_bloc: body.zone_bloc || null,
+                delivery_instructions: body.delivery_instructions || null,
+                amount_to_collect: parseFloat(body.amount_to_collect) || 0,
+                collected_amount: 0,
+                status: statut,
+                delivery_date: body.delivery_date ? new Date(body.delivery_date) : null,
+                client_nom: body.client_nom,
+                client_telephone: body.client_telephone,
                 client_whatsapp: body.client_whatsapp || body.client_telephone,
             }
         });
@@ -145,12 +152,12 @@ async function show(req, res) {
 async function update(req, res) {
     try {
         var data = {};
-        if (req.body.delivery_address)              data.delivery_address     = req.body.delivery_address;
-        if (req.body.zone_bloc !== undefined)        data.zone_bloc            = req.body.zone_bloc;
+        if (req.body.delivery_address) data.delivery_address = req.body.delivery_address;
+        if (req.body.zone_bloc !== undefined) data.zone_bloc = req.body.zone_bloc;
         if (req.body.delivery_instructions !== undefined) data.delivery_instructions = req.body.delivery_instructions;
-        if (req.body.delivery_date)                 data.delivery_date        = new Date(req.body.delivery_date);
-        if (req.body.amount_to_collect)             data.amount_to_collect    = parseFloat(req.body.amount_to_collect);
-        if (req.body.collected_amount !== undefined) data.collected_amount    = parseFloat(req.body.collected_amount);
+        if (req.body.delivery_date) data.delivery_date = new Date(req.body.delivery_date);
+        if (req.body.amount_to_collect) data.amount_to_collect = parseFloat(req.body.amount_to_collect);
+        if (req.body.collected_amount !== undefined) data.collected_amount = parseFloat(req.body.collected_amount);
         var updated = await prisma.deliveryorders.update({ where: { id: parseInt(req.params.id) }, data });
         res.json({ message: 'Livraison mise à jour.', livraison: updated });
     } catch (error) { res.status(500).json({ message: 'Erreur serveur', error: error.message }); }
@@ -163,8 +170,14 @@ async function assigner(req, res) {
 
         var livraison = await prisma.deliveryorders.update({
             where: { id: parseInt(req.params.id) },
-            data : { delivery_person_id: parseInt(delivery_person_id), status: 'Assign_' },
-            include: { customers: { include: { users: true } }, delivery_persons: { include: { vehicules: true } }, managers: { include: { users: true } }, delivery_items: true, confirmations: true }
+            data: { delivery_person_id: parseInt(delivery_person_id), status: 'Assign_' },
+            include: {
+                customers: { include: { users: true } },
+                delivery_persons: { include: { vehicules: true } },
+                managers: { include: { users: true } },
+                delivery_items: true,
+                confirmations: true
+            }
         });
 
         await enrichirLivreur(livraison);
@@ -175,37 +188,73 @@ async function assigner(req, res) {
             try {
                 await prisma.confirmations.create({
                     data: {
-                        deliveryorder_id  : livraison.id,
-                        customer_id       : livraison.customer_id,
+                        deliveryorder_id: livraison.id,
+                        customer_id: livraison.customer_id,
                         delivery_person_id: parseInt(delivery_person_id),
-                        otp_code          : otp,
-                        methode           : 'OTP'
+                        otp_code: otp,
+                        methode: 'OTP'
                     }
                 });
             } catch (e) { console.warn('[CONFIRMATION] Echec création OTP:', e.message); }
         } else {
-            // Mettre à jour le delivery_person_id dans la confirmation existante
             try {
                 await prisma.confirmations.updateMany({
                     where: { deliveryorder_id: livraison.id },
-                    data : { delivery_person_id: parseInt(delivery_person_id) }
+                    data: { delivery_person_id: parseInt(delivery_person_id) }
                 });
             } catch (e) { console.warn('[CONFIRMATION] Echec update:', e.message); }
         }
 
         var livraisonId = livraison.id;
-        var clientNom   = livraison.client_nom || 'Client';
-        var livreurUser = livraison.delivery_persons ? livraison.delivery_persons.user : null;
-        var livreurNom  = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : 'Livreur';
-        var managerUser = livraison.managers ? livraison.managers.users : null;
-        var managerNom  = managerUser ? managerUser.first_name + ' ' + managerUser.last_name : 'Commerçant';
+        var clientNom = livraison.client_nom || 'Client';
 
+        // Récupérer les infos du livreur via user_id
+        var livreurDP = await prisma.delivery_persons.findUnique({
+            where: { id: parseInt(delivery_person_id) },
+            include: { users: true }
+        });
+        var livreurNom = livreurDP && livreurDP.users ?
+            livreurDP.users.first_name + ' ' + livreurDP.users.last_name :
+            'Livreur';
+        var livreurTel = livreurDP && livreurDP.users ? livreurDP.users.phone : '';
+
+        var managerUser = livraison.managers ? livraison.managers.users : null;
+
+        // ── Notification in-app pour le manager (commerçant) ──────────────
+        if (livraison.manager_id) {
+            var managerRecord = await prisma.managers.findFirst({
+                where: { id: livraison.manager_id },
+                include: { users: true }
+            });
+            if (managerRecord && managerRecord.user_id) {
+                try {
+                    await prisma.notifications.create({
+                        data: {
+                            recipient_id: managerRecord.user_id,
+                            message: '✅ Commande #' + String(livraisonId).padStart(5, '0') +
+                                ' assignée à ' + livreurNom +
+                                (livreurTel ? ' (' + livreurTel + ')' : '') +
+                                ' pour le client ' + clientNom + '.',
+                            type: 'Interne',
+                            is_read: false,
+                        }
+                    });
+                } catch (e) { console.warn('[NOTIF MANAGER] Echec:', e.message); }
+            }
+        }
+
+        // ── Notification FCM si token disponible ───────────────────────────
         if (managerUser && managerUser.fcm_token) {
-            await envoyerNotificationFCM(managerUser.fcm_token, '✅ Commande assignée', 'Votre commande #' + String(livraisonId).padStart(5,'0') + ' pour ' + clientNom + ' a été assignée à ' + livreurNom + '.');
+            await envoyerNotificationFCM(
+                managerUser.fcm_token,
+                '✅ Commande assignée',
+                'Commande #' + String(livraisonId).padStart(5, '0') +
+                ' assignée à ' + livreurNom + '.'
+            );
         }
 
         console.log('[ASSIGNER] Livraison #' + livraisonId + ' assignée à ' + livreurNom);
-        res.json({ message: "Livreur assigné.", livraison });
+        res.json({ message: 'Livreur assigné.', livraison });
     } catch (error) {
         console.error('ERREUR ASSIGNER:', error.message);
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
@@ -237,7 +286,7 @@ async function demarrerCourse(req, res) {
         var otp = livraison.confirmations && livraison.confirmations.length > 0 ? livraison.confirmations[0].otp_code : genererOTP();
         var clientNom = livraison.client_nom || 'Client';
         var clientTel = livraison.client_telephone || '';
-        var clientWa  = livraison.client_whatsapp || clientTel;
+        var clientWa = livraison.client_whatsapp || clientTel;
         var livreurNom = livreur.users ? (livreur.users.first_name + ' ' + livreur.users.last_name) : 'Votre livreur';
         var trackingUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/suivi/' + livraisonId;
 

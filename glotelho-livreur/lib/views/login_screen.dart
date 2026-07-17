@@ -230,9 +230,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: _isLoading
                                 ? const SizedBox(height: 22, width: 22,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                                 : const Text('Se connecter',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -342,10 +342,10 @@ class _LoginScreenState extends State<LoginScreen> {
         prefixIcon: Icon(icon, color: Colors.white54, size: 20),
         suffixIcon: isPassword
             ? IconButton(
-          icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: Colors.white54, size: 20),
-          onPressed: () => setState(() => _obscure = !_obscure),
-        )
+                icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: Colors.white54, size: 20),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              )
             : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.06),

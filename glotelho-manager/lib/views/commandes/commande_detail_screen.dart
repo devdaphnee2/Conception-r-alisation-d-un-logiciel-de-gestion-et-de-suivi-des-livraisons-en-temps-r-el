@@ -33,18 +33,19 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
   @override
   void initState() { super.initState(); _load(); }
 
-  Future<void> _load() async {
+ Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final api = ApiService(context.read<AppState>());
       final res = await api.getCommande(widget.id);
       setState(() => _cmd = res.data);
-    } catch (_) {
+    } catch (e) {
+      print('ERREUR LOAD COMMANDE: $e');
+      if (mounted) setState(() => _error = 'Impossible de charger la commande.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
-
   Future<void> _commanderCourse() async {
     setState(() { _actionLoading = true; _error = null; });
     try {
@@ -196,7 +197,7 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
                 children: [
                   Expanded(child: Text('${a["product_name"]} x${a["quantity"] ?? 1}',
                       style: const TextStyle(fontSize: 13))),
-                  Text('${((double.tryParse(a["unit_price"]?.toString() ?? "0") ?? 0) * (int.tryParse(a["quantity"]?.toString() ?? "1") ?? 1)).toStringAsFixed(0)} FCFA',
+                  Text('${((double.tryParse((a["price"] ?? a["unit_price"])?.toString() ?? "0") ?? 0) * (int.tryParse(a["quantity"]?.toString() ?? "1") ?? 1)).toStringAsFixed(0)} FCFA',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D1B2A), fontSize: 12)),
                 ],
               ),

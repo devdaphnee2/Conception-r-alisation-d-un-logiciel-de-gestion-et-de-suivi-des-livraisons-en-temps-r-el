@@ -174,15 +174,15 @@ export default function LivraisonList() {
                             var clientTel = l.client_telephone || ((l.customers && l.customers.users) ? l.customers.users.phone : '');
                             var clientInit = clientNom[0] || '?';
                             // users est un tableau — trouver le user dont l'id = user_id du livreur
-                            var livreurUser = null;
-                            if (l.delivery_persons) {
-                                var dp = l.delivery_persons;
-                                if (Array.isArray(dp.users)) {
-                                    livreurUser = dp.users.find(function(u) { return u.id === dp.user_id; }) || null;
-                                } else if (dp.users && typeof dp.users === 'object') {
-                                    livreurUser = dp.users;
+                           var livreurUser = null;
+                                if (l.delivery_persons) {
+                                    var dp = l.delivery_persons;
+                                    livreurUser = Array.isArray(dp.users)
+                                        ? (dp.users.find(function(u) { return u.id === dp.user_id; }) || dp.users[0] || null)
+                                        : (dp.users || null);
+                                    // Fallback — chercher via user_id dans enrichirLivreur
+                                    if (!livreurUser && dp.user) livreurUser = dp.user;
                                 }
-                            }
                             var livreurNom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : null;
                             var livreurPhoto = l.delivery_persons ? l.delivery_persons.photo_profil_url : null;
 

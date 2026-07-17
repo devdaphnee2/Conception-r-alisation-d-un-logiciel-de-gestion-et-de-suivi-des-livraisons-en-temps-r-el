@@ -16,6 +16,19 @@ class TrackingService {
       return false;
     }
   }
+  static Future<bool> accepterCourse(String deliveryId) async {
+    try {
+      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/accepter');
+      return response.statusCode == 200;
+    } catch (_) { return false; }
+  }
+
+  static Future<bool> refuserCourse(String deliveryId) async {
+    try {
+      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/refuser');
+      return response.statusCode == 200;
+    } catch (_) { return false; }
+  }
 
   /// Liste les livraisons du jour du livreur connecte
   static Future<List<DeliveryModel>> getTodayDeliveries() async {

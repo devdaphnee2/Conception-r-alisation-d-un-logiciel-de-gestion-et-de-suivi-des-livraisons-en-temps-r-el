@@ -1,142 +1,223 @@
 import 'package:flutter/material.dart';
-import '../models/activity_model.dart';
-import '../services/earnings_service.dart';
-import 'commission_detail_screen.dart';
+import '../utils/constants.dart';
+import '../models/delivery_model.dart';
+import '../services/tracking_service.dart';
+import 'delivery_route_detail_screen.dart';
 
-class DeliveryDetailScreen extends StatelessWidget {
-  final ActivityModel delivery;
-  const DeliveryDetailScreen({super.key, required this.delivery});
 
-  static const Color _bg = Color(0xFF1F3A4D);
-  static const Color _teal = Color(0xFF35D0B8);
-  static const Color _gold = Color(0xFFE0A400);
+class DeliveriesListScreen extends StatefulWidget {
+  const DeliveriesListScreen({super.key});
+
+  @override
+  State<DeliveriesListScreen> createState() => _DeliveriesListScreenState();
+}
+
+class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
+  List<DeliveryModel> _all = [];
+  bool _loading = true;
+  int _tab = 0; // 0 Toutes, 1 En cours, 2 Livrées, 3 Annulées, 4 Assignées
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final data = await TrackingService.getTodayDeliveries();
+    if (!mounted) return;
+    setState(() { _all = data; _loading = false; });
+  }
+
+  List<DeliveryModel> get _filtered {
+    switch (_tab) {
+      case 1: return _all.where((d) => d.status == DeliveryStatus.inProgress).toList();
+      case 2: return _all.where((d) => d.status == DeliveryStatus.delivered).toList();
+      case 3: return _all.where((d) => d.status == DeliveryStatus.cancelled).toList();
+      case 4: return _all.where((d) => d.status == DeliveryStatus.assigned).toList();
+      default: return _all;
+    }
+  }
+
+  Color _statusColor(DeliveryStatus s) {
+    switch (s) {
+      case DeliveryStatus.delivered:  return AppColors.statusDelivered;
+      case DeliveryStatus.cancelled:  return AppColors.statusCancelled;
+      case DeliveryStatus.inProgress: return AppColors.statusInProgress;
+      case DeliveryStatus.suspended:  return AppColors.amber;
+      case DeliveryStatus.assigned:   return AppColors.blue;
+      case DeliveryStatus.pending:    return AppColors.statusPending;
+    }
+  }
+
+  String _statusLabel(DeliveryStatus s) {
+    switch (s) {
+      case DeliveryStatus.delivered:  return 'Livrée';
+      case DeliveryStatus.cancelled:  return 'Annulée';
+      case DeliveryStatus.inProgress: return 'En cours';
+      case DeliveryStatus.suspended:  return 'Suspendue';
+      case DeliveryStatus.assigned:   return 'Assignée';
+      case DeliveryStatus.pending:    return 'En attente';
+    }
+  }
 
   String _fmt(double v) =>
-      '${v.toStringAsFixed(v.truncateToDouble() == v ? 0 : 1).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} XAF';
+      '${v.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} XAF';
 
-  String _dateLong(DateTime d) {
-    const mois = ['', 'Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${d.day} ${mois[d.month]} ${d.year.toString().substring(2)} à '
-        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-  }
+  String _heure(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
-    final d = delivery;
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.navy,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 26),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
-            IconButton(
-              padding: EdgeInsets.zero,
-              alignment: Alignment.centerLeft,
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Livraisons',
+                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('${_all.length} aujourd\'hui',
+                      style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                ],
+              ),
             ),
-            const SizedBox(height: 18),
-            Text(_dateLong(d.date), style: const TextStyle(color: Color(0xFFC5D2DD), fontSize: 16)),
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _tabChip('Toutes', 0),
+                  _tabChip('En cours', 1),
+                  _tabChip('Livrées', 2),
+                  _tabChip('Annulées', 3),
+                  _tabChip('Assignées', 4),
+                ],
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(_fmt(d.amount),
-                style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 24),
-
-            _row('ID', d.id, mono: true),
-            _rowBadge('Statut', 'Effectué'),
-            _row('Service', 'Livraison à domicile'),
-            _row('Opérateur (Manager)', d.manager),
-            _row('Client', d.clientName ?? '—'),
-            _row('Numéro Client', d.clientPhone ?? '—'),
-            _row('Adresse Client', d.clientAddress ?? '—'),
-            _row('Articles', d.articles ?? '—'),
-            _row('Quantité', d.quantite ?? '—'),
-            _row('Montant produits', _fmt(d.amount)),
-            _row('Frais de livraison', _fmt(d.fraisLivraison ?? 0)),
-            _row('Méthode de paiement', d.paymentMethod ?? '—'),
-            _row('Zone / Distance', d.zone ?? '—'),
-            _row('Prise en charge → Livraison', '${d.priseEnCharge} → ${d.heureLivraison}'),
-            _row('Instructions', d.note ?? '—'),
-
-            const SizedBox(height: 20),
-            _linkButton(
-              context,
-              'Voir la commission associée →',
-              _teal,
-                  () async {
-                final all = await EarningsService.getActivities();
-                final comm = all.firstWhere(
-                      (a) => a.id == d.linkedId,
-                  orElse: () => d,
-                );
-                if (comm.isCommission && context.mounted) {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => CommissionDetailScreen(commission: comm)));
-                }
-              },
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
+                  : _filtered.isEmpty
+                  ? const Center(child: Text('Aucune livraison', style: TextStyle(color: Colors.white38)))
+                  : RefreshIndicator(
+                onRefresh: _load,
+                color: AppColors.gold,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  children: _filtered.map(_card).toList(),
+                ),
+              ),
             ),
-            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String k, String v, {bool mono = false}) {
+  Widget _tabChip(String label, int i) {
+    final active = _tab == i;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(flex: 42, child: Text(k, style: const TextStyle(color: Color(0xFF9DB2C2), fontSize: 16))),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 58,
-            child: Text(v,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: mono ? 15 : 16,
-                    fontWeight: mono ? FontWeight.w600 : FontWeight.w700)),
+      padding: const EdgeInsets.only(right: 10),
+      child: GestureDetector(
+        onTap: () => setState(() => _tab = i),
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          decoration: BoxDecoration(
+            color: active ? AppColors.gold : AppColors.cardNavy,
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _rowBadge(String k, String v) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        children: [
-          Expanded(flex: 42, child: Text(k, style: const TextStyle(color: Color(0xFF9DB2C2), fontSize: 16))),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(color: _teal.withOpacity(0.16), borderRadius: BorderRadius.circular(8)),
-            child: Text(v, style: const TextStyle(color: _teal, fontSize: 15, fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _linkButton(BuildContext c, String label, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.35)),
+          child: Text(label,
+              style: TextStyle(
+                  color: active ? Colors.white : Colors.white54,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13)),
         ),
-        child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15)),
       ),
+    );
+  }
+
+  Widget _card(DeliveryModel d) {
+    final color = _statusColor(d.status);
+    return GestureDetector(
+      onTap: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => DeliveryRouteDetailScreen(delivery: d))),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: AppColors.cardNavy, borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+                  child: Icon(Icons.inventory_2_outlined, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(d.clientNom,
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(height: 2),
+                      Text(d.adresseLivraison,
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                _badge(d.status),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(color: Colors.white12, height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _miniInfo('Montant', _fmt(d.montant)),
+                _miniInfo('Frais', _fmt(d.fraisLivraison)),
+                _miniInfo('Heure', _heure(d.dateCreation)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _miniInfo(String k, String v) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(k, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        const SizedBox(height: 2),
+        Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+      ],
+    );
+  }
+
+  Widget _badge(DeliveryStatus s) {
+    final color = _statusColor(s);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+      child: Text(_statusLabel(s),
+          style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 11)),
     );
   }
 }

@@ -3,20 +3,20 @@ const bcrypt = require('bcrypt');
 
 // Helper pour récupérer le user lié au livreur de manière sécurisée
 async function getUserForLivreur(livreurId, userId) {
-    let user = await prisma.users.findFirst({
-        where: { delivery_personsId: livreurId }
-    });
-    if (!user && userId) {
-        user = await prisma.users.findUnique({ where: { id: userId } });
+    if (userId) {
+        return await prisma.users.findUnique({ where: { id: userId } });
     }
-    return user;
+    var livreur = await prisma.delivery_persons.findUnique({ where: { id: livreurId } });
+    if (livreur && livreur.user_id) {
+        return await prisma.users.findUnique({ where: { id: livreur.user_id } });
+    }
+    return null;
 }
 
 // Liste principale
 async function index(req, res) {
     try {
-        const where = req.query.all === 'true' ? { status: { in: ['Disponible', 'En_livraison', 'Suspendu'] } } : { status: 'Disponible' };
-
+        const where = req.query.all === 'true' ? { status: { in: ['Disponible', 'En_livraison', 'Suspendu', 'Hors_service'] } } : { status: 'Disponible' };
         const livreurs = await prisma.delivery_persons.findMany({
             include: { vehicules: true },
             where,
