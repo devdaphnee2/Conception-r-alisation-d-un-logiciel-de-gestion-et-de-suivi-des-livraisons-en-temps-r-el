@@ -26,35 +26,25 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
 
   Color _statusColor(DeliveryStatus s) {
     switch (s) {
-      case DeliveryStatus.delivered:
-        return AppColors.statusDelivered;
-      case DeliveryStatus.cancelled:
-        return AppColors.statusCancelled;
-      case DeliveryStatus.inProgress:
-        return AppColors.statusInProgress;
-      case DeliveryStatus.suspended:
-        return AppColors.amber;
-      case DeliveryStatus.assigned:
-        return AppColors.blue;
-      case DeliveryStatus.pending:
-        return AppColors.statusPending;
+      case DeliveryStatus.delivered:  return AppColors.statusDelivered;
+      case DeliveryStatus.cancelled:  return AppColors.statusCancelled;
+      case DeliveryStatus.inProgress: return AppColors.statusInProgress;
+      case DeliveryStatus.suspended:  return AppColors.amber;
+      case DeliveryStatus.assigned:   return AppColors.blue;
+      case DeliveryStatus.validated:  return AppColors.green;
+      case DeliveryStatus.pending:    return AppColors.statusPending;
     }
   }
 
   String _statusLabel(DeliveryStatus s) {
     switch (s) {
-      case DeliveryStatus.delivered:
-        return 'Livrée';
-      case DeliveryStatus.cancelled:
-        return 'Annulée';
-      case DeliveryStatus.inProgress:
-        return 'En cours';
-      case DeliveryStatus.suspended:
-        return 'Suspendue';
-      case DeliveryStatus.assigned:
-        return 'Assignée';
-      case DeliveryStatus.pending:
-        return 'En attente';
+      case DeliveryStatus.delivered:  return 'Livrée';
+      case DeliveryStatus.cancelled:  return 'Annulée';
+      case DeliveryStatus.inProgress: return 'En cours';
+      case DeliveryStatus.suspended:  return 'Suspendue';
+      case DeliveryStatus.assigned:   return 'Assignée';
+      case DeliveryStatus.validated:  return 'Validée';
+      case DeliveryStatus.pending:    return 'En attente';
     }
   }
 
@@ -64,7 +54,6 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
   String _heure(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
-  // ---- Appeler le client ----
   Future<void> _appelerClient() async {
     final uri = Uri(scheme: 'tel', path: d.clientTelephone);
     if (await canLaunchUrl(uri)) {
@@ -76,13 +65,11 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
     }
   }
 
-  // ---- Voir la carte / itinéraire ----
   void _voirCarte() {
     Navigator.push(context,
         MaterialPageRoute(builder: (_) => DeliveryMapRouteScreen(delivery: d)));
   }
 
-  // ---- Saisie du code de clôture ----
   Future<void> _saisirCode() async {
     final ctrl = TextEditingController();
     bool loading = false;
@@ -127,16 +114,14 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
               child: const Text('Annuler', style: TextStyle(color: Colors.white54)),
             ),
             ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () async {
+              onPressed: loading ? null : () async {
                 setLocal(() { loading = true; error = null; });
                 final ok = await TrackingService.verifierCodeCloture(d.id, ctrl.text);
                 if (!ok) {
                   setLocal(() { loading = false; error = 'Code incorrect'; });
                   return;
                 }
-                if (ctx.mounted) Navigator.pop(ctx); // ferme le dialog
+                if (ctx.mounted) Navigator.pop(ctx);
                 _clotureReussie();
               },
               style: ElevatedButton.styleFrom(
@@ -185,7 +170,6 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          // Bandeau statut
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
@@ -198,7 +182,6 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
           _infoCard([
             _row('Client', d.clientNom),
             _row('Téléphone', d.clientTelephone),
@@ -214,8 +197,6 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
             if (d.dateLivraison != null) _row('Livrée à', _heure(d.dateLivraison!)),
           ]),
           const SizedBox(height: 24),
-
-          // Actions
           Row(
             children: [
               Expanded(child: _actionBtn(Icons.phone, 'Appeler', AppColors.green, _appelerClient)),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import '../services/earnings_service.dart';
 import '../models/activity_model.dart';
-import 'delivery_detail_screen.dart';
 import 'commission_detail_screen.dart';
+import 'delivery_route_detail_screen.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -58,15 +58,43 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   void _openDetail(ActivityModel a) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => a.isCommission
-            ? CommissionDetailScreen(commission: a)
-            : DeliveryDetailScreen(delivery: a),
+    if (a.isCommission) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => CommissionDetailScreen(commission: a)));
+      return;
+    }
+    // Livraison — afficher les détails directement
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.cardNavy,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Livraison #${a.id}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 16),
+            _detailRow('Client', a.clientName ?? '—'),
+            _detailRow('Téléphone', a.clientPhone ?? '—'),
+            _detailRow('Adresse', a.clientAddress ?? '—'),
+            _detailRow('Montant', '${a.amount.toStringAsFixed(0)} XAF'),
+            if (a.fraisLivraison != null) _detailRow('Commission', '${a.fraisLivraison!.toStringAsFixed(0)} XAF'),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _detailRow(String k, String v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        SizedBox(width: 110, child: Text(k, style: const TextStyle(color: Colors.white54, fontSize: 13))),
+        Expanded(child: Text(v, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600))),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {

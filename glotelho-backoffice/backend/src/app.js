@@ -36,7 +36,7 @@ app.use('/api/litiges', authMiddleware, managerOnly, require('./modules/administ
 app.use('/api/recouvrements', authMiddleware, managerOnly, require('./modules/administration/recouvrementRoutesAdminRoutes'));
 app.use('/api/profils', authMiddleware, managerOnly, require('./modules/administration/profilAdminRoutes'));
 app.use('/api/bordereaux', authMiddleware, managerOnly, require('./modules/administration/bordereauAdminRoutes'));
-
+app.use('/api/notifications', authMiddleware, require('./modules/notifications/notificationRoutes'));
 // 404
 app.use((req, res) => {
     res.status(404).json({ message: 'Route introuvable : ' + req.method + ' ' + req.path });

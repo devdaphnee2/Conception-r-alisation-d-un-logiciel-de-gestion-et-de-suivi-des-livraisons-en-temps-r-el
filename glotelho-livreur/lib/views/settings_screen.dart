@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/constants.dart';
+import '../utils/driver_state.dart';
 import '../models/delivery_request_model.dart';
 import '../services/delivery_request_manager.dart';
+import '../views/splash_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
 
-  /// Simule l'arrivée d'une demande de course (démo, en attendant Firebase).
   void _simulerCourse() {
     DeliveryRequestManager.onNewRequest(
       DeliveryRequestModel(
@@ -30,8 +32,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+ Future<void> _logout() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.cardNavy,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Déconnexion', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('Voulez-vous vraiment vous déconnecter ?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            child: const Text('Se déconnecter'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await context.read<DriverState>().logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const SplashScreen()),
+      (r) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final driver = context.watch<DriverState>().driver;
+    final nom    = driver != null ? '${driver.prenom} ${driver.nom}' : 'Livreur';
+    final phone  = driver?.telephone ?? '';
+    final photo  = driver?.photoPath;
+
     return Scaffold(
       backgroundColor: AppColors.navy,
       body: SafeArea(
@@ -41,46 +79,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text('Paramètres',
                 style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
+
             // Profil
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: AppColors.cardNavy, borderRadius: BorderRadius.circular(16)),
               child: Row(
                 children: [
-                  const CircleAvatar(radius: 28, backgroundColor: Colors.white12,
-                      child: Icon(Icons.person, color: Colors.white70, size: 30)),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Livreur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                      SizedBox(height: 2),
-                      Text('Voir le profil', style: TextStyle(color: Colors.white54, fontSize: 13)),
-                    ],
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white12,
+                    backgroundImage: photo != null ? NetworkImage(photo) : null,
+                    child: photo == null
+                        ? const Icon(Icons.person, color: Colors.white70, size: 30)
+                        : null,
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(nom, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
+                        const SizedBox(height: 2),
+                        Text(phone, style: const TextStyle(color: Colors.white54, fontSize: 13)),
+                      ],
+                    ),
+                  ),
                   const Icon(Icons.chevron_right, color: Colors.white38),
                 ],
               ),
             ),
             const SizedBox(height: 24),
+
             _section('Compte'),
             _tile(Icons.person_outline, 'Profil'),
             _tile(Icons.lock_outline, 'Sécurité'),
             _tile(Icons.account_balance_wallet_outlined, 'Moyens de retrait'),
             const SizedBox(height: 20),
+
             _section('Préférences'),
             _switchTile(
               Icons.notifications_none,
               'Notifications',
               _notifications,
-                  (v) => setState(() => _notifications = v),
+              (v) => setState(() => _notifications = v),
             ),
             _tile(Icons.language, 'Langue', trailing: 'Français'),
             _tile(Icons.dark_mode_outlined, 'Thème', trailing: 'Sombre'),
             const SizedBox(height: 20),
 
-            // ── Section démo (à retirer après la soutenance) ──
             _section('Développeur'),
             Container(
               margin: const EdgeInsets.only(bottom: 8),
@@ -101,12 +148,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _tile(Icons.help_outline, 'Aide & FAQ'),
             _tile(Icons.info_outline, 'À propos'),
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: _logout,
                 icon: const Icon(Icons.logout, color: Colors.redAccent),
-                label: const Text('Déconnexion', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                label: const Text('Déconnexion',
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -115,7 +164,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Center(child: Text('Version 1.0.0', style: TextStyle(color: Colors.white24, fontSize: 12))),
+            const Center(
+              child: Text('Version 1.0.0', style: TextStyle(color: Colors.white24, fontSize: 12)),
+            ),
           ],
         ),
       ),
@@ -124,7 +175,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
-    child: Text(title, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
+    child: Text(title,
+        style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
   );
 
   Widget _tile(IconData icon, String label, {String? trailing}) {
@@ -139,7 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (trailing != null) Text(trailing, style: const TextStyle(color: Colors.white38, fontSize: 13)),
+            if (trailing != null)
+              Text(trailing, style: const TextStyle(color: Colors.white38, fontSize: 13)),
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, color: Colors.white38),
           ],
