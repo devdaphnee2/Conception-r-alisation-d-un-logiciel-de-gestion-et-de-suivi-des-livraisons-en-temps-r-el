@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/app_state.dart';
 import '../../services/api_service.dart';
 import 'nouvelle_commande_screen.dart';
@@ -21,6 +22,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     'Commande'  : Color(0xFF9E9E9E),
     'En_attente': Color(0xFFE65100),
     'Assign_'   : Color(0xFF3E5682),
+    'Valide_'   : Color(0xFF2E7D32),
     'En_cours'  : Color(0xFF20619E),
     'Livr_'     : Color(0xFF1B5E20),
     'Suspendu'  : Color(0xFFBA1A1A),
@@ -29,8 +31,9 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   static const _statusLabels = <String, String>{
     'Commande'  : 'Brouillon',
     'En_attente': 'En attente assignation',
-    'Assign_'   : 'Assigné',
-    'En_cours'  : "En cours de livraison",
+    'Assign_'   : 'Assignée',
+    'Valide_'   : 'Validée',
+    'En_cours'  : 'En cours de livraison',
     'Livr_'     : 'Livré',
     'Suspendu'  : 'Suspendu',
     'Annul_'    : 'Annulé',
@@ -39,7 +42,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _load();
   }
 
@@ -58,14 +61,15 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     }
   }
 
-  List get _enAttente => _all.where((l) => ['Commande', 'En_attente'].contains(l['status'])).toList();
-  List get _actives   => _all.where((l) => ['Assign_','En_cours'].contains(l['status'])).toList();
-  List get _historique=> _all.where((l) => ['Livr_','Annul_','Suspendu'].contains(l['status'])).toList();
+  List get _brouillons  => _all.where((l) => ['Commande', 'En_attente'].contains(l['status'])).toList();
+  List get _assignees   => _all.where((l) => l['status'] == 'Assign_').toList();
+  List get _enCours     => _all.where((l) => ['Valide_', 'En_cours'].contains(l['status'])).toList();
+  List get _historique  => _all.where((l) => ['Livr_', 'Annul_', 'Suspendu'].contains(l['status'])).toList();
 
   List _filter(List list) {
     if (_search.isEmpty) return list;
     return list.where((l) =>
-    (l['client_nom'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) ||
+        (l['client_nom'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) ||
         '#${l['id'].toString().padLeft(5,'0')}'.contains(_search) ||
         (l['delivery_address'] ?? '').toString().toLowerCase().contains(_search.toLowerCase())
     ).toList();
@@ -113,11 +117,13 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                 indicatorColor: const Color(0xFFC9952E),
                 labelColor: const Color(0xFFC9952E),
                 unselectedLabelColor: Colors.white54,
-                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                isScrollable: true,
                 tabs: [
-                  Tab(text: 'Brouillons (${_enAttente.length})'),
-                  Tab(text: 'En cours (${_actives.length})'),
-                  Tab(text: 'Historique'),
+                  Tab(text: 'Brouillons (${_brouillons.length})'),
+                  Tab(text: 'Assignées (${_assignees.length})'),
+                  Tab(text: 'En cours (${_enCours.length})'),
+                  const Tab(text: 'Historique'),
                 ],
               ),
             ],
@@ -127,13 +133,14 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
-        controller: _tabController,
-        children: [
-          _buildList(_filter(_enAttente), showCourseBtn: true),
-          _buildList(_filter(_actives), showSuivreBtn: true),
-          _buildList(_filter(_historique)),
-        ],
-      ),
+              controller: _tabController,
+              children: [
+                _buildList(_filter(_brouillons), showCourseBtn: true),
+                _buildList(_filter(_assignees)),            // Assignées — sans bouton suivre
+                _buildList(_filter(_enCours), showSuivreBtn: true), // En cours — avec bouton suivre
+                _buildList(_filter(_historique)),
+              ],
+            ),
     );
   }
 
@@ -172,7 +179,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final id        = '#${l['id'].toString().padLeft(5, '0')}';
     final articles  = (l['delivery_items'] as List?) ?? [];
     final livreurInfo = l['delivery_persons'];
-    final livreurNom = livreurInfo?['users'] != null
+    final livreurNom  = livreurInfo?['users'] != null
         ? '${livreurInfo['users']['first_name'] ?? ''} ${livreurInfo['users']['last_name'] ?? ''}'.trim()
         : null;
 
@@ -223,7 +230,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                     _infoRow(Icons.shopping_bag_outlined,
                         articles.map((a) => '${a['product_name']} x${a['quantity'] ?? 1}').join(' · ')),
                   ],
-                  if (livreurNom != null) ...[
+                  if (livreurNom != null && livreurNom.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     _infoRow(Icons.delivery_dining, 'Livreur : $livreurNom'),
                   ],
@@ -234,12 +241,11 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                       Text(montant, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0D1B2A))),
                       Row(
                         children: [
-                          // Bouton Commander une course (seulement si brouillon)
                           if (showCourseBtn && status == 'Commande')
                             ElevatedButton.icon(
                               onPressed: () => _commanderCourse(l['id'] as int),
                               icon: const Icon(Icons.send, size: 14),
-                              label: const Text('Commander une course', style: TextStyle(fontSize: 11)),
+                              label: const Text('Commander', style: TextStyle(fontSize: 11)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0D1B2A),
                                 foregroundColor: Colors.white,
@@ -247,15 +253,14 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
-                          // Bouton supprimer (seulement si brouillon)
-                          if (showCourseBtn && status == 'Commande')
+                          if (showCourseBtn && ['Commande', 'En_attente'].contains(status))
                             IconButton(
                               onPressed: () => _supprimerCommande(l['id'] as int),
                               icon: const Icon(Icons.delete_outline, color: Color(0xFFBA1A1A), size: 20),
-                              tooltip: 'Supprimer',
+                              tooltip: 'Annuler',
                             ),
-                          // Bouton Suivre
-                          if (showSuivreBtn)
+                          // Bouton Suivre uniquement sur En cours
+                          if (showSuivreBtn && status == 'En_cours')
                             ElevatedButton.icon(
                               onPressed: () => _ouvrirSuivi(l['id'] as int),
                               icon: const Icon(Icons.location_on, size: 14),
@@ -298,7 +303,6 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       ),
     );
     if (confirm != true || !mounted) return;
-
     try {
       final api = ApiService(context.read<AppState>());
       await api.commanderCourse(id);
@@ -324,14 +328,14 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Supprimer la commande ?'),
+        title: const Text('Annuler la commande ?'),
         content: const Text('Cette action est irréversible.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Non')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Supprimer'),
+            child: const Text('Oui, annuler'),
           ),
         ],
       ),
@@ -342,7 +346,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       await api.supprimerCommande(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Commande supprimée.'),
+        content: Text('Commande annulée.'),
         backgroundColor: Color(0xFF1B5E20),
         behavior: SnackBarBehavior.floating,
       ));
@@ -350,7 +354,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Erreur lors de la suppression.'),
+        content: Text('Erreur lors de l\'annulation.'),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ));
@@ -358,14 +362,10 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   }
 
   Future<void> _ouvrirSuivi(int id) async {
-    try {
-      // ignore: import_of_legacy_library_into_null_safe
-      final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
-      // Utiliser url_launcher si disponible
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => CommandeDetailScreen(id: id),
-      ));
-    } catch (_) {}
+    final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _infoRow(IconData icon, String text) {
@@ -374,7 +374,8 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       children: [
         Icon(icon, size: 14, color: Colors.grey),
         const SizedBox(width: 6),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey),
+        Expanded(child: Text(text,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
             overflow: TextOverflow.ellipsis)),
       ],
     );

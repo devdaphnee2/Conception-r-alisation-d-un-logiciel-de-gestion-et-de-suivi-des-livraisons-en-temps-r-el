@@ -53,7 +53,7 @@ async function envoyerNotificationCaution(req, res) {
         if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
         var user = await getUserForLivreur(livreur.id);
         var montantFinal = req.body.montant || livreur.caution_montant || 50000;
-        var prenom    = user ? user.first_name : 'Livreur';
+        var prenom = user ? user.first_name : 'Livreur';
         var telephone = user ? user.phone : '';
         var smsMessage = 'Bonjour ' + prenom + ',\n\nVotre profil Glotelho a ete retenu !\n\n' +
             'Pour finaliser votre inscription, veuillez regler votre caution de ' +
@@ -102,11 +102,13 @@ async function approuver(req, res) {
         var livreur = await prisma.delivery_persons.findUnique({ where: { id: parseInt(req.params.id) } });
         if (!livreur) return res.status(404).json({ message: 'Profil introuvable.' });
         if (livreur.status !== 'Indisponible') return res.status(400).json({ message: "Ce profil n'est pas en attente d'approbation." });
-        var user    = await getUserForLivreur(livreur.id);
+        var user = await getUserForLivreur(livreur.id);
         var updated = await prisma.delivery_persons.update({
             where: { id: parseInt(req.params.id) },
             data: {
-                status: 'Disponible', available: 1, date_activation: new Date(),
+                status: 'Disponible',
+                available: true,
+                date_activation: new Date(),
                 note_manager: (livreur.note_manager ? livreur.note_manager + '\n' : '') +
                     '[' + new Date().toLocaleString('fr-FR') + '] Profil approuve — acces plateforme accorde'
             }
@@ -129,7 +131,8 @@ async function rejeter(req, res) {
         var updated = await prisma.delivery_persons.update({
             where: { id: parseInt(req.params.id) },
             data: {
-                status: 'Hors_service', available: 0,
+                status: 'Hors_service',
+                available: false,
                 note_manager: (livreur.note_manager ? livreur.note_manager + '\n' : '') +
                     '[' + new Date().toLocaleString('fr-FR') + '] REJETE : ' + motif
             }

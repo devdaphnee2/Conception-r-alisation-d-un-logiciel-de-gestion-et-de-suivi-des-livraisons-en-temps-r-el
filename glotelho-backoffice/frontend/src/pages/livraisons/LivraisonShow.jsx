@@ -268,8 +268,8 @@ export default function LivraisonShow() {
                         {livraison && livraison.delivery_persons ? (function() {
                             var dp = livraison.delivery_persons;
                             var livreurUser = Array.isArray(dp.users)
-                                ? dp.users.find(function(u) { return u.id === dp.user_id; }) || null
-                                : (dp.users || null);
+                                ? (dp.users.find(function(u) { return u.id === dp.user_id; }) || dp.users[0] || null)
+                                : (dp.users || dp.user || null);
                             var photo = dp.photo_profil_url;
                             var nom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : '—';
                             var initiale = livreurUser ? livreurUser.first_name[0] : '?';

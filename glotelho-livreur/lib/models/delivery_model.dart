@@ -1,5 +1,5 @@
-enum DeliveryStatus { pending, assigned, inProgress, suspended, delivered, cancelled }
-
+import 'package:url_launcher/url_launcher.dart';
+enum DeliveryStatus { pending, assigned, validated, inProgress, suspended, delivered, cancelled }
 class DeliveryModel {
   final String id;
   final String clientNom;
@@ -118,6 +118,9 @@ class DeliveryModel {
       case 'Assign_':
       case 'assigned':
         return DeliveryStatus.assigned;
+      case 'Valide_':
+      case 'validated':
+        return DeliveryStatus.validated;
       case 'Suspendu':
       case 'suspended':
         return DeliveryStatus.suspended;
@@ -131,4 +134,4 @@ class DeliveryModel {
         return DeliveryStatus.pending;
     }
   }
-}
+   }

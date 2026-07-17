@@ -463,4 +463,5 @@ enum users_role {
   manager
   delivery_person
   customer
+  commercant
 }
