@@ -26,6 +26,20 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
 
   Color _statusColor(DeliveryStatus s) {
     switch (s) {
+<<<<<<< HEAD
+      case DeliveryStatus.delivered:
+        return AppColors.statusDelivered;
+      case DeliveryStatus.cancelled:
+        return AppColors.statusCancelled;
+      case DeliveryStatus.inProgress:
+        return AppColors.statusInProgress;
+      case DeliveryStatus.suspended:
+        return AppColors.amber;
+      case DeliveryStatus.assigned:
+        return AppColors.blue;
+      case DeliveryStatus.pending:
+        return AppColors.statusPending;
+=======
       case DeliveryStatus.delivered:  return AppColors.statusDelivered;
       case DeliveryStatus.cancelled:  return AppColors.statusCancelled;
       case DeliveryStatus.inProgress: return AppColors.statusInProgress;
@@ -33,11 +47,26 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
       case DeliveryStatus.assigned:   return AppColors.blue;
       case DeliveryStatus.validated:  return AppColors.green;
       case DeliveryStatus.pending:    return AppColors.statusPending;
+>>>>>>> origin/main
     }
   }
 
   String _statusLabel(DeliveryStatus s) {
     switch (s) {
+<<<<<<< HEAD
+      case DeliveryStatus.delivered:
+        return 'Livrée';
+      case DeliveryStatus.cancelled:
+        return 'Annulée';
+      case DeliveryStatus.inProgress:
+        return 'En cours';
+      case DeliveryStatus.suspended:
+        return 'Suspendue';
+      case DeliveryStatus.assigned:
+        return 'Assignée';
+      case DeliveryStatus.pending:
+        return 'En attente';
+=======
       case DeliveryStatus.delivered:  return 'Livrée';
       case DeliveryStatus.cancelled:  return 'Annulée';
       case DeliveryStatus.inProgress: return 'En cours';
@@ -45,6 +74,7 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
       case DeliveryStatus.assigned:   return 'Assignée';
       case DeliveryStatus.validated:  return 'Validée';
       case DeliveryStatus.pending:    return 'En attente';
+>>>>>>> origin/main
     }
   }
 

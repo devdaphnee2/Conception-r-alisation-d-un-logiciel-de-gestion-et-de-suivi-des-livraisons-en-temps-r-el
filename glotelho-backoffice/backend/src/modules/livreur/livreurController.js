@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { getFirebaseDB } = require('../../config/firebaseAdmin');
 const { fileUrl } = require('../../middlewares/upload');
+const { sendLivraisonRetardeeEmail } = require('../../utils/mailer');
 
 // ── HELPER — mapper statut BDD vers Flutter ──────────────────
 function mapStatus(status) {
@@ -537,7 +538,22 @@ async function signalerIncident(req, res) {
             data: { status: 'Suspendu', suspension_reason: type_incident + ' : ' + (description || '') }
         });
 
-        var course = await prisma.deliveryorders.findUnique({ where: { id: courseId } });
+        var course = await prisma.deliveryorders.findUnique({
+            where: { id: courseId },
+            include: { managers: { include: { users: true } } }
+        });
+
+        // Email au commercant si sa preference "email_alerts" est activee
+        try {
+            var manager = course && course.managers;
+            var managerUser = manager && manager.users;
+            if (managerUser && managerUser.email && (manager.email_alerts === undefined || manager.email_alerts === true)) {
+                await sendLivraisonRetardeeEmail(managerUser.email, managerUser.first_name, courseId, type_incident + (description ? ' : ' + description : ''));
+            }
+        } catch (mailErr) {
+            console.warn('[EMAIL livraison retardee] Echec:', mailErr.message);
+        }
+
         await prisma.litiges.create({
             data: {
                 deliveryorder_id: courseId,
