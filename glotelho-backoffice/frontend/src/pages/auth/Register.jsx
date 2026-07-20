@@ -74,6 +74,7 @@ export default function Register() {
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleGoogleCredential,
                 });
+                
                 window.google.accounts.id.renderButton(googleBtnRef.current, {
                     theme: 'outline',
                     size: 'large',
