@@ -27,7 +27,7 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
 
   Color _statusColor(DeliveryStatus s) {
     switch (s) {
-<<<<<<< HEAD
+
       case DeliveryStatus.delivered:
         return AppColors.statusDelivered;
       case DeliveryStatus.cancelled:
@@ -40,7 +40,6 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
         return AppColors.blue;
       case DeliveryStatus.pending:
         return AppColors.statusPending;
-=======
       case DeliveryStatus.delivered:  return AppColors.statusDelivered;
       case DeliveryStatus.cancelled:  return AppColors.statusCancelled;
       case DeliveryStatus.inProgress: return AppColors.statusInProgress;
@@ -48,13 +47,11 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
       case DeliveryStatus.assigned:   return AppColors.blue;
       case DeliveryStatus.validated:  return AppColors.green;
       case DeliveryStatus.pending:    return AppColors.statusPending;
->>>>>>> origin/main
     }
   }
 
   double _hueForStatus(DeliveryStatus s) {
     switch (s) {
-<<<<<<< HEAD
       case DeliveryStatus.delivered:
         return BitmapDescriptor.hueGreen;
       case DeliveryStatus.cancelled:
@@ -67,7 +64,6 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
         return BitmapDescriptor.hueBlue;
       case DeliveryStatus.pending:
         return BitmapDescriptor.hueYellow;
-=======
       case DeliveryStatus.delivered:  return BitmapDescriptor.hueGreen;
       case DeliveryStatus.cancelled:  return BitmapDescriptor.hueRed;
       case DeliveryStatus.inProgress: return BitmapDescriptor.hueAzure;
@@ -87,7 +83,6 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
       case DeliveryStatus.assigned:   return 'Assignée';
       case DeliveryStatus.validated:  return 'Validée';
       case DeliveryStatus.pending:    return 'En attente';
->>>>>>> origin/main
     }
   }
 
