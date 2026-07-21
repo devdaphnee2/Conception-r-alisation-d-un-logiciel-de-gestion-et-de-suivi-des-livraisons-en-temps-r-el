@@ -41,7 +41,7 @@ export default function Login() {
         setError('');
         setLoading(true);
         try {
-            const res = await api.post('/auth/google-login', { credential: response.credential });
+            const res = await api.post('http://localhost:5000/api/auth/google-login', { credential: response.credential });
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             window.location.href = '/dashboard';

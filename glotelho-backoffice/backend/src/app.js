@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
+
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -15,10 +16,11 @@ app.get('/', (req, res) => {
 // AUTH
 app.use('/api/auth', require('./modules/auth/authRoutes'));
 
-// LIVREUR (app mobile Flutter)
+/// LIVREUR (app mobile Flutter)
 var livreurRoutes = require('./modules/livreur/livreurRoutes');
 app.use('/api/v1/drivers', livreurRoutes);
 app.use('/api/mobile/livreur', livreurRoutes);
+app.use('/api/drivers', livreurRoutes); // ✅ On réutilise livreurRoutes ici !
 
 // LIVRAISON
 app.use('/api/livraisons/public', require('./modules/livraison/trackingPublicRoutes'));
@@ -37,6 +39,7 @@ app.use('/api/recouvrements', authMiddleware, managerOnly, require('./modules/ad
 app.use('/api/profils', authMiddleware, managerOnly, require('./modules/administration/profilAdminRoutes'));
 app.use('/api/bordereaux', authMiddleware, managerOnly, require('./modules/administration/bordereauAdminRoutes'));
 app.use('/api/notifications', authMiddleware, require('./modules/notifications/notificationRoutes'));
+
 // 404
 app.use((req, res) => {
     res.status(404).json({ message: 'Route introuvable : ' + req.method + ' ' + req.path });

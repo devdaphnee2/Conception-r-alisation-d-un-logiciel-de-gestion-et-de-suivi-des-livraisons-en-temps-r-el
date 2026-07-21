@@ -300,14 +300,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             )),
                           ),
                         ),
-                        Center(
+                        /*Center(
                           child: TextButton(
                             onPressed: () => Navigator.push(context,
                                 MaterialPageRoute(builder: (_) => const MainNavigationScreen())),
                             child: const Text('Accès test (sans backend)',
                                 style: TextStyle(color: Colors.white24, fontSize: 12)),
                           ),
-                        ),
+                        ),*/
                         const SizedBox(height: 8),
                       ],
                     ),

@@ -6,7 +6,6 @@ import '../utils/constants.dart';
 import '../utils/driver_state.dart';
 import '../services/polling_service.dart';
 import '../models/driver_model.dart';
-import 'onboarding_screen.dart';
 import 'main_navigation_screen.dart';
 import 'login_screen.dart';
 
@@ -26,32 +25,51 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _init() async {
     final driverState = context.read<DriverState>();
+
+    // 1. Charger le token en local
     await driverState.loadSession();
 
+    bool profileValid = false;
+
+    // 2. Si un token existe, valider la session auprès du backend
     if (driverState.isLoggedIn) {
-      await driverState.refreshProfile();
+      profileValid = await driverState.refreshProfile();
     }
 
-    await Future.delayed(const Duration(seconds: 2));
+    // Un petit délai d'affichage pour éviter un flash visuel trop rapide du SplashScreen
+    await Future.delayed(const Duration(seconds: 1));
     if (!mounted) return;
 
-    if (!driverState.isLoggedIn) {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+    // 3. Si aucun token n'est stocké OU si le token est invalide / expiré
+    if (!driverState.isLoggedIn || !profileValid) {
+      // Nettoyer toute donnée résiduelle
+      await driverState.logout();
+
+      if (!mounted) return;
+      // Rediriger impérativement vers l'écran de connexion
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
       return;
     }
 
-    // Démarrer le polling si le livreur est approuvé
+    // 4. Si le livreur est connecté et que son compte est approuvé
     if (driverState.driver?.status == DriverStatus.approved) {
       await PollingService.start();
     }
 
+    // 5. Redirection selon le statut de vérification du profil
     if (driverState.driver?.isVerified == true) {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (_) => const MainNavigationScreen()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
     } else {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (_) => const PendingVerificationScreen()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const PendingVerificationScreen()),
+      );
     }
   }
 
@@ -63,7 +81,10 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/glotelho_delivery_logo_high_contrast.png', width: 140),
+            Image.asset(
+              'assets/images/glotelho_delivery_logo_high_contrast.png',
+              width: 140,
+            ),
             const SizedBox(height: 24),
             const CircularProgressIndicator(color: AppColors.gold),
           ],

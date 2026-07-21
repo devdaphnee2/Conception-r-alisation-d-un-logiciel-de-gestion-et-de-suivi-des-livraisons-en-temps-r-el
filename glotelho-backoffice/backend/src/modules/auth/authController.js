@@ -12,10 +12,14 @@ function genToken(user, expiresIn) {
 
 async function login(req, res) {
     try {
+        console.log('--- TENTATIVE DE CONNEXION ---');
+        console.log('Données reçues du client:', req.body);
+
         var email = req.body.email;
         var password = req.body.password;
         if (!email || !password) return res.status(400).json({ message: 'Email et mot de passe requis.' });
         var user = await prisma.users.findUnique({ where: { email: email } });
+        console.log('Utilisateur trouvé en BDD:', user? user.email : 'AUCUN UTILISATEUR');
         if (!user) return res.status(401).json({ message: 'Identifiants incorrects.' });
         var valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(401).json({ message: 'Identifiants incorrects.' });
@@ -25,6 +29,7 @@ async function login(req, res) {
 }
 
 async function googleLogin(req, res) {
+    
     try {
         var { OAuth2Client } = require('google-auth-library');
         var client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);

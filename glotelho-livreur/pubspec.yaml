@@ -68,15 +68,15 @@ flutter:
 
 flutter_native_splash:
   color: "#0D1B2A"
-  image: assets/images/glotelho_driver_logo_high_contrast.png
+  image: assets/images/glotelho_delivery_logo_high_contrast.png
   android_12:
     color: "#0D1B2A"
-    image: assets/images/glotelho_driver_logo_high_contrast.png
+    image: assets/images/glotelho_delivery_logo_high_contrast.png
 
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/glotelho_driver_logo_high_contrast.png"
+  image_path: "assets/images/glotelho_delivery_logo_high_contrast.png"
   #image_scale: 3
   adaptive_icon_background: "#0D1B2A"
-  adaptive_icon_foreground: "assets/images/glotelho_driver_logo_high_contrast.png"
+  adaptive_icon_foreground: "assets/images/glotelho_delivery_logo_high_contrast.png"

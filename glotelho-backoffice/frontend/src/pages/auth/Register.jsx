@@ -39,13 +39,27 @@ export default function Register() {
 
         setLoading(true);
         try {
-            const res = await api.post('/auth/register', form);
+            console.log(" Données envoyées au backend :", form);
+            const res = await api.post('http://localhost:5000/api/auth/register', form);
+            console.log(" Réponse du backend :", res.data);
+
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             setWelcomeNew(true);
             setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Erreur lors de la creation du compte.');
+            // 🔍 Impression détaillée de l'erreur dans la console du navigateur (F12)
+            console.error("❌ Exception capturée lors de l'inscription :", err);
+            if (err.response) {
+                console.error(" Statut HTTP :", err.response.status);
+                console.error(" Données de réponse backend :", err.response.data);
+            } else if (err.request) {
+                console.error(" Pas de réponse du serveur (problème réseau ou CORS) :", err.request);
+            } else {
+                console.error(" Erreur de configuration de la requête :", err.message);
+            }
+
+            setError(err.response?.data?.message || `Erreur: ${err.message || 'Erreur lors de la creation du compte.'}`);
         } finally { setLoading(false); }
     }
 
@@ -54,19 +68,27 @@ export default function Register() {
         setError('');
         setLoading(true);
         try {
+            console.log(" Credential Google reçu :", response.credential);
             const res = await api.post('/auth/google-register', { credential: response.credential });
+            console.log(" Réponse du backend (Google) :", res.data);
+
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             setWelcomeNew(true);
             setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
         } catch (err) {
+            // 🔍 Impression détaillée de l'erreur
+            console.error("❌ Exception lors de l'inscription Google :", err);
+            if (err.response) {
+                console.error(" Statut HTTP :", err.response.status);
+                console.error(" Données de réponse :", err.response.data);
+            }
+
             setError(err.response?.data?.message || 'Inscription Google impossible.');
         } finally { setLoading(false); }
     }
 
     // ── Chargement du script Google Identity Services ────────
-    // Meme logique que Login.jsx : verifie si le script est deja
-    // present avant de le recreer, evite la double initialisation.
     useEffect(() => {
         function initGoogle() {
             if (window.google && googleBtnRef.current) {
