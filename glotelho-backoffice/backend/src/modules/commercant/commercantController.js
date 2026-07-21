@@ -211,29 +211,4 @@ async function declarerLitige(req, res) {
     } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
 }
 
-// GET /commercant/preferences
-async function getPreferences(req, res) {
-    try {
-        var manager = await prisma.managers.findFirst({ where: { user_id: req.user.id } });
-        if (!manager) return res.status(403).json({ message: 'Compte commercant introuvable.' });
-        res.json({ email_alerts: manager.email_alerts !== undefined ? manager.email_alerts : true });
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
-}
-
-// PATCH /commercant/preferences
-async function updatePreferences(req, res) {
-    try {
-        var manager = await prisma.managers.findFirst({ where: { user_id: req.user.id } });
-        if (!manager) return res.status(403).json({ message: 'Compte commercant introuvable.' });
-        if (req.body.email_alerts === undefined) {
-            return res.status(400).json({ message: 'email_alerts est requis (true/false).' });
-        }
-        var updated = await prisma.managers.update({
-            where: { id: manager.id },
-            data: { email_alerts: Boolean(req.body.email_alerts) }
-        });
-        res.json({ message: 'Preferences mises a jour.', email_alerts: updated.email_alerts });
-    } catch (err) { res.status(500).json({ message: 'Erreur serveur', error: err.message }); }
-}
-
-module.exports = { mesLivraisons, livraisonsEnCours, detailLivraison, creerLivraison, commanderCourse, supprimerCommande, livreursDisponibles, declarerLitige, getPreferences, updatePreferences };
+module.exports = { mesLivraisons, livraisonsEnCours, detailLivraison, creerLivraison, commanderCourse, supprimerCommande, livreursDisponibles, declarerLitige };

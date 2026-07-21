@@ -24,7 +24,7 @@ class CommercantPollingService {
     if (!appState.isAuthenticated) return;
     try {
       final dio = Dio(BaseOptions(
-        baseUrl: 'http://10.243.164.203:5000/api/',
+        baseUrl: 'http://172.20.10.4:5000/api/',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: { 'Authorization': 'Bearer ${appState.authToken}' },

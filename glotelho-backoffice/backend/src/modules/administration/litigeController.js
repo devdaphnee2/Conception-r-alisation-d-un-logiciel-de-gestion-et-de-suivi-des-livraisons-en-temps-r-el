@@ -1,5 +1,4 @@
 const prisma = require('../../utils/prismaClient');
-const { sendLitigeResoluEmail } = require('../../utils/mailer');
 
 async function index(req, res) {
     try {
@@ -80,21 +79,8 @@ async function resoudre(req, res) {
                 status: 'Approuvee',
                 type: decision,
                 amount: amount ? parseFloat(amount) : null,
-            },
-            include: { managers: { include: { users: true } } }
-        });
-
-        // Email au commercant si sa preference "email_alerts" est activee
-        try {
-            const manager = litige.managers;
-            const managerUser = manager && manager.users;
-            if (managerUser && managerUser.email && (manager.email_alerts === undefined || manager.email_alerts === true)) {
-                await sendLitigeResoluEmail(managerUser.email, managerUser.first_name, litige.id, decision, litige.amount);
             }
-        } catch (mailErr) {
-            console.warn('[EMAIL litige resolu] Echec:', mailErr.message);
-        }
-
+        });
         // TODO: Etape 11-12 — FCM notification livreur + client
         res.json({ message: 'Litige resolu. Decision enregistree. (FCM: notification livreur + client a connecter)', litige });
     } catch (error) {
@@ -107,20 +93,8 @@ async function rejeter(req, res) {
     try {
         const litige = await prisma.remises_compensations.update({
             where: { id: parseInt(req.params.id) },
-            data: { status: 'Rejetee' },
-            include: { managers: { include: { users: true } } }
+            data: { status: 'Rejetee' }
         });
-
-        try {
-            const manager = litige.managers;
-            const managerUser = manager && manager.users;
-            if (managerUser && managerUser.email && (manager.email_alerts === undefined || manager.email_alerts === true)) {
-                await sendLitigeResoluEmail(managerUser.email, managerUser.first_name, litige.id, 'Rejetee', null);
-            }
-        } catch (mailErr) {
-            console.warn('[EMAIL litige rejete] Echec:', mailErr.message);
-        }
-
         // TODO: FCM notification demandeur
         res.json({ message: 'Litige rejete. (FCM: notification demandeur a connecter)', litige });
     } catch (error) {

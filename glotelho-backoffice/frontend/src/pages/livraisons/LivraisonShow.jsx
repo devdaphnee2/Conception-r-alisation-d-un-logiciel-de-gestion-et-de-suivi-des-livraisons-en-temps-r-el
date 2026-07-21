@@ -137,7 +137,7 @@ export default function LivraisonShow() {
         var waMsg = 'Bonjour ' + clientNom + ' !\n\n' +
             'Votre commande Glotelho est en cours de livraison.\n' +
             'Numero : ' + livraisonId + '\n\n' +
-            'Suivez votre livreur :\n' + (trackingUrl || 'http://localhost:5173/tracking/' + livraison.id) + '\n\n' +
+            'Suivez votre livreur :\n' + (trackingUrl || 'http://localhost:5173/suivi/' + livraison.id) + '\n\n' +
             'Code a donner au livreur :\n*' + otp + '*\n\nNe partagez pas ce code.';
         waLinkFromLivraison = waTel ? 'https://wa.me/' + waTel + '?text=' + encodeURIComponent(waMsg) : '';
     }
