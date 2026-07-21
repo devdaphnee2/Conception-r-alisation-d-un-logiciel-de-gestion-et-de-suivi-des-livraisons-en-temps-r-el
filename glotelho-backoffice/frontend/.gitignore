@@ -8,14 +8,15 @@ pnpm-debug.log*
 lerna-debug.log*
 *.env
 .env
+firebase-admin.json
 backend/src/config/firebase-admin.json
 frontend/src/config/firebase-admin.json
-
+node_modules/
 node_modules
 dist
 dist-ssr
 *.local
-
+dist/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
