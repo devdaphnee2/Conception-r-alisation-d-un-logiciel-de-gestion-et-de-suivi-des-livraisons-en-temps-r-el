@@ -4,10 +4,9 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { database, ref, onValue, off } from '../config/firebase';
 
-mapboxgl.accessToken = 'import.meta.env.VITE_MAPBOX_TOKEN';
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-//pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
-
+//import.meta.env.VITE_MAPBOX_TOKEN
 const STATUS_INFO = {
     'En_attente': { label: 'En attente de livreur', color: '#c9952e', bg: '#ffdea9', icon: '⏳' },
     'Assign_':    { label: 'Livreur assigne',        color: '#475e8b', bg: '#b5ccff', icon: '🛵' },

@@ -22,7 +22,7 @@
     </queries>
 
     <application
-        android:label="Glotelho Driver"
+        android:label="Glotelho Delivery"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

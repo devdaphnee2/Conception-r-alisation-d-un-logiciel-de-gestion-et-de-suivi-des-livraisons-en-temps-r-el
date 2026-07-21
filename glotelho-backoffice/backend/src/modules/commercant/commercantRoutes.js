@@ -8,8 +8,6 @@ router.use(authMiddleware);
 // IMPORTANT: routes fixes AVANT les routes avec parametres /:id
 router.get('/livraisons/en-cours', ctrl.livraisonsEnCours);
 router.get('/livreurs-disponibles', ctrl.livreursDisponibles);
-router.get('/preferences', ctrl.getPreferences);
-router.patch('/preferences', ctrl.updatePreferences);
 
 router.get('/livraisons', ctrl.mesLivraisons);
 router.post('/livraisons', ctrl.creerLivraison);

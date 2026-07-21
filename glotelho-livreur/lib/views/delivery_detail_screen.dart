@@ -48,7 +48,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
       case DeliveryStatus.suspended:  return AppColors.amber;
       case DeliveryStatus.assigned:   return AppColors.blue;
       case DeliveryStatus.pending:    return AppColors.statusPending;
-      case DeliveryStatus.validated: return AppColors.green;
     }
   }
 
@@ -60,7 +59,6 @@ class _DeliveriesListScreenState extends State<DeliveriesListScreen> {
       case DeliveryStatus.suspended:  return 'Suspendue';
       case DeliveryStatus.assigned:   return 'Assignée';
       case DeliveryStatus.pending:    return 'En attente';
-      case DeliveryStatus.validated: return 'Validée';
     }
   }
 

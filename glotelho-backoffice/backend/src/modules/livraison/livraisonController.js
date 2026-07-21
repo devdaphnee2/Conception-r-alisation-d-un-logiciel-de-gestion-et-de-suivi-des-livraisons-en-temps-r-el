@@ -303,5 +303,21 @@ async function demarrerCourse(req, res) {
         res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 }
+async function publicShow(req, res) {
+    try {
+        var livraison = await prisma.deliveryorders.findUnique({
+            where: { id: parseInt(req.params.id) },
+            include: {
+                delivery_persons: { include: { vehicules: true } },
+                confirmations: true
+            }
+        });
+        if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
+        await enrichirLivreur(livraison);
+        res.json(livraison);
+    } catch (error) {
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+}
 
-module.exports = { index, create, show, update, assigner, annuler, demarrerCourse };
+module.exports = { index, create, show, update, assigner, annuler, demarrerCourse, publicShow };
