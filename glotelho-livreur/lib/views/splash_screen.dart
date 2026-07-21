@@ -19,11 +19,10 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+}
   Future<void> _init() async {
     final driverState = context.read<DriverState>();
     await driverState.loadSession();
@@ -55,20 +54,23 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.navy,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/images/glotelho_delivery_logo_high_contrast.png', width: 140),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(color: AppColors.gold),
-          ],
-        ),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: AppColors.navy,
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/glotelho_delivery_logo_high_contrast.png',
+            width: 140,
+          ),
+          const SizedBox(height: 24),
+          const CircularProgressIndicator(color: AppColors.gold),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
