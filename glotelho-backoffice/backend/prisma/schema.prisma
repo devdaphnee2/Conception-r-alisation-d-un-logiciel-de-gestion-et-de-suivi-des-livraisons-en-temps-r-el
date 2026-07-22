@@ -144,6 +144,11 @@ model deliveryorders {
   client_nom              String?                @db.VarChar(150)
   client_telephone        String?                @db.VarChar(30)
   client_whatsapp         String?                @db.VarChar(30)
+  payment_status          String?                @default("unpaid") @db.VarChar(20)
+  payment_reference       String?                @db.VarChar(255)
+  pickup_address          String?                @db.VarChar(255)
+  pickup_latitude         Decimal?               @db.Decimal(10, 7)
+  pickup_longitude        Decimal?               @db.Decimal(10, 7)
   bordereaux              bordereaux[]
   confirmations           confirmations[]
   delivery_items          delivery_items[]
