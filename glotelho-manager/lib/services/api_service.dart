@@ -5,8 +5,11 @@ class ApiService {
   final Dio dio;
   final AppState appState;
 
-  // ⚠️ Pense à vérifier que 192.168.1.152 est bien l'IP actuelle de ton PC Debian
-  static const String _baseUrl = 'http://192.168.1.150:5000/api';
+
+  static const String _baseUrl = 'http://192.168.1.145:5000/api';
+  //'http://192.168.1.145:5000/api';
+
+
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(
