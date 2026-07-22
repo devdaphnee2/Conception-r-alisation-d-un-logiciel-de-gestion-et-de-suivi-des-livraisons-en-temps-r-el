@@ -9,15 +9,49 @@ class DriverState extends ChangeNotifier {
   DriverModel? _driver;
   String? _token;
   bool _isOnline = false;
+  bool _isLoading = true; // Permet de savoir si la vérification initiale est en cours
 
   DriverModel? get driver => _driver;
   String? get token => _token;
-  bool get isLoggedIn => _token != null;
+  bool get isLoggedIn => _token != null && _driver != null; // Sécurité : il faut un token ET un profil
   bool get isOnline => _isOnline;
+  bool get isLoading => _isLoading;
+
+  DriverState() {
+    initSession(); // Vérifie la session dès la création de la classe
+  }
+
+  /// Initialise la session au lancement de l'application
+  Future<void> initSession() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _token = prefs.getString('driver_token');
+
+      if (_token != null && _token!.isNotEmpty) {
+        // Appliquer le token à l'API et charger le profil
+        ApiService.setToken(_token!);
+        final profileLoaded = await refreshProfile();
+
+        // Si le profil échoue (ex: token expiré), on réinitialise la session
+        if (!profileLoaded) {
+          await logout();
+        }
+      }
+    } catch (e) {
+      await logout();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void setDriver(DriverModel driver, String token) {
     _driver = driver;
     _token = token;
+    ApiService.setToken(token);
     notifyListeners();
   }
 
@@ -36,15 +70,17 @@ class DriverState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('driver_token', token);
     _token = token;
+    ApiService.setToken(token);
     notifyListeners();
   }
 
   Future<void> logout() async {
-    PollingService.stop(); // arrêter le polling à la déconnexion
+    PollingService.stop(); // Arrêter le polling à la déconnexion
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('driver_token');
     _driver = null;
     _token = null;
+    _isOnline = false;
     notifyListeners();
   }
 

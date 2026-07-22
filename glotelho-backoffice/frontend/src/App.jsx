@@ -37,8 +37,8 @@ import TrackingPublic from './pages/TrackingPublic';
 
 export default function App() {
     return (
-        <AuthProvider>
-            <Router>
+        <Router>
+            <AuthProvider>
                 <Routes>
 
                     {/* ── ROUTES PUBLIQUES — sans auth, sans sidebar ── */}
@@ -77,7 +77,7 @@ export default function App() {
 
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
-            </Router>
-        </AuthProvider>
+            </AuthProvider>
+        </Router>
     );
 }
