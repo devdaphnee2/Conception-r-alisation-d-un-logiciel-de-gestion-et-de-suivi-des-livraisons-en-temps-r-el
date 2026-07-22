@@ -39,7 +39,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Future<void> _ouvrirSuivi(int id) async {
-    final url = 'http://172.20.10.4:5173/suivi/$id';
+    final url = 'http://192.168.1.145:5173/suivi-commercant/$id';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

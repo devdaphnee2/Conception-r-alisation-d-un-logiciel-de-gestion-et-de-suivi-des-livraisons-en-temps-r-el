@@ -19,9 +19,8 @@ router.delete('/:id', async(req, res) => {
 router.patch('/:id/lire', async(req, res) => {
     await prisma.notifications.update({
         where: { id: parseInt(req.params.id) },
-        data: { is_read: 1 }
+        data: { is_read: true }
     });
     res.json({ message: 'Marquée lue.' });
 });
-
 module.exports = router;

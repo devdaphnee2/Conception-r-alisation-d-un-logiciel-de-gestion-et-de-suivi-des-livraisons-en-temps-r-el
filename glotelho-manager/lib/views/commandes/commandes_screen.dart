@@ -365,9 +365,16 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Impossible d\'ouvrir le suivi pour la livraison #$id'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
     }
   }
-
   Widget _infoRow(IconData icon, String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

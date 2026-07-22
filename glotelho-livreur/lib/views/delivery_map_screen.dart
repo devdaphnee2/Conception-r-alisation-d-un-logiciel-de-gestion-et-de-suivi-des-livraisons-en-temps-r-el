@@ -7,6 +7,7 @@ import '../services/tracking_service.dart';
 import '../services/directions_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
+  import 'package:firebase_database/firebase_database.dart';
 
 class DeliveryMapScreen extends StatefulWidget {
   final DeliveryModel? activeLivraison;
@@ -143,21 +144,22 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     ));
   }
 
-  Future<void> _envoyerPosition() async {
+
+
+Future<void> _envoyerPosition() async {
     try {
       final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       final latLng = LatLng(pos.latitude, pos.longitude);
 
-      // Envoyer via API — le backend écrit sur Firebase positions/{livreur.id}
-      if (_selected != null) {
-        await TrackingService.updatePosition(
-          deliveryId: _selected!.id,
-          latitude  : pos.latitude,
-          longitude : pos.longitude,
-          speed     : pos.speed,
-        );
-      }
+      // Écrire directement sur Firebase
+      final dbRef = FirebaseDatabase.instance.ref('positions/22');
+      await dbRef.set({
+        'latitude' : pos.latitude,
+        'longitude': pos.longitude,
+        'speed'    : pos.speed,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
 
       if (!mounted) return;
       setState(() => _myPosition = latLng);

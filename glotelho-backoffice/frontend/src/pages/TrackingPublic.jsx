@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { database, ref, onValue, off } from '../config/firebase';
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+mapboxgl.accessToken = "import.meta.env.VITE_MAPBOX_TOKEN";
 
 //import.meta.env.VITE_MAPBOX_TOKEN
 const STATUS_INFO = {
