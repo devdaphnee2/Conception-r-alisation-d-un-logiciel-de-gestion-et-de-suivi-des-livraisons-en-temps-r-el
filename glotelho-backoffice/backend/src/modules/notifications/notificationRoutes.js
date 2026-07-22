@@ -16,18 +16,17 @@ router.delete('/:id', async(req, res) => {
     res.json({ message: 'Supprimée.' });
 });
 
-
 router.patch('/:id/lire', async(req, res) => {
-    await prisma.notifications.update({
-        where: { id: parseInt(req.params.id) },
-        data: { is_read: true }
-
-    });
-
-    res.json({ success: true, notification });
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour de la notification:', error);
-    res.status(500).json({ message: 'Erreur serveur.' });
-  }
+    try {
+        const notification = await prisma.notifications.update({
+            where: { id: parseInt(req.params.id) },
+            data: { is_read: true }
+        });
+        res.json({ success: true, notification });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de la notification:', error);
+        res.status(500).json({ message: 'Erreur serveur.' });
+    }
 });
+
 module.exports = router;

@@ -28,7 +28,6 @@ async function livraisonsEnCours(req, res) {
 
 async function detailLivraison(req, res) {
     try {
-        console.log('[DETAIL] id:', req.params.id);
         var livraison = await prisma.deliveryorders.findUnique({
             where: { id: parseInt(req.params.id) },
             include: {
@@ -37,11 +36,9 @@ async function detailLivraison(req, res) {
                 confirmations: true
             }
         });
-        console.log('[DETAIL] livraison trouvée:', livraison ? livraison.id : 'null');
         if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
         res.json(livraison);
     } catch (err) {
-        console.error('[DETAIL ERROR]', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
@@ -70,15 +67,28 @@ async function creerLivraison(req, res) {
             customer = await prisma.customers.create({ data: { user_id: newUser.id } });
         }
 
+        // ── Calcul des montants ────────────────────────────────────────
+        // amount_to_collect = UNIQUEMENT le prix de la marchandise (payé en ligne par le client via OM/MoMo)
+        // frais_livraison   = payé en cash au livreur à la remise du colis
+        var totalArticles = 0;
+        if (body.articles && body.articles.length > 0) {
+            body.articles.forEach(function(a) {
+                totalArticles += (parseFloat(a.prix_unitaire) || 0) * (parseInt(a.quantite) || 1);
+            });
+        }
+        var fraisLivraison = parseFloat(body.montant_livraison || body.frais_livraison) || 0;
+
         var livraison = await prisma.deliveryorders.create({
             data: {
                 manager_id: manager.id,
                 customer_id: customer.id,
                 delivery_person_id: null,
+                pickup_address: body.pickup_address || null,
                 delivery_address: body.delivery_address,
                 zone_bloc: body.zone_bloc || null,
                 delivery_instructions: body.delivery_instructions || null,
-                amount_to_collect: parseFloat(body.amount_to_collect) || 0,
+                amount_to_collect: totalArticles, // ← uniquement la marchandise
+                frais_livraison: fraisLivraison, // ← payé cash au livreur
                 collected_amount: 0,
                 status: 'Commande',
                 delivery_date: body.delivery_date ? new Date(body.delivery_date) : null,
@@ -102,8 +112,6 @@ async function creerLivraison(req, res) {
             if (articlesData.length > 0) await prisma.delivery_items.createMany({ data: articlesData });
         }
 
-        // PAS de confirmation ici — elle sera créée lors de l'assignation du livreur
-
         res.status(201).json({ message: 'Commande enregistrée.', livraison });
     } catch (err) {
         console.error('[creerLivraison]', err.message);
@@ -123,7 +131,6 @@ async function commanderCourse(req, res) {
 
         await prisma.deliveryorders.update({ where: { id }, data: { status: 'En_attente' } });
 
-        // Récupérer le nom du commerçant
         var commercantUser = null;
         if (livraison.manager_id) {
             var commercantRecord = await prisma.managers.findFirst({
@@ -136,7 +143,6 @@ async function commanderCourse(req, res) {
             commercantUser.first_name + ' ' + commercantUser.last_name :
             'Un commerçant';
 
-        // ── Notifier tous les vrais managers (role = 'manager') ───────────
         try {
             var admins = await prisma.users.findMany({ where: { role: 'manager' } });
             for (var admin of admins) {
@@ -154,7 +160,6 @@ async function commanderCourse(req, res) {
             }
         } catch (e) { console.warn('[NOTIF COMMANDER COURSE] Echec:', e.message); }
 
-        // ── Notification FCM si token disponible ───────────────────────────
         var managerUser = livraison.managers ? livraison.managers.users : null;
         if (managerUser && managerUser.fcm_token) {
             try {
@@ -172,7 +177,6 @@ async function commanderCourse(req, res) {
             } catch (e) { console.warn('[FCM COMMANDER COURSE] Echec:', e.message); }
         }
 
-        console.log('[COMMANDER COURSE] Commande #' + id + ' → En_attente, managers notifiés.');
         res.json({ message: "Course commandée ! L'admin va assigner un livreur." });
     } catch (err) {
         console.error('[COMMANDER COURSE] Erreur:', err.message);

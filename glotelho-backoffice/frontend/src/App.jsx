@@ -29,6 +29,8 @@ import Recouvrements from './pages/Recouvrements';
 import Parametres from './pages/Parametres';
 import CommandesList from './pages/livraisons/CommandesList';
 import TrackingCommercant from './pages/TrackingCommercant';
+import PaiementClient from './pages/PaiementClient';
+
 
 
 
@@ -39,7 +41,8 @@ export default function App() {
     return (
         <Router>
             <AuthProvider>
-                <Routes>
+                <Routes> 
+                  
 
                     {/* ── ROUTES PUBLIQUES — sans auth, sans sidebar ── */}
                     <Route path="/login" element={<Login />} />
@@ -51,6 +54,7 @@ export default function App() {
                     {/* Page tracking client — totalement separee du manager */}
                     <Route path="/suivi" element={<TrackingPublic />} />
                     <Route path="/suivi/:id" element={<TrackingPublic />} />
+                      <Route path="/paiement/:id" element={<PaiementClient />} />
 
                     {/* ── ROUTES PROTEGEES — avec sidebar manager ── */}
                     <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
