@@ -62,6 +62,7 @@ export default function LivraisonList() {
     const [filterStatus, setFilterStatus]   = useState('');
     const [filterAccept, setFilterAccept]   = useState('');
     const [error, setError]           = useState('');
+    const [vue, setVue]               = useState('actives'); // 'actives' | 'archivees'
 
     useEffect(function() {
         api.get('/livraisons')
@@ -70,7 +71,15 @@ export default function LivraisonList() {
             .finally(function() { setLoading(false); });
     }, []);
 
-    var filtered = livraisons.filter(function(l) {
+    var STATUTS_ARCHIVES = ['Livr_', 'Annul_'];
+
+    var livraisonsVue = livraisons.filter(function(l) {
+        return vue === 'archivees'
+            ? STATUTS_ARCHIVES.includes(l.status)
+            : !STATUTS_ARCHIVES.includes(l.status);
+    });
+
+    var filtered = livraisonsVue.filter(function(l) {
         var matchStatus = !filterStatus || l.status === filterStatus;
         var matchAccept = !filterAccept || getAcceptStatus(l) === filterAccept;
         var clientNom = l.client_nom || ((l.customers && l.customers.users) ? l.customers.users.first_name + ' ' + l.customers.users.last_name : '');
@@ -107,6 +116,28 @@ export default function LivraisonList() {
             </div>
 
             {error && <div style={{ backgroundColor: P.errorContainer, color: P.error, padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{error}</div>}
+
+            {/* Onglets Actives / Archivées */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                <button onClick={function() { setVue('actives'); }}
+                    style={{
+                        padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        fontSize: '12px', fontWeight: 700, fontFamily: 'Poppins, sans-serif',
+                        backgroundColor: vue === 'actives' ? P.primary : P.surfaceContainerLow,
+                        color: vue === 'actives' ? '#fff' : P.outline,
+                    }}>
+                    📦 Livraisons actives ({livraisons.filter(function(l) { return !['Livr_','Annul_'].includes(l.status); }).length})
+                </button>
+                <button onClick={function() { setVue('archivees'); }}
+                    style={{
+                        padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        fontSize: '12px', fontWeight: 700, fontFamily: 'Poppins, sans-serif',
+                        backgroundColor: vue === 'archivees' ? P.primary : P.surfaceContainerLow,
+                        color: vue === 'archivees' ? '#fff' : P.outline,
+                    }}>
+                    🗄️ Archivées ({livraisons.filter(function(l) { return ['Livr_','Annul_'].includes(l.status); }).length})
+                </button>
+            </div>
 
             <div style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
 
@@ -174,15 +205,15 @@ export default function LivraisonList() {
                             var clientTel = l.client_telephone || ((l.customers && l.customers.users) ? l.customers.users.phone : '');
                             var clientInit = clientNom[0] || '?';
                             // users est un tableau — trouver le user dont l'id = user_id du livreur
-                           var livreurUser = null;
-                                if (l.delivery_persons) {
-                                    var dp = l.delivery_persons;
-                                    livreurUser = Array.isArray(dp.users)
-                                        ? (dp.users.find(function(u) { return u.id === dp.user_id; }) || dp.users[0] || null)
-                                        : (dp.users || null);
-                                    // Fallback — chercher via user_id dans enrichirLivreur
-                                    if (!livreurUser && dp.user) livreurUser = dp.user;
+                            var livreurUser = null;
+                            if (l.delivery_persons) {
+                                var dp = l.delivery_persons;
+                                if (Array.isArray(dp.users)) {
+                                    livreurUser = dp.users.find(function(u) { return u.id === dp.user_id; }) || null;
+                                } else if (dp.users && typeof dp.users === 'object') {
+                                    livreurUser = dp.users;
                                 }
+                            }
                             var livreurNom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : null;
                             var livreurPhoto = l.delivery_persons ? l.delivery_persons.photo_profil_url : null;
 

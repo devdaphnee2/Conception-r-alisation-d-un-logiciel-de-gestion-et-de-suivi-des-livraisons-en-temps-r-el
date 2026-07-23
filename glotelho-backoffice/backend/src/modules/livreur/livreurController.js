@@ -69,7 +69,6 @@ function buildProfile(livreur, user, vehicule, statusOverride) {
 }
 
 // ── POST /register ────────────────────────────────────────────
-
 async function register(req, res) {
     var uploadFields = require('../../middlewares/upload').uploadFields;
     uploadFields(req, res, async function(err) {
@@ -133,13 +132,12 @@ async function register(req, res) {
                 }
             } catch (e) {}
 
-            console.log('[REGISTER] création livreur...');
             var livreur = await prisma.delivery_persons.create({
                 data: {
                     user_id: user.id,
                     vehicle_id: vehicule ? vehicule.id : null,
                     status: 'Indisponible',
-                    available: false,
+                    available: 0,
                     date_naissance: dateNaissance,
                     adresse_residence: body.adresseResidence || null,
                     cni_numero: body.cniNumero || null,
@@ -174,7 +172,7 @@ async function register(req, res) {
                 data: buildProfile(livreur, user, vehicule, 'pending'),
             });
         } catch (err) {
-            console.error('[Enrolement] Erreur :', err.message, err);
+            console.error('[Enrolement] Erreur :', err.message);
             res.status(500).json({ message: 'Erreur serveur', error: err.message });
         }
     });
@@ -239,10 +237,8 @@ async function updateMe(req, res) {
             if (body.assuranceNumero) updateData.assurance_numero = body.assuranceNumero;
             if (body.assuranceExpiration) updateData.assurance_expiration = new Date(body.assuranceExpiration);
             if (body.mobileMoneyNumero) updateData.mobile_money_numero = body.mobileMoneyNumero;
-            if (body.mobileMoneyTitulaire) {
-                updateData.mobile_money_nom = body.mobileMoneyTitulaire;
-                updateData.mobile_money_titulaire = body.mobileMoneyTitulaire;
-            }
+            if (body.mobileMoneyTitulaire) { updateData.mobile_money_nom = body.mobileMoneyTitulaire;
+                updateData.mobile_money_titulaire = body.mobileMoneyTitulaire; }
 
             var updated = await prisma.delivery_persons.update({ where: { id: livreur.id }, data: updateData, include: { vehicules: true } });
             var user = await prisma.users.findUnique({ where: { id: req.user.id } });
@@ -270,92 +266,22 @@ async function toggleDisponibilite(req, res) {
     }
 }
 
-// ── HELPER — mapper une deliveryorder vers le format Flutter ──
-function mapCourseToFlutter(c) {
-    var customer = c.customers || {};
-    var customerUser = customer.users || {};
-    var confirmations = c.confirmations || [];
-
-    // Nom du client : depuis la table customers ou directement sur la commande
-    var clientNom = c.client_nom ||
-        (customerUser.first_name ? customerUser.first_name + ' ' + (customerUser.last_name || '') : null) ||
-        customer.name ||
-        'Client';
-
-    var clientTel = c.client_telephone ||
-        customerUser.phone ||
-        customer.phone ||
-        '';
-
-    // OTP depuis confirmations
-    var otp = null;
-    if (confirmations.length > 0) {
-        otp = confirmations[0].otp_code ? String(confirmations[0].otp_code) : null;
-    }
-
-    // Mapping statut BDD → Flutter
-    var statusMap = {
-        'En_attente': 'pending',
-        'Assign_': 'assigned',
-        'En_cours': 'in_progress',
-        'Livr_': 'delivered',
-        'Annul_': 'cancelled',
-        'Suspendu': 'suspended',
-    };
-
-    return {
-        id: String(c.id),
-        _id: String(c.id),
-        client_nom: clientNom,
-        clientNom: clientNom,
-        client_telephone: clientTel,
-        clientTelephone: clientTel,
-        delivery_address: c.delivery_address || c.adresse_livraison || '',
-        adresseLivraison: c.delivery_address || c.adresse_livraison || '',
-        latitude: Number(c.latitude || 0),
-        longitude: Number(c.longitude || 0),
-        amount_to_collect: Number(c.amount_to_collect || c.montant || 0),
-        montant: Number(c.amount_to_collect || c.montant || 0),
-        fraisLivraison: Number(c.frais_livraison || 0),
-        status: statusMap[c.status] || 'pending',
-        creation_date: c.creation_date ? new Date(c.creation_date).toISOString() : new Date().toISOString(),
-        dateCreation: c.creation_date ? new Date(c.creation_date).toISOString() : new Date().toISOString(),
-        delivery_date: c.delivery_date ? new Date(c.delivery_date).toISOString() : null,
-        dateLivraison: c.delivery_date ? new Date(c.delivery_date).toISOString() : null,
-        zone_bloc: c.zone_bloc || null,
-        delivery_instructions: c.delivery_instructions || null,
-        instructions: c.delivery_instructions || null,
-        confirmations: confirmations.map(function(conf) {
-            return { otp_code: conf.otp_code ? String(conf.otp_code) : null };
-        }),
-        signatureUrl: c.signature_url || null,
-        commercant_nom: c.commercant_nom || null,
-        commercant_telephone: c.commercant_telephone || null,
-        commercant_adresse: c.commercant_adresse || null,
-    };
-}
-
 // ── COURSES ───────────────────────────────────────────────────
 async function getCourses(req, res) {
     try {
+        console.log('[DEBUG getCourses] req.user =', JSON.stringify(req.user));
         var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id } });
+        console.log('[DEBUG getCourses] livreur trouvé =', livreur ? livreur.id : 'AUCUN');
         if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
-
         var courses = await prisma.deliveryorders.findMany({
-            where: {
-                delivery_person_id: livreur.id,
-                status: { in: ['En_attente', 'Assign_', 'En_cours'] }
-            },
-            include: {
-                customers: { include: { users: true } },
-                delivery_items: true,
-                confirmations: true,
-            },
+            where: { delivery_person_id: livreur.id, status: { in: ['Assign_', 'Valide_', 'En_cours'] } },
+            include: { customers: { include: { users: true } }, delivery_items: true, confirmations: true },
             orderBy: { creation_date: 'desc' }
         });
-
-        res.json(courses.map(mapCourseToFlutter));
+        console.log('[DEBUG getCourses] nombre trouvé =', courses.length, 'pour livreur.id =', livreur.id);
+        res.json(courses);
     } catch (err) {
+        console.error('[DEBUG getCourses] ERREUR:', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
@@ -364,21 +290,13 @@ async function getHistorique(req, res) {
     try {
         var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id } });
         if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
-
         var courses = await prisma.deliveryorders.findMany({
-            where: {
-                delivery_person_id: livreur.id,
-                status: { in: ['Livr_', 'Annul_', 'Suspendu'] }
-            },
-            include: {
-                customers: { include: { users: true } },
-                confirmations: true,
-            },
+            where: { delivery_person_id: livreur.id, status: { in: ['Livr_', 'Annul_'] } },
+            include: { customers: { include: { users: true } } },
             orderBy: { creation_date: 'desc' },
             take: 50
         });
-
-        res.json(courses.map(mapCourseToFlutter));
+        res.json(courses);
     } catch (err) {
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
@@ -387,41 +305,28 @@ async function getHistorique(req, res) {
 async function accepterCourse(req, res) {
     try {
         var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id } });
-        var course = await prisma.deliveryorders.findUnique({
-            where: { id: parseInt(req.params.id) },
-            include: { managers: { include: { users: true } } }
-        });
+        var course = await prisma.deliveryorders.findUnique({ where: { id: parseInt(req.params.id) } });
         if (!course) return res.status(404).json({ message: 'Course introuvable.' });
+        if (course.status !== 'Assign_') return res.status(400).json({ message: 'Cette course ne peut plus être acceptée.' });
 
-        // Marquer comme acceptée — statut En_cours
-        await prisma.deliveryorders.update({
-            where: { id: course.id },
-            data: { status: 'En_cours', delivery_person_id: livreur.id }
-        });
+        // Effacer toute position Firebase précédente (course précédente) —
+        // le client ne doit voir la position que quand le livreur l'active explicitement
+        // pour CETTE course, jamais une position obsolète d'une livraison passée.
+        try {
+            var firebaseDb = getFirebaseDB();
+            if (firebaseDb) await firebaseDb.ref('positions/' + livreur.id).remove();
+        } catch (e) { console.warn('[CLEAR POSITION] Echec:', e.message); }
 
-        // Notifier le manager via Firebase
-        var livreurUser = await prisma.users.findUnique({ where: { id: req.user.id } });
-        var livreurNom = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : 'Le livreur';
-        var managerUser = course.managers && course.managers.users;
-        if (managerUser && managerUser.fcm_token) {
-            var { getFirebaseDB } = require('../../config/firebaseAdmin');
-            var db = getFirebaseDB();
-            if (db) {
-                await db.ref('notifications/' + Date.now()).set({
-                    token: managerUser.fcm_token,
-                    titre: '✅ Course acceptée',
-                    corps: livreurNom + ' a accepté la course #' + String(course.id).padStart(5, '0'),
-                    lu: false,
-                    createdAt: Date.now()
-                });
-            }
-        }
-
+        // Passage à "Valide_" — le livreur a explicitement accepté la course.
+        // Ce n'est qu'à partir de là qu'il pourra démarrer la livraison,
+        // et donc que sa position pourra être visible du client.
+        await prisma.deliveryorders.update({ where: { id: course.id }, data: { status: 'Valide_', delivery_person_id: livreur.id } });
         res.json({ message: 'Course acceptee.' });
     } catch (err) {
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
+
 async function refuserCourse(req, res) {
     try {
         var course = await prisma.deliveryorders.findUnique({ where: { id: parseInt(req.params.id) } });
@@ -440,8 +345,23 @@ async function demarrerCourse(req, res) {
         var course = await prisma.deliveryorders.findUnique({ where: { id: courseId }, include: { confirmations: true } });
         if (!course) return res.status(404).json({ message: 'Course introuvable.' });
 
+        // ── Bloquer si le client n'a pas encore payé sa commande ──────────
+        if (course.payment_status !== 'paid') {
+            return res.status(400).json({
+                message: 'Le client n\'a pas encore payé sa commande. Impossible de démarrer la livraison.'
+            });
+        }
+
         await prisma.deliveryorders.update({ where: { id: courseId }, data: { status: 'En_cours' } });
         await prisma.delivery_persons.update({ where: { id: livreur.id }, data: { status: 'En_livraison', available: 0 } });
+
+        // Sécurité supplémentaire — effacer toute position résiduelle avant le départ.
+        // Le client ne verra rien tant que le livreur n'aura pas cliqué
+        // "Partager ma position" pour cette nouvelle course.
+        try {
+            var firebaseDb = getFirebaseDB();
+            if (firebaseDb) await firebaseDb.ref('positions/' + livreur.id).remove();
+        } catch (e) { console.warn('[CLEAR POSITION] Echec:', e.message); }
 
         var otp = course.confirmations && course.confirmations.length > 0 ? course.confirmations[0].otp_code || '' : '';
         var frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -451,9 +371,10 @@ async function demarrerCourse(req, res) {
         var livreurNom = livreur.users ? livreur.users.first_name + ' ' + livreur.users.last_name : 'Votre livreur';
 
         var message = 'Bonjour ' + clientNom + ' !\n\n' +
-            livreurNom + ' vient de demarrer votre livraison.\n\n' +
-            'Suivez en temps reel :\n' + trackingUrl + '\n\n' +
-            'Code a donner au livreur :\n*' + otp + '*\n\nNe partagez pas ce code.';
+            livreurNom + ' vient de récupérer votre colis et est en route.\n\n' +
+            'Suivez la livraison en temps reel :\n' + trackingUrl + '\n\n' +
+            'Montant a remettre au livreur (frais de livraison) :\n*' + Number(course.frais_livraison || 0).toLocaleString('fr-FR') + ' FCFA*\n\n' +
+            'Code a donner au livreur a la reception :\n*' + otp + '*\n\nNe partagez pas ce code.';
 
         var waTel = clientWa.replace(/\s/g, '').replace(/\+/g, '');
         if (waTel && !waTel.startsWith('237')) waTel = '237' + waTel;

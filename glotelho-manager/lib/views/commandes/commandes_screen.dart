@@ -182,6 +182,8 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final livreurNom  = livreurInfo?['users'] != null
         ? '${livreurInfo['users']['first_name'] ?? ''} ${livreurInfo['users']['last_name'] ?? ''}'.trim()
         : null;
+    final paymentStatus = l['payment_status'] as String? ?? 'unpaid';
+    final estPaye = paymentStatus == 'paid';
 
     return GestureDetector(
       onTap: () => Navigator.push(context,
@@ -207,7 +209,27 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(id, style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 15)),
+                  Row(children: [
+                    Text(id, style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 15)),
+                    const SizedBox(width: 8),
+                    // ── Badge statut de paiement ────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: estPaye ? const Color(0xFFC8E6C9) : const Color(0xFFFFDAD6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(estPaye ? Icons.check_circle : Icons.hourglass_empty,
+                            size: 11, color: estPaye ? const Color(0xFF1B5E20) : const Color(0xFFBA1A1A)),
+                        const SizedBox(width: 3),
+                        Text(estPaye ? 'Payé' : 'Non payé',
+                            style: TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.bold,
+                                color: estPaye ? const Color(0xFF1B5E20) : const Color(0xFFBA1A1A))),
+                      ]),
+                    ),
+                  ]),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
@@ -291,7 +313,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text('Commander une course ?'),
-        content: const Text('Cette commande sera envoyée à l\'administration pour assignation d\'un livreur.'),
+        content: const Text('Un lien de paiement sera envoyé au client par WhatsApp. La course sera transmise à l\'administration une fois le paiement confirmé.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
           ElevatedButton(
@@ -305,10 +327,20 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     if (confirm != true || !mounted) return;
     try {
       final api = ApiService(context.read<AppState>());
-      await api.commanderCourse(id);
+      final res = await api.commanderCourse(id);
       if (!mounted) return;
+
+      // Ouvrir automatiquement WhatsApp avec le lien de paiement
+      final waLink = res.data['whatsapp_link'] as String?;
+      if (waLink != null && waLink.isNotEmpty) {
+        final uri = Uri.parse(waLink);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('✅ Course commandée ! L\'admin va assigner un livreur.'),
+        content: Text('💳 Lien de paiement envoyé au client par WhatsApp.'),
         backgroundColor: Color(0xFF1B5E20),
         behavior: SnackBarBehavior.floating,
       ));
@@ -365,16 +397,9 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Impossible d\'ouvrir le suivi pour la livraison #$id'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
     }
   }
+
   Widget _infoRow(IconData icon, String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

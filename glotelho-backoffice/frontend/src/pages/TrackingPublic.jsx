@@ -40,7 +40,7 @@ function PageAccueil({ onSearch }) {
                         <p style={{ margin: 0, fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Paiement & suivi</p>
                     </div>
                 </div>
-                <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>Payez votre commande</h1>
+                <h1 style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>Payez votre commande 🛒</h1>
                 <p style={{ margin: '0 auto', fontSize: 'clamp(13px, 2vw, 16px)', color: 'rgba(255,255,255,0.5)', maxWidth: '400px', lineHeight: 1.6 }}>
                     Entrez votre numero de commande pour voir le récapitulatif et effectuer le paiement.
                 </p>
@@ -48,8 +48,8 @@ function PageAccueil({ onSearch }) {
 
             <div style={{ padding: '0 16px', marginTop: '-60px', maxWidth: '560px', margin: '-60px auto 0', width: '100%' }}>
                 <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: 'clamp(24px, 4vw, 40px)', boxShadow: '0 12px 48px rgba(0,0,0,0.15)' }}>
-                    <p style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#817564', textTransform: 'Uppercase', letterSpacing: '0.1em', textAlign: 'center' }}>Numero de commande</p>
-                  <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#817564', textAlign: 'center' }}></p>
+                    <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#817564', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center' }}>Numero de commande</p>
+                    <p style={{ margin: '0 0 20px', fontSize: '12px', color: '#817564', textAlign: 'center' }}>Recu par SMS ou WhatsApp</p>
                     <form onSubmit={handleSubmit}>
                         <input type="text" value={numLivraison}
                             onChange={function(e) { setNumLivraison(e.target.value); }}
@@ -98,7 +98,14 @@ function PageTracking({ livraisonId, onBack }) {
     }, [livraisonId]);
 
     useEffect(function() {
+        // Sécurité côté client : ne jamais écouter/afficher une position
+        // tant que la livraison n'est pas réellement "En_cours" — même si
+        // Firebase contient encore une donnée résiduelle d'un ancien test.
         if (!livraison || !livraison.delivery_person_id) return;
+        if (livraison.status !== 'En_cours') {
+            setPosition(null);
+            return;
+        }
         var posRef = ref(database, 'positions/' + livraison.delivery_person_id);
         onValue(posRef, function(snapshot) {
             var data = snapshot.val();
@@ -241,6 +248,19 @@ function PageTracking({ livraisonId, onBack }) {
                         </div>
                     )}
 
+                    {/* Bannière frais de livraison — visible dès l'assignation, pour que le client prépare le montant */}
+                    {livraison && ['Assign_', 'Valide_', 'En_cours'].includes(livraison.status) && livraison.frais_livraison > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', margin: '10px 0', backgroundColor: '#fff8e1', borderRadius: '10px', border: '1px solid #ffe082' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '16px' }}>💰</span>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#7d5700', fontWeight: 600 }}>Montant à remettre au livreur</p>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#7d5700' }}>
+                                {Number(livraison.frais_livraison).toLocaleString('fr-FR')} FCFA
+                            </p>
+                        </div>
+                    )}
+
                     {livraison && livraison.status === 'En_attente' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 0 12px' }}>
                             <span style={{ fontSize: '28px' }}>⏳</span>
@@ -310,9 +330,30 @@ export default function TrackingPublic() {
         if (id) setLivraisonId(id);
     }, [id]);
 
-    // Redirige vers la page de PAIEMENT après saisie du numéro
-    function handleSearch(num) {
-        navigate('/paiement/' + num);
+    // Vérifie le statut de paiement avant de rediriger
+    async function handleSearch(num) {
+        try {
+            var apiUrl = (import.meta.env.VITE_API_URL || 'http://192.168.1.145:5000/api') + '/paiement/' + num;
+            var res = await fetch(apiUrl);
+            var data = await res.json();
+
+            if (data.message && !data.id) {
+                // Livraison introuvable — laisser la page de paiement afficher l'erreur
+                navigate('/paiement/' + num);
+                return;
+            }
+
+            if (data.already_paid) {
+                // Déjà payé → tracking direct
+                navigate('/suivi/' + num);
+            } else {
+                // Pas encore payé → page de paiement
+                navigate('/paiement/' + num);
+            }
+        } catch {
+            // En cas d'erreur réseau, tenter quand même la page paiement
+            navigate('/paiement/' + num);
+        }
     }
 
     function handleBack() {

@@ -149,6 +149,7 @@ model deliveryorders {
   pickup_address          String?                @db.VarChar(255)
   pickup_latitude         Decimal?               @db.Decimal(10, 7)
   pickup_longitude        Decimal?               @db.Decimal(10, 7)
+  frais_livraison         Decimal?               @default(0.00) @db.Decimal(10, 2)
   bordereaux              bordereaux[]
   confirmations           confirmations[]
   delivery_items          delivery_items[]
@@ -428,16 +429,6 @@ enum confirmations_methode {
   Signature
 }
 
-enum deliveryorders_status {
-  En_attente
-  Assign_
-  En_cours
-  Livr_
-  Suspendu
-  Annul_
-  Commande
-}
-
 enum vehicules_status {
   Disponible
   En_cours_dutilisation
@@ -469,4 +460,15 @@ enum users_role {
   delivery_person
   customer
   commercant
+}
+
+enum deliveryorders_status {
+  Commande
+  En_attente
+  Assign_
+  Valide_
+  En_cours
+  Livr_
+  Suspendu
+  Annul_
 }
