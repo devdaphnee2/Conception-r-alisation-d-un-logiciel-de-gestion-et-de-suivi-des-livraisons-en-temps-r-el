@@ -129,7 +129,8 @@ async function commanderCourse(req, res) {
         if (!livraison) return res.status(404).json({ message: 'Commande introuvable.' });
         if (livraison.status !== 'Commande') return res.status(400).json({ message: 'Déjà envoyée.' });
 
-        await prisma.deliveryorders.update({ where: { id }, data: { status: 'En_attente' } });
+        // Le statut reste "Commande" — il ne passera à "En_attente" (visible au manager)
+        // qu'une fois le paiement confirmé (voir /api/paiement/:id/verifier)
 
         var commercantUser = null;
         if (livraison.manager_id) {
@@ -143,41 +144,29 @@ async function commanderCourse(req, res) {
             commercantUser.first_name + ' ' + commercantUser.last_name :
             'Un commerçant';
 
+        // ── Envoyer le lien de paiement au client par WhatsApp ────────────
+        var waLink = null;
         try {
-            var admins = await prisma.users.findMany({ where: { role: 'manager' } });
-            for (var admin of admins) {
-                await prisma.notifications.create({
-                    data: {
-                        recipient_id: admin.id,
-                        message: '🛒 Nouvelle commande #' + String(id).padStart(5, '0') +
-                            ' reçue de ' + commercantNom +
-                            (livraison.delivery_address ? ' · ' + livraison.delivery_address : '') +
-                            '. En attente d\'assignation.',
-                        type: 'Interne',
-                        is_read: false,
-                    }
-                });
-            }
-        } catch (e) { console.warn('[NOTIF COMMANDER COURSE] Echec:', e.message); }
+            var frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.145:5173';
+            var lienPaiement = frontendUrl + '/paiement/' + id;
+            var clientNom = livraison.client_nom || 'Client';
+            var clientWa = livraison.client_whatsapp || livraison.client_telephone || '';
 
-        var managerUser = livraison.managers ? livraison.managers.users : null;
-        if (managerUser && managerUser.fcm_token) {
-            try {
-                var { getFirebaseDB } = require('../../config/firebaseAdmin');
-                var db = getFirebaseDB();
-                if (db) {
-                    await db.ref('notifications/' + Date.now()).set({
-                        token: managerUser.fcm_token,
-                        titre: '🛒 Nouvelle commande reçue',
-                        corps: 'Commande #' + String(id).padStart(5, '0') + ' de ' + commercantNom,
-                        lu: false,
-                        createdAt: Date.now()
-                    });
-                }
-            } catch (e) { console.warn('[FCM COMMANDER COURSE] Echec:', e.message); }
-        }
+            var message = 'Bonjour ' + clientNom + ' !\n\n' +
+                'Votre commande chez ' + commercantNom + ' est prête.\n' +
+                'Numero : #' + String(id).padStart(5, '0') + '\n\n' +
+                'Merci de finaliser le paiement de votre commande ici :\n' + lienPaiement + '\n\n' +
+                'Votre livraison sera prise en charge dès confirmation du paiement.';
 
-        res.json({ message: "Course commandée ! L'admin va assigner un livreur." });
+            var waTel = clientWa.replace(/\s/g, '').replace(/\+/g, '');
+            if (waTel && !waTel.startsWith('237')) waTel = '237' + waTel;
+            waLink = waTel ? 'https://wa.me/' + waTel + '?text=' + encodeURIComponent(message) : null;
+        } catch (e) { console.warn('[LIEN PAIEMENT] Echec:', e.message); }
+        console.log('[LIEN GENERE]', waLink);
+        res.json({
+            message: "Lien de paiement envoyé au client. La course sera transmise au manager une fois le paiement confirmé.",
+            whatsapp_link: waLink,
+        });
     } catch (err) {
         console.error('[COMMANDER COURSE] Erreur:', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });

@@ -5,8 +5,8 @@ const axios = require('axios');
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow';
 
 // Formule : Prix = F_base + (D x T_km) + Σ Surcharges
-const FRAIS_BASE = 500; // F_base — prise en charge
-const TARIF_PAR_KM = 200; // T_km — tarif au kilomètre
+const FRAIS_BASE = 400; // F_base — prise en charge
+const TARIF_PAR_KM = 150; // T_km — tarif au kilomètre
 const SURCHARGE_COLIS_GROS = 700; // colis volumineux
 const SURCHARGE_EXPRESS = 700; // livraison express
 

@@ -38,7 +38,10 @@ export default function PaiementClient() {
             .then(data => {
                 if (data.message && !data.id) { setError(data.message); return; }
                 setLivraison(data);
-                if (data.already_paid) setStep('succes');
+                if (data.already_paid) {
+                    // Déjà payé — rediriger directement vers le tracking, sans repasser par la facture
+                    navigate('/suivi/' + id, { replace: true });
+                }
             })
             .catch(() => setError('Impossible de charger la commande.'))
             .finally(() => setLoading(false));
@@ -164,11 +167,27 @@ export default function PaiementClient() {
                                 {livraison?.zone_bloc && <p style={{ margin: '2px 0 0', fontSize: '11px', color: P.lgray }}>{livraison.zone_bloc}</p>}
                             </div>
 
+                            {/* Frais de livraison — montant exact, informatif */}
+                            {livraison?.frais_livraison > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff8e1', border: '1px solid #ffe082', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '16px' }}>🛵</span>
+                                        <div>
+                                            <p style={{ margin: 0, fontSize: '12px', color: '#7d5700', fontWeight: 700 }}>Frais de livraison</p>
+                                            <p style={{ margin: 0, fontSize: '10px', color: '#a17d00' }}>À remettre en cash au livreur à la réception</p>
+                                        </div>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#7d5700' }}>
+                                        {Number(livraison.frais_livraison).toLocaleString('fr-FR')} F
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Total */}
                             <div style={{ background: P.navy, borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Montant à payer</p>
-                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Frais de livraison payés au livreur</p>
+                                    <p style={{ margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Montant à payer maintenant</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Marchandise uniquement — via Mobile Money</p>
                                 </div>
                                 <p style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: P.gold }}>{montant.toLocaleString('fr-FR')} <span style={{ fontSize: '14px' }}>FCFA</span></p>
                             </div>
@@ -184,7 +203,7 @@ export default function PaiementClient() {
                 {/* ── ÉTAPE 2 : PAIEMENT ── */}
                 {step === 'paiement' && (
                     <div style={{ backgroundColor: P.white, borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                        <p style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800, color: P.navy, textAlign: 'center' }}> Paiement Mobile Money</p>
+                        <p style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 800, color: P.navy, textAlign: 'center' }}>💳 Paiement Mobile Money</p>
                         <p style={{ margin: '0 0 24px', fontSize: '13px', color: P.lgray, textAlign: 'center' }}>MTN MoMo ou Orange Money</p>
 
                         <div style={{ background: P.navy, borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
@@ -208,7 +227,7 @@ export default function PaiementClient() {
 
                         <button onClick={initierPaiement} disabled={payLoading}
                             style={{ width: '100%', padding: '18px', borderRadius: '14px', border: 'none', background: payLoading ? '#ccc' : `linear-gradient(135deg, ${P.goldDark}, ${P.gold})`, color: P.white, fontSize: '16px', fontWeight: 700, cursor: payLoading ? 'not-allowed' : 'pointer', fontFamily: 'Poppins, sans-serif', marginBottom: '12px' }}>
-                            {payLoading ? ' Traitement...' : ' Effectuer le paiement'}
+                            {payLoading ? '⏳ Traitement...' : '📱 Effectuer le paiement'}
                         </button>
 
                         <button onClick={() => setStep('facture')}

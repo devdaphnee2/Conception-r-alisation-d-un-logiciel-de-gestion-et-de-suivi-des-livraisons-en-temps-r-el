@@ -243,10 +243,11 @@ class _NouvelleLivraisonScreenState extends State<NouvelleLivraisonScreen> {
             // ADRESSES
             _section('📍 Adresses', isDark),
             AdresseInput(
+              key: const ValueKey('adresse_depart'),
+              controller: _adresseDepart,
               label: 'Votre adresse (récupération) *',
               icon : Icons.store_outlined,
               onChanged: (result) {
-                _adresseDepart.text = result.texte;
                 _latDepart = result.latitude;
                 _lngDepart = result.longitude;
                 _onAdresseChanged();
@@ -254,11 +255,12 @@ class _NouvelleLivraisonScreenState extends State<NouvelleLivraisonScreen> {
             ),
             const SizedBox(height: 14),
             AdresseInput(
+              key: const ValueKey('adresse_livraison'),
+              controller: _adresse,
               label: 'Adresse du client (livraison) *',
               icon : Icons.location_on_outlined,
-              showGeoloc: false, // retiré — le commerçant ne doit pas se géolocaliser à la place du client
+              showGeoloc: false,
               onChanged: (result) {
-                _adresse.text = result.texte;
                 _latLivraison = result.latitude;
                 _lngLivraison = result.longitude;
                 _onAdresseChanged();

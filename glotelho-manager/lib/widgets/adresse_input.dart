@@ -10,23 +10,100 @@ const String _MAPBOX_TOKEN = 'pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzB
 const double _DOUALA_LAT = 4.0483;
 const double _DOUALA_LNG = 9.7043;
 
-// Quartiers de secours avec coordonnées pré-enregistrées
+// Quartiers de Douala — données OpenStreetMap (92 quartiers réels avec coordonnées)
 const Map<String, List<double>> QUARTIERS_DOUALA = {
-  'Akwa'          : [4.0500, 9.6980],
-  'Bonanjo'       : [4.0470, 9.6930],
-  'Bonapriso'     : [4.0330, 9.7030],
-  'Bonamoussadi'  : [4.0850, 9.7460],
-  'Deido'         : [4.0620, 9.6980],
-  'Bali'          : [4.0500, 9.6850],
-  'Ndokoti'       : [4.0680, 9.7350],
-  'Makepe'        : [4.0800, 9.7280],
-  'Logpom'        : [4.0950, 9.7550],
-  'Kotto'         : [4.0620, 9.7550],
-  'PK8'           : [4.0350, 9.6600],
-  'PK14'          : [4.0100, 9.6300],
-  'Village'       : [4.0400, 9.7100],
-  'New Bell'      : [4.0500, 9.7100],
-  'Bepanda'       : [4.0700, 9.7200],
+  'Bonaberi': [4.0822098, 9.6649718],
+  'Akwa': [4.052544, 9.6963304],
+  'Ndogbati': [4.0495046, 9.7236832],
+  'Ndobo': [4.1018152, 9.6360158],
+  'Ngangue': [4.0207674, 9.7068203],
+  'Ndogmbe': [4.0349769, 9.7529055],
+  'Ndokoti': [4.0434344, 9.7436776],
+  'Bonendale 1': [4.1122222, 9.6375552],
+  'Nkomba': [4.0715713, 9.6733797],
+  'Beedi': [4.0611714, 9.7662924],
+  'Bonaminkano': [4.0820341, 9.675549],
+  'Vallee Bessengue': [4.0526728, 9.7052693],
+  'Bonambape': [4.0762703, 9.6755731],
+  'Bonantone': [4.0618085, 9.7075205],
+  'Bonadouma II': [4.0190947, 9.7011987],
+  'Sodiko': [4.097744, 9.6623609],
+  'Nkolminta': [4.0372098, 9.7260913],
+  'Bonamatoumbe': [4.0952147, 9.6711081],
+  'Bonamouang': [4.0829325, 9.721624],
+  'Bassa': [4.0458695, 9.7289916],
+  'Bonamoudourou': [4.06185, 9.71758],
+  'Songbikako': [4.0456961, 9.7681459],
+  'Koto': [4.1003794, 9.7555747],
+  'Bepanda': [4.0565417, 9.7227206],
+  'Bonadiwoto': [4.0161627, 9.7217454],
+  'Ndoghem': [4.0675197, 9.7904885],
+  'Bonanloka': [4.0139573, 9.7327861],
+  'Bonamouti': [4.0717537, 9.7144253],
+  'Cite Des Palmiers': [4.0542657, 9.7640556],
+  'Logpom': [4.0769067, 9.7711838],
+  'Bonendale 2': [4.1164184, 9.6544209],
+  'New Bell': [4.0314849, 9.7057582],
+  'Logbaba': [4.0328521, 9.7603178],
+  'Ndogsimbi': [4.0404139, 9.7311528],
+  'Bali': [4.0399946, 9.6930482],
+  'Bonanjo': [4.043024, 9.6864962],
+  'Makepe II Yonyong': [4.0671936, 9.7308224],
+  'Bonatene': [4.0657787, 9.7076223],
+  'Youpwe': [4.0105092, 9.699614],
+  'Koumassi': [4.0357924, 9.6932786],
+  'Pindo': [4.0596128, 9.7839646],
+  'Besseke': [4.0726387, 9.6804632],
+  'Bomkoul': [4.0949123, 9.8026592],
+  'Makepe II Bonamoussadi': [4.0826348, 9.75451],
+  'Bayis': [4.1116212, 9.8152313],
+  'Nkolmbong': [4.0182989, 9.7955265],
+  'Brazzaville': [4.0233735, 9.7292726],
+  'Bonadoumbe': [4.0230872, 9.6988735],
+  'Bonamoussongo': [4.0717211, 9.7254947],
+  'Bonangang': [4.1056467, 9.744505],
+  'Malangue': [4.0684699, 9.7613769],
+  'Bonajinje': [4.0654728, 9.7130541],
+  'Bangue': [4.1056394, 9.7528416],
+  'Camp Yabassi': [4.0431861, 9.7092426],
+  'Zusa Bassa': [4.1050886, 9.8091756],
+  'Kambo': [4.0236763, 9.7941289],
+  'Nkololoun': [4.0334598, 9.7195305],
+  'Logbessou I': [4.0844731, 9.7842289],
+  'Nylon': [4.0282399, 9.7307532],
+  'Bois des Singes': [4.0080364, 9.7079395],
+  'Bonamoussadi': [4.094354, 9.7393663],
+  'Ndogbong': [4.0644714, 9.7521285],
+  'Yassa': [3.9913253, 9.8103803],
+  'Madagascar': [4.033651, 9.7360237],
+  'Congo': [4.0373892, 9.7053201],
+  'Bonewonda': [4.0755225, 9.7190991],
+  'Nyalla Bassa': [4.0334103, 9.7744243],
+  'Logbessou II': [4.0810919, 9.7970314],
+  'Domaine Universitaire': [4.0596227, 9.7401261],
+  'New Deido': [4.0594866, 9.7146748],
+  'Bonapriso': [4.0256151, 9.6930153],
+  'KM 6': [4.0379991, 9.7206786],
+  'Bonadouma': [4.028734, 9.6998938],
+  'Oyak': [4.0266304, 9.7397861],
+  'Nouvel Aeroport': [4.0110463, 9.7211998],
+  'Babylone': [4.0261148, 9.7085218],
+  'Ancien Aeroport': [4.0147686, 9.70769],
+  'Didom II': [4.0141502, 9.7430749],
+  'Denver': [4.0915045, 9.7323226],
+  'Ndogpassi III': [4.0100854, 9.7566698],
+  'Cite SIC': [4.0539142, 9.7307181],
+  'Village': [4.011774, 9.7294207],
+  'Mbanga Bakoko': [4.0070341, 9.7992035],
+  'Bepele': [4.1058985, 9.6223042],
+  'Bojongo': [4.0866081, 9.6190381],
+  'Ngwele': [4.0911188, 9.6505071],
+  'Bonateki': [4.0703304, 9.7175548],
+  'Bessengue': [4.0566106, 9.7111669],
+  'Washington': [4.0842012, 9.6534023],
+  'Ange Raphael': [4.0225624, 9.7017512],
+  'Mabanda': [4.0706087, 9.6573311],
+  'Lobe': [4.0990957, 9.6554455],
 };
 
 class AdresseResult {
@@ -41,6 +118,7 @@ class AdresseInput extends StatefulWidget {
   final IconData icon;
   final ValueChanged<AdresseResult> onChanged;
   final bool showGeoloc;
+  final TextEditingController? controller; // ← contrôleur externe optionnel (source de vérité)
 
   const AdresseInput({
     super.key,
@@ -48,6 +126,7 @@ class AdresseInput extends StatefulWidget {
     required this.icon,
     required this.onChanged,
     this.showGeoloc = true,
+    this.controller,
   });
 
   @override
@@ -55,7 +134,8 @@ class AdresseInput extends StatefulWidget {
 }
 
 class _AdresseInputState extends State<AdresseInput> {
-  final _controller = TextEditingController();
+  late final TextEditingController _controller;
+  bool _controllerEstExterne = false;
   Timer? _debounce;
   List<Map<String, dynamic>> _suggestions = [];
   bool _loadingSuggestions = false;
@@ -64,9 +144,22 @@ class _AdresseInputState extends State<AdresseInput> {
   double? _lat, _lng;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+      _controllerEstExterne = true;
+    } else {
+      _controller = TextEditingController();
+      _controllerEstExterne = false;
+    }
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
-    _controller.dispose();
+    // Ne jamais disposer un contrôleur fourni par le parent — il lui appartient
+    if (!_controllerEstExterne) _controller.dispose();
     super.dispose();
   }
 
@@ -167,16 +260,35 @@ class _AdresseInputState extends State<AdresseInput> {
       _lat = pos.latitude;
       _lng = pos.longitude;
 
-      // Reverse geocoding pour affichage — mais on garde les coordonnées
-      // même si cette requête échoue (le calcul de frais n'en a pas besoin)
+      // Reverse geocoding précis — privilégie l'adresse de rue / POI / quartier
       String texte = 'Ma position actuelle';
       try {
         final url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/'
-            '${pos.longitude},${pos.latitude}.json?access_token=$_MAPBOX_TOKEN&limit=1';
+            '${pos.longitude},${pos.latitude}.json'
+            '?access_token=$_MAPBOX_TOKEN'
+            '&types=address,poi,neighborhood'
+            '&limit=1';
         final res = await http.get(Uri.parse(url));
         final data = jsonDecode(res.body);
         final features = (data['features'] as List?) ?? [];
-        if (features.isNotEmpty) texte = features[0]['place_name'];
+        if (features.isNotEmpty) {
+          texte = features[0]['place_name'];
+        } else {
+          // Rien de précis chez Mapbox — trouver le quartier connu le plus proche
+          // localement (calcul de distance), sans jamais retomber sur "Douala, ville"
+          String? quartierProche;
+          double distanceMin = double.infinity;
+          QUARTIERS_DOUALA.forEach((nom, coords) {
+            final dLat = coords[0] - pos.latitude;
+            final dLng = coords[1] - pos.longitude;
+            final dist = dLat * dLat + dLng * dLng; // distance au carré, suffisant pour comparer
+            if (dist < distanceMin) {
+              distanceMin = dist;
+              quartierProche = nom;
+            }
+          });
+          texte = quartierProche != null ? 'Près de $quartierProche' : 'Ma position actuelle';
+        }
       } catch (_) {
         // Reverse geocoding a échoué — on garde quand même les coordonnées GPS
       }
