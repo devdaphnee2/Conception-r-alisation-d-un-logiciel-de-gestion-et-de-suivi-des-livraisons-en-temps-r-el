@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import '../config/app_state.dart';
+import '../config/app_config.dart';
 
 /// Service de polling global — tourne en arrière-plan toutes les 30 secondes.
 /// Ne tourne QUE si l'utilisateur est authentifié ET que le polling a été
@@ -43,7 +44,7 @@ class CommercantPollingService {
     }
     try {
       final dio = Dio(BaseOptions(
-        baseUrl: 'http://192.168.1.166:5000/api/',
+        baseUrl: AppConfig.baseUrl + '/',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {'Authorization': 'Bearer ${appState.authToken}'},

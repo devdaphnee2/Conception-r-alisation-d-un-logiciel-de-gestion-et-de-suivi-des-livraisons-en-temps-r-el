@@ -6,6 +6,7 @@ import 'dart:convert';
 import '../../config/app_state.dart';
 import '../../services/api_service.dart';
 import '../../widgets/adresse_input.dart';
+import '../../config/app_config.dart';
 
 class NouvelleLivraisonScreen extends StatefulWidget {
   const NouvelleLivraisonScreen({super.key});
@@ -48,7 +49,7 @@ class _NouvelleLivraisonScreenState extends State<NouvelleLivraisonScreen> {
   double? _latDepart, _lngDepart;
   double? _latLivraison, _lngLivraison;
 
-  static const String _baseUrl = 'http://192.168.1.145:5000/api';
+  static String get _baseUrl => AppConfig.baseUrl;
 
   @override
   void initState() {
@@ -119,6 +120,7 @@ class _NouvelleLivraisonScreenState extends State<NouvelleLivraisonScreen> {
         _surchargesDetails = data;
       });
     } catch (e) {
+      debugPrint('[FRAIS] ERREUR: $e');
       setState(() => _error = 'Impossible de calculer les frais. Vérifiez votre connexion.');
     } finally {
       if (mounted) setState(() => _calculLoading = false);
