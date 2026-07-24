@@ -1,0 +1,283 @@
+"filename", "language", "JSON", "C++", "JavaScript", "Markdown", "JavaScript JSX", "CMake", "XML", "PostCSS", "HTML", "Dotenv", "MS SQL", "Properties", "YAML", "Dart", "Swift", "comment", "blank", "total"
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\database\glotelho_db_complet.sql", "MS SQL", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 237, 0, 0, 0, 0, 67, 24, 328
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\.env", "Dotenv", 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\README.md", "Markdown", 0, 0, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 65
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\check.js", "JavaScript", 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\package-lock.json", "JSON", 3827, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3828
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\package.json", "JSON", 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 29
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\prisma\migrations\20260706101630_make_order_id_nullable\migration.sql", "MS SQL", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 346, 0, 0, 0, 0, 59, 80, 485
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\prisma\migrations\20260707123641_sync_delivery_persons\migration.sql", "MS SQL", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 15, 8, 36
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\app.js", "JavaScript", 0, 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 11, 50
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\config\firebase-admin.json", "JSON", 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\config\firebaseAdmin.js", "JavaScript", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 28
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\middlewares\authMiddleware.js", "JavaScript", 0, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\middlewares\livreurOnly.js", "JavaScript", 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\middlewares\managerOnly.js", "JavaScript", 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\middlewares\upload.js", "JavaScript", 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 42
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\adminRoutes.js", "JavaScript", 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\bordereauAdminRoutes.js", "JavaScript", 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 11
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\bordereauController.js", "JavaScript", 0, 0, 165, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 39, 213
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\litigeController.js", "JavaScript", 0, 0, 132, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 13, 152
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\litigeRoutesAdminRoutes.js", "JavaScript", 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 17
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\livreurController.js", "JavaScript", 0, 0, 151, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 21, 179
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\livreurRoutesAdminRoutes.js", "JavaScript", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 22
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\profilAdminRoutes.js", "JavaScript", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 23
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\profilController.js", "JavaScript", 0, 0, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 29, 228
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\recouvrementController.js", "JavaScript", 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 35
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\administration\recouvrementRoutesAdminRoutes.js", "JavaScript", 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 11
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\auth\authController.js", "JavaScript", 0, 0, 152, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 173
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\auth\authRoutes.js", "JavaScript", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 33
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\commercant\commercantController.js", "JavaScript", 0, 0, 158, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 11, 171
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\commercant\commercantRoutes.js", "JavaScript", 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 21
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\livraison\livraisonController.js", "JavaScript", 0, 0, 277, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 36, 330
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\livraison\livraisonRoutes.js", "JavaScript", 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\livraison\trackingPublicRoutes.js", "JavaScript", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 31
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\livreur\livreurController.js", "JavaScript", 0, 0, 484, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 59, 558
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\modules\livreur\livreurRoutes.js", "JavaScript", 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7, 39
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\server.js", "JavaScript", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 24
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\utils\mailer.js", "JavaScript", 0, 0, 47, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 57
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\backend\src\utils\prismaClient.js", "JavaScript", 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\README.md", "Markdown", 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 17
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\eslint.config.js", "JavaScript", 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 22
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0, 1, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\package-lock.json", "JSON", 4580, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4581
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\package.json", "JSON", 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 37
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\public\favicon.svg", "XML", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\public\icons.svg", "XML", 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 25
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\App.jsx", "JavaScript JSX", 0, 0, 0, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 77
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\assets\react.svg", "XML", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\assets\vite.svg", "XML", 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\components\BackButton.jsx", "JavaScript JSX", 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\components\Icons.jsx", "JavaScript JSX", 0, 0, 0, 0, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 57
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\components\ProtectedRoute.jsx", "JavaScript JSX", 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\config\firebase-admin.json", "JSON", 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\config\firebase.js", "JavaScript", 0, 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 18
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\config\firebaseAdmin.js", "JavaScript", 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6, 31
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\context\AuthContext.jsx", "JavaScript JSX", 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 46
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\index.css", "PostCSS", 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 0, 0, 0, 0, 0, 0, 7, 76
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\layouts\DashboardLayout.jsx", "JavaScript JSX", 0, 0, 0, 0, 253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 19, 273
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\main.jsx", "JavaScript JSX", 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 11
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\CommandeList.jsx", "JavaScript JSX", 0, 0, 0, 0, 355, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 42, 416
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\Dashboard.jsx", "JavaScript JSX", 0, 0, 0, 0, 220, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 19, 248
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\Parametres.jsx", "JavaScript JSX", 0, 0, 0, 0, 193, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 21, 218
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\Recouvrements.jsx", "JavaScript JSX", 0, 0, 0, 0, 153, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 15, 169
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\Tracking.jsx", "JavaScript JSX", 0, 0, 0, 0, 302, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 39, 351
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\TrackingLivraison.jsx", "JavaScript JSX", 0, 0, 0, 0, 275, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 33, 326
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\TrackingPublic.jsx", "JavaScript JSX", 0, 0, 0, 0, 287, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 38, 342
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\auth\ForgotPassword.jsx", "JavaScript JSX", 0, 0, 0, 0, 68, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 11, 81
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\auth\Login.jsx", "JavaScript JSX", 0, 0, 0, 0, 136, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 21, 167
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\auth\Register.jsx", "JavaScript JSX", 0, 0, 0, 0, 177, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 24, 209
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\auth\ResetPassword.jsx", "JavaScript JSX", 0, 0, 0, 0, 96, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 113
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\litiges\LitigeCreate.jsx", "JavaScript JSX", 0, 0, 0, 0, 89, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 96
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\litiges\LitigeList.jsx", "JavaScript JSX", 0, 0, 0, 0, 140, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 156
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\litiges\LitigeShow.jsx", "JavaScript JSX", 0, 0, 0, 0, 266, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 28, 310
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livraisons\CommandesList.jsx", "JavaScript JSX", 0, 0, 0, 0, 210, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 17, 234
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livraisons\LivraisonCreate.jsx", "JavaScript JSX", 0, 0, 0, 0, 241, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 23, 273
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livraisons\LivraisonEdit.jsx", "JavaScript JSX", 0, 0, 0, 0, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 117
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livraisons\LivraisonList.jsx", "JavaScript JSX", 0, 0, 0, 0, 254, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 26, 294
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livraisons\LivraisonShow.jsx", "JavaScript JSX", 0, 0, 0, 0, 429, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 34, 481
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\LivreurCreate.jsx", "JavaScript JSX", 0, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 81
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\LivreurEdit.jsx", "JavaScript JSX", 0, 0, 0, 0, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 16, 116
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\LivreurList.jsx", "JavaScript JSX", 0, 0, 0, 0, 243, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 32, 294
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\LivreurShow.jsx", "JavaScript JSX", 0, 0, 0, 0, 203, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 30, 245
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\ProfilDetail.jsx", "JavaScript JSX", 0, 0, 0, 0, 176, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 25, 203
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\pages\livreurs\ProfilsEnAttente.jsx", "JavaScript JSX", 0, 0, 0, 0, 217, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 21, 239
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\src\services\api.js", "JavaScript", 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 15
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-backoffice\frontend\vite.config.js", "JavaScript", 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 11
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-client\backend-client\.env", "Dotenv", 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 4, 4, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-client\backend-client\package-lock.json", "JSON", 1870, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1871
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-client\backend-client\src\controllers\authController.js", "JavaScript", 0, 0, 334, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 58, 439
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\README.md", "Markdown", 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 17
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\analysis_options.yaml", "YAML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 22, 4, 29
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\google-services.json", "JSON", 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\debug\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 54
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\drawable-v21\launch_background.xml", "XML", 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\drawable\launch_background.xml", "XML", 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\mipmap-anydpi-v26\ic_launcher.xml", "XML", 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 6
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\values-night\styles.xml", "XML", 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 19
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\values\colors.xml", "XML", 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\main\res\values\styles.xml", "XML", 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 19
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\app\src\profile\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\gradle.properties", "Properties", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2, 1, 7
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\android\gradle\wrapper\gradle-wrapper.properties", "Properties", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 1, 6
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\.env", "Dotenv", 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 6, 5, 23
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\package-lock.json", "JSON", 1870, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1871
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\package.json", "JSON", 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 29
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\config\db.js", "JavaScript", 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 32
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\controllers\authController.js", "JavaScript", 0, 0, 443, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 70, 523
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\middlewares\authMiddleware.js", "JavaScript", 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 49
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\middlewares\upload.js", "JavaScript", 0, 0, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 36
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\routes\driverRoutes.js", "JavaScript", 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 21
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\server.js", "JavaScript", 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 43
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\utils\helpers.js", "JavaScript", 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 39
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\backend-livreur\src\utils\mailer.js", "JavaScript", 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 38
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\RunnerTests\RunnerTests.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 4, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\AppDelegate.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 2, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Assets.xcassets\AppIcon.appiconset\Contents.json", "JSON", 122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 123
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Assets.xcassets\LaunchImage.imageset\Contents.json", "JSON", 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 24
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Assets.xcassets\LaunchImage.imageset\README.md", "Markdown", 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Base.lproj\LaunchScreen.storyboard", "XML", 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 38
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Base.lproj\Main.storyboard", "XML", 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 27
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\ios\Runner\Runner-Bridging-Header.h", "C++", 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\main.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 37, 0, 0, 3, 40
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\activity_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 0, 7, 7, 82
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\delivery_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 114, 0, 8, 12, 134
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\delivery_request_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 2, 3, 49
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\driver_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 108, 0, 9, 17, 134
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\order_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 0, 2, 28
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\models\vehicle_model.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 4, 40
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\api_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 4, 26
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\auth_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 98, 0, 6, 8, 112
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\biometric_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 8, 8, 60
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\delivery_request_manager.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 5, 4, 30
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\directions_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 0, 8, 5, 39
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\driver_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 91, 0, 1, 7, 99
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\earnings_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 6, 70
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\google_auth_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 3, 7, 40
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\notification_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 65, 0, 3, 10, 78
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\orders_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68, 0, 3, 8, 79
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\password_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 0, 29, 5, 108
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\services\tracking_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 71, 0, 6, 8, 85
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\utils\constants.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 1, 4, 35
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\utils\driver_state.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 0, 1, 8, 61
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\activities_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 177, 0, 1, 17, 195
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\auth\forgot_password_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 113, 0, 0, 8, 121
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\auth\otp_verification_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 184, 0, 1, 15, 200
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\auth\reset_password_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 162, 0, 1, 9, 172
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\commission_detail_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 135, 0, 0, 12, 147
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\deliveries_list_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 291, 0, 3, 17, 311
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery\new_delivery_request_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 118, 0, 0, 8, 126
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_completed_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 79, 0, 1, 4, 84
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_detail_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 132, 0, 0, 10, 142
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_map_route_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 5, 8, 86
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_map_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 0, 6, 20, 227
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_route_detail_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 256, 0, 5, 20, 281
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\delivery_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 122, 0, 2, 9, 133
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\earnings_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\home_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 404, 0, 6, 26, 436
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\login_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 370, 0, 15, 42, 427
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\main_navigation_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 7, 83
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\notifications_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\onboarding_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 141, 0, 0, 8, 149
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\orders_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 176, 0, 0, 13, 189
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\pending_verification_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 95, 0, 5, 8, 108
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\preparation_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\profile_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\settings_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 154, 0, 3, 10, 167
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\signup\signup_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 358, 0, 63, 27, 448
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\signup\signup_widgets.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 0, 4, 12, 240
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\splash_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 0, 1, 10, 69
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\vehicle_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\lib\views\widgets\donut_chart.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 1, 12, 86
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 104, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 129
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\flutter\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 89
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\flutter\generated_plugin_registrant.cc", "C++", 0, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 24
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\flutter\generated_plugin_registrant.h", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\flutter\generated_plugins.cmake", "CMake", 0, 0, 0, 0, 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 28
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\runner\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 27
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\runner\main.cc", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\runner\my_application.cc", "C++", 0, 94, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 29, 149
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\linux\runner\my_application.h", "C++", 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 5, 22
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\Flutter\GeneratedPluginRegistrant.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 3, 4, 27
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\RunnerTests\RunnerTests.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 4, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\Runner\AppDelegate.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 3, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\Runner\Assets.xcassets\AppIcon.appiconset\Contents.json", "JSON", 68, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 69
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\Runner\Base.lproj\MainMenu.xib", "XML", 0, 0, 0, 0, 0, 0, 343, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 344
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\macos\Runner\MainFlutterWindow.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 4, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\pubspec.yaml", "YAML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 12, 22, 82
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\test\widget_test.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 10, 7, 31
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\web\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 15, 5, 39
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\web\manifest.json", "JSON", 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 36
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 89, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 109
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\flutter\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 98, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 110
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\flutter\generated_plugin_registrant.cc", "C++", 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 30
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\flutter\generated_plugin_registrant.h", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\flutter\generated_plugins.cmake", "CMake", 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 31
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 41
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\flutter_window.cpp", "C++", 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 16, 72
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\flutter_window.h", "C++", 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 9, 34
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\main.cpp", "C++", 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 10, 44
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\resource.h", "C++", 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 2, 17
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\utils.cpp", "C++", 0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 10, 66
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\utils.h", "C++", 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\win32_window.cpp", "C++", 0, 210, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 55, 289
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-livreur\windows\runner\win32_window.h", "C++", 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 24, 103
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\README.md", "Markdown", 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 41
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\analysis_options.yaml", "YAML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 22, 4, 29
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\debug\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\main\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 37, 0, 0, 0, 0, 0, 0, 0, 0, 11, 1, 49
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\main\res\drawable-v21\launch_background.xml", "XML", 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\main\res\drawable\launch_background.xml", "XML", 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\main\res\values-night\styles.xml", "XML", 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 19
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\main\res\values\styles.xml", "XML", 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 19
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\app\src\profile\AndroidManifest.xml", "XML", 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 8
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\gradle.properties", "Properties", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2, 1, 7
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\android\gradle\wrapper\gradle-wrapper.properties", "Properties", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 1, 6
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\devtools_options.yaml", "YAML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 4
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\RunnerTests\RunnerTests.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 4, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\AppDelegate.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 2, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Assets.xcassets\AppIcon.appiconset\Contents.json", "JSON", 122, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 123
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Assets.xcassets\LaunchImage.imageset\Contents.json", "JSON", 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 24
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Assets.xcassets\LaunchImage.imageset\README.md", "Markdown", 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Base.lproj\LaunchScreen.storyboard", "XML", 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 38
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Base.lproj\Main.storyboard", "XML", 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 27
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\ios\Runner\Runner-Bridging-Header.h", "C++", 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\config\app_routes.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 1, 12
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\config\app_state.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 61, 0, 2, 6, 69
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\config\app_strings.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 6, 2, 81
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\config\app_theme.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 11, 7, 72
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\main.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 1, 4, 41
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\services\api_service.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 0, 6, 17, 86
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\auth\login_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 223, 0, 8, 16, 247
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\auth\register_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 254, 0, 3, 15, 272
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\commandes\commande_detail_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 277, 0, 9, 25, 311
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\commandes\commandes_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 358, 0, 7, 17, 382
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\commandes\nouvelle_commande_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 400, 0, 10, 22, 432
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\dashboard\dashboard_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 236, 0, 3, 12, 251
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\litiges\litiges_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 197, 0, 2, 11, 210
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\livraisons\livraisons_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 183, 0, 16, 8, 207
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\notifications\notifications_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 0, 3, 2, 32
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\parametres\change_password_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 0, 4, 8, 156
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\parametres\parametres_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 306, 0, 12, 20, 338
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\views\tracking\tracking_screen.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 176, 0, 2, 9, 187
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\widgets\dashboard_header.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 117, 0, 6, 5, 128
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\widgets\kpi_card.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 0, 3, 3, 82
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\widgets\main_navigation_shell.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 61, 0, 0, 5, 66
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\lib\widgets\theme_toggle_switch.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0, 2, 3, 54
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 104, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 129
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\flutter\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 89
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\flutter\generated_plugin_registrant.cc", "C++", 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\flutter\generated_plugin_registrant.h", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\flutter\generated_plugins.cmake", "CMake", 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 25
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\runner\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 27
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\runner\main.cc", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 7
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\runner\my_application.cc", "C++", 0, 94, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 26, 29, 149
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\linux\runner\my_application.h", "C++", 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 5, 22
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\Flutter\GeneratedPluginRegistrant.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 3, 4, 15
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\RunnerTests\RunnerTests.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 2, 4, 13
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\Runner\AppDelegate.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 3, 14
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\Runner\Assets.xcassets\AppIcon.appiconset\Contents.json", "JSON", 68, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 69
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\Runner\Base.lproj\MainMenu.xib", "XML", 0, 0, 0, 0, 0, 0, 343, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 344
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\macos\Runner\MainFlutterWindow.swift", "Swift", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 4, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\pubspec.yaml", "YAML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 0, 0, 3, 16, 40
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\test\widget_test.dart", "Dart", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14, 0, 10, 7, 31
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\web\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 15, 5, 39
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\web\manifest.json", "JSON", 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 36
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 89, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 109
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\flutter\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 98, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 110
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\flutter\generated_plugin_registrant.cc", "C++", 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 15
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\flutter\generated_plugin_registrant.h", "C++", 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 16
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\flutter\generated_plugins.cmake", "CMake", 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 25
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\CMakeLists.txt", "CMake", 0, 0, 0, 0, 0, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 41
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\flutter_window.cpp", "C++", 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 16, 72
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\flutter_window.h", "C++", 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 9, 34
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\main.cpp", "C++", 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 10, 44
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\resource.h", "C++", 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 2, 17
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\utils.cpp", "C++", 0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 10, 66
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\utils.h", "C++", 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 20
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\win32_window.cpp", "C++", 0, 210, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24, 55, 289
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\glotelho-manager\windows\runner\win32_window.h", "C++", 0, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 31, 24, 103
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\package-lock.json", "JSON", 1345, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1346
+"c:\Users\MEITANG Junior\GLOTELHO\glotelho-tracking\package.json", "JSON", 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8
+"Total", "-", 14189, 1145, 3202, 117, 5457, 935, 995, 69, 51, 37, 596, 18, 78, 8771, 126, 1342, 2694, 39822
