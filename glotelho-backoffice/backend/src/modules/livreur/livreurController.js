@@ -139,7 +139,7 @@ async function register(req, res) {
                     user_id: user.id,
                     vehicle_id: vehicule ? vehicule.id : null,
                     status: 'Indisponible',
-                    available: false,
+                    available: 0,
                     date_naissance: dateNaissance,
                     adresse_residence: body.adresseResidence || null,
                     cni_numero: body.cniNumero || null,

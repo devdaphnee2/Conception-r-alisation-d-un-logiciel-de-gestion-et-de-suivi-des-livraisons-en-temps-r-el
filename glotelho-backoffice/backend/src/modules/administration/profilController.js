@@ -107,7 +107,7 @@ async function approuver(req, res) {
             where: { id: parseInt(req.params.id) },
             data: {
                 status: 'Disponible',
-                available: true,
+                available: 1,
                 date_activation: new Date(),
                 note_manager: (livreur.note_manager ? livreur.note_manager + '\n' : '') +
                     '[' + new Date().toLocaleString('fr-FR') + '] Profil approuve — acces plateforme accorde'

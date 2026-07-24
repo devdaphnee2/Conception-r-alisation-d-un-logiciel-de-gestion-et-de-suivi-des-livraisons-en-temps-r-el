@@ -23,18 +23,18 @@ model bordereaux {
 }
 
 model confirmations {
-  id                 Int                   @id @default(autoincrement())
+  id                 Int               @id @default(autoincrement())
   deliveryorder_id   Int
   customer_id        Int?
   delivery_person_id Int?
-  methode            confirmations_methode
-  otp_code           String?               @db.VarChar(10)
-  signature_path     String?               @db.VarChar(255)
-  confirmed_at       DateTime?             @db.DateTime(0)
-  created_at         DateTime              @default(now()) @db.Timestamp(0)
-  deliveryorders     deliveryorders        @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "confirmations_ibfk_1")
-  customers          customers?            @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "confirmations_ibfk_2")
-  delivery_persons   delivery_persons?     @relation(fields: [delivery_person_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "confirmations_ibfk_3")
+  methode            String?           @default("OTP") @db.VarChar(20)
+  otp_code           String?           @db.VarChar(10)
+  signature_path     String?           @db.VarChar(255)
+  confirmed_at       DateTime?         @db.DateTime(0)
+  created_at         DateTime          @default(now()) @db.Timestamp(0)
+  deliveryorders     deliveryorders    @relation(fields: [deliveryorder_id], references: [id], onUpdate: Restrict, map: "confirmations_ibfk_1")
+  customers          customers?        @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "confirmations_ibfk_2")
+  delivery_persons   delivery_persons? @relation(fields: [delivery_person_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "confirmations_ibfk_3")
 
   @@index([customer_id], map: "customer_id")
   @@index([delivery_person_id], map: "delivery_person_id")
@@ -51,6 +51,7 @@ model customers {
   confirmations  confirmations[]
   users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "customers_ibfk_1")
   deliveryorders deliveryorders[]
+  litiges        litiges[]
   notations      notations[]
   orders         orders[]
 }
@@ -60,12 +61,12 @@ model delivery_items {
   deliveryorder_id      Int
   order_id              Int?
   product_name          String         @db.VarChar(255)
-  quantity              Int?           @default(1)
-  price                 Decimal?       @default(0.00) @db.Decimal(10, 2)
   delivery_instructions String?        @db.Text
   route_info            String?        @db.Text
   status                String?        @default("En_attente") @db.VarChar(50)
   created_at            DateTime       @default(now()) @db.Timestamp(0)
+  quantity              Int?           @default(1)
+  unit_price            Decimal?       @db.Decimal(10, 2)
   deliveryorders        deliveryorders @relation(fields: [deliveryorder_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_items_ibfk_1")
   orders                orders?        @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_items_ibfk_2")
 
@@ -75,47 +76,48 @@ model delivery_items {
 
 model delivery_persons {
   id                       Int                 @id @default(autoincrement())
-  user_id                  Int                 @unique(map: "user_id")
+  user_id                  Int
   vehicle_id               Int?
   status                   String?             @default("Disponible")
-  date_naissance           DateTime?           @db.Date
-  photo_profil_url         String?             @db.VarChar(255)
-  adresse_residence        String?             @db.VarChar(255)
-  cni_numero               String?             @db.VarChar(100)
-  cni_recto_url            String?             @db.VarChar(255)
-  cni_verso_url            String?             @db.VarChar(255)
-  permis_url               String?             @db.VarChar(255)
-  vehicule_type            String?             @db.VarChar(50)
-  vehicule_marque          String?             @db.VarChar(100)
-  vehicule_modele          String?             @db.VarChar(100)
-  vehicule_immatriculation String?             @db.VarChar(50)
-  vehicule_photo_url       String?             @db.VarChar(255)
-  assurance_numero         String?             @db.VarChar(100)
-  assurance_expiration     DateTime?           @db.Date
-  mobile_money_numero      String?             @db.VarChar(30)
-  mobile_money_titulaire   String?             @db.VarChar(150)
-  disponibilites           String?             @db.Text
-  solde_commission         Decimal             @default(0.00) @db.Decimal(10, 2)
-  emprunt                  Decimal             @default(0.00) @db.Decimal(10, 2)
-  note                     Decimal             @default(0.00) @db.Decimal(3, 2)
   zone_affectee            String?             @db.VarChar(100)
-  available                Boolean?            @default(true)
+  available                Int?                @default(1) @db.TinyInt
   created_at               DateTime            @default(now()) @db.Timestamp(0)
+  cni_numero               String?             @db.VarChar(100)
   caution_montant          Decimal?            @default(50000.00) @db.Decimal(10, 2)
   caution_payee            Int?                @default(0) @db.TinyInt
-  date_candidature         DateTime?           @default(now()) @db.Timestamp(0)
+  date_candidature         DateTime            @default(now()) @db.Timestamp(0)
   note_manager             String?             @db.Text
+  date_naissance           DateTime?           @db.Date
+  assurance_numero         String?             @db.VarChar(100)
+  assurance_expiration     DateTime?           @db.Date
+  vehicule_modele          String?             @db.VarChar(100)
+  mobile_money_numero      String?             @db.VarChar(30)
   date_activation          DateTime?           @db.Timestamp(0)
+  adresse_residence        String?             @db.VarChar(255)
+  cni_recto_url            String?             @db.VarChar(255)
+  cni_verso_url            String?             @db.VarChar(255)
+  disponibilites           String?             @db.Text
+  emprunt                  Decimal             @default(0.00) @db.Decimal(10, 2)
+  mobile_money_titulaire   String?             @db.VarChar(150)
+  note                     Decimal             @default(0.00) @db.Decimal(3, 2)
+  permis_url               String?             @db.VarChar(255)
+  photo_profil_url         String?             @db.VarChar(255)
+  solde_commission         Decimal             @default(0.00) @db.Decimal(10, 2)
+  vehicule_immatriculation String?             @db.VarChar(50)
+  vehicule_marque          String?             @db.VarChar(100)
+  vehicule_photo_url       String?             @db.VarChar(255)
+  vehicule_type            String?             @db.VarChar(50)
   confirmations            confirmations[]
-  users                    users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "delivery_persons_ibfk_1")
-  vehicules                vehicules?          @relation(fields: [vehicle_id], references: [id], onUpdate: Restrict, map: "delivery_persons_ibfk_2")
+  vehicules                vehicules?          @relation(fields: [vehicle_id], references: [id], map: "delivery_persons_ibfk_2")
   deliveryorders           deliveryorders[]
+  litiges                  litiges[]
   notations                notations[]
   photos                   photos[]
   position_tracking        position_tracking[]
   races                    races[]
   rapports                 rapports[]
   recouvrement             recouvrement[]
+  users                    users[]
 
   @@index([status], map: "idx_status")
   @@index([vehicle_id], map: "vehicle_id")
@@ -140,16 +142,17 @@ model deliveryorders {
   tracking_blocked        Boolean?               @default(false)
   created_at              DateTime               @default(now()) @db.Timestamp(0)
   updated_at              DateTime               @default(now()) @db.Timestamp(0)
-  delivery_instructions   String?                @db.Text
   client_nom              String?                @db.VarChar(150)
   client_telephone        String?                @db.VarChar(30)
   client_whatsapp         String?                @db.VarChar(30)
+  delivery_instructions   String?                @db.Text
   bordereaux              bordereaux[]
   confirmations           confirmations[]
   delivery_items          delivery_items[]
   managers                managers               @relation(fields: [manager_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_1")
   delivery_persons        delivery_persons?      @relation(fields: [delivery_person_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_2")
   customers               customers              @relation(fields: [customer_id], references: [id], onUpdate: Restrict, map: "deliveryorders_ibfk_3")
+  litiges                 litiges[]
   notations               notations?
   photos                  photos[]
   race_deliveryorders     race_deliveryorders[]
@@ -170,6 +173,7 @@ model managers {
   created_at            DateTime                @default(now()) @db.Timestamp(0)
   bordereaux            bordereaux[]
   deliveryorders        deliveryorders[]
+  litiges               litiges[]
   users                 users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "managers_ibfk_1")
   remises_compensations remises_compensations[]
 }
@@ -209,12 +213,6 @@ model notifications {
 model orders {
   id                    Int                     @id @default(autoincrement())
   customer_id           Int
-  delivery_address      String?                 @db.Text
-  delivery_type         String?                 @default("home") @db.VarChar(20)
-  payment_method        String?                 @db.VarChar(50)
-  shipping_fee          Decimal?                @default(0.00) @db.Decimal(10, 2)
-  reference             String?                 @db.VarChar(20)
-  cancellation_reason   String?                 @db.Text
   status                String?                 @default("En_cours") @db.VarChar(50)
   total_amount          Decimal                 @db.Decimal(10, 2)
   created_at            DateTime                @default(now()) @db.Timestamp(0)
@@ -225,7 +223,6 @@ model orders {
 
   @@index([created_at], map: "idx_created")
   @@index([customer_id], map: "idx_customer")
-  @@index([reference], map: "idx_reference")
   @@index([status], map: "idx_status")
 }
 
@@ -361,30 +358,29 @@ model remises_compensations {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model users {
   id                     Int               @id @default(autoincrement())
-  last_name              String?           @db.VarChar(100)
+  last_name              String            @db.VarChar(100)
   first_name             String            @db.VarChar(100)
   email                  String            @unique(map: "email") @db.VarChar(150)
   password               String            @db.VarChar(255)
   phone                  String            @unique(map: "idx_unique_phone") @db.VarChar(20)
   role                   users_role
   fcm_token              String?           @db.VarChar(255)
-  avatar_url             String?           @db.VarChar(255)
-  google_id              String?           @db.VarChar(255)
   created_at             DateTime          @default(now()) @db.Timestamp(0)
   updated_at             DateTime          @default(now()) @db.Timestamp(0)
-  has_password           Boolean           @default(true)
-  photo_url              String?           @db.VarChar(255)
   reset_password_token   String?           @db.VarChar(255)
   reset_password_expires DateTime?         @db.DateTime(0)
+  google_id              String?           @unique(map: "google_id") @db.VarChar(255)
+  photo_url              String?           @db.VarChar(500)
+  delivery_personsId     Int?
   customers              customers?
-  delivery_persons       delivery_persons?
   managers               managers?
   notifications          notifications[]
   password_resets        password_resets[]
+  delivery_persons       delivery_persons? @relation(fields: [delivery_personsId], references: [id])
 
   @@index([email], map: "idx_email")
-  @@index([google_id], map: "idx_google_id")
   @@index([role], map: "idx_role")
+  @@index([delivery_personsId], map: "users_delivery_personsId_fkey")
 }
 
 model vehicules {
@@ -397,6 +393,30 @@ model vehicules {
   updated_at       DateTime           @default(now()) @db.Timestamp(0)
   delivery_persons delivery_persons[]
   races            races[]
+}
+
+model litiges {
+  id                 Int               @id @default(autoincrement())
+  deliveryorder_id   Int
+  customer_id        Int?
+  delivery_person_id Int?
+  manager_id         Int?
+  statut             litiges_statut?   @default(Ouvert)
+  description        String            @db.Text
+  decision           String?           @db.VarChar(100)
+  motif              String?           @db.Text
+  date_ouverture     DateTime          @default(now()) @db.Timestamp(0)
+  date_cloture       DateTime?         @db.Timestamp(0)
+  deliveryorders     deliveryorders    @relation(fields: [deliveryorder_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "litiges_ibfk_1")
+  customers          customers?        @relation(fields: [customer_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "litiges_ibfk_2")
+  delivery_persons   delivery_persons? @relation(fields: [delivery_person_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "litiges_ibfk_3")
+  managers           managers?         @relation(fields: [manager_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "litiges_ibfk_4")
+
+  @@index([customer_id], map: "customer_id")
+  @@index([delivery_person_id], map: "delivery_person_id")
+  @@index([deliveryorder_id], map: "idx_deliveryorder")
+  @@index([statut], map: "idx_statut")
+  @@index([manager_id], map: "manager_id")
 }
 
 enum remises_compensations_type {
@@ -416,21 +436,6 @@ enum bordereaux_status {
   Genere
   Imprime
   Distribue
-}
-
-enum confirmations_methode {
-  OTP
-  Signature
-}
-
-enum deliveryorders_status {
-  En_attente
-  Assign_
-  En_cours
-  Livr_
-  Suspendu
-  Annul_
-  Commande
 }
 
 enum vehicules_status {
@@ -459,9 +464,27 @@ enum remises_compensations_status {
   Rejet_e    @map("Rejetée")
 }
 
+enum litiges_statut {
+  Ouvert
+  En_cours
+  Resolu
+  Cloture
+}
+
 enum users_role {
   manager
   delivery_person
   customer
   commercant
+}
+
+enum deliveryorders_status {
+  Commande
+  En_attente
+  Assign_
+  Valide_
+  En_cours
+  Livr_
+  Suspendu
+  Annul_
 }
