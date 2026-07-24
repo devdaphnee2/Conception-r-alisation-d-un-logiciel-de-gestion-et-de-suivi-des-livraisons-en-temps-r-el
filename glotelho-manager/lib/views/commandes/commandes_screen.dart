@@ -5,6 +5,7 @@ import '../../config/app_state.dart';
 import '../../services/api_service.dart';
 import 'nouvelle_commande_screen.dart';
 import 'commande_detail_screen.dart';
+import '../../config/app_config.dart';
 
 class CommandesScreen extends StatefulWidget {
   const CommandesScreen({super.key});
@@ -394,9 +395,9 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   }
 
   Future<void> _ouvrirSuivi(int id) async {
-    final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    final url = Uri.parse('${AppConfig.trackingUrl}/$id');
+if (await canLaunchUrl(url)) {
+  await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 

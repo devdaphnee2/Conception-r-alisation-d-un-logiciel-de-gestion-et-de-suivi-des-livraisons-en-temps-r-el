@@ -23,7 +23,7 @@ app.use('/api/mobile/livreur', livreurRoutes);
 app.use('/api/drivers', livreurRoutes); // ✅ On réutilise livreurRoutes ici !
 
 // LIVRAISON
-app.use('/api/livraisons/public', require('./modules/livraison/trackingPublicRoutes'));
+// app.use('/api/livraisons/public', require('./modules/livraison/trackingPublicRoutes'));
 app.use('/api/livraisons', require('./modules/livraison/livraisonRoutes'));
 
 // COMMERCANT (app mobile Flutter)
@@ -40,7 +40,6 @@ app.use('/api/profils', authMiddleware, managerOnly, require('./modules/administ
 app.use('/api/bordereaux', authMiddleware, managerOnly, require('./modules/administration/bordereauAdminRoutes'));
 app.use('/api/notifications', authMiddleware, require('./modules/notifications/notificationRoutes'));
 app.use('/api/paiement', require('./modules/paiement/paiementRoutes'));
-app.use('/api/distance', require('./modules/distance/distanceRoutes'));
 app.use('/api/distance', require('./modules/distance/distanceRoutes'));
 
 // 404

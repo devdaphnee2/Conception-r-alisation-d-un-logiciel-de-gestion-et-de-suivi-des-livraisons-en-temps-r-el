@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { database, ref, onValue, off } from '../config/firebase';
 
-mapboxgl.accessToken = 'import.meta.env.VITE_MAPBOX_TOKEN';
+mapboxgl.accessToken = 'pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow';
 //import.meta.env.VITE_MAPBOX_TOKEN
 //pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
 const STATUS_INFO = {
@@ -32,7 +32,7 @@ export default function TrackingCommercant() {
 
     // Charger la livraison
     useEffect(function() {
-        var apiUrl = (import.meta.env.VITE_API_URL || 'http://192.168.1.145:5000/api') + '/livraisons/public/' + id;
+        var apiUrl = (import.meta.env.VITE_API_URL || 'http://10.203.155.25:5000/api') + '/livraisons/public/' + id;
         fetch(apiUrl)
             .then(function(r) { return r.json(); })
             .then(function(data) {

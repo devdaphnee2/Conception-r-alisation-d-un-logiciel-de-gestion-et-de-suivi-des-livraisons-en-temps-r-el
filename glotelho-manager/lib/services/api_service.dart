@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import '../config/app_state.dart';
+import '../config/app_config.dart';
 
 class ApiService {
   final Dio dio;
   final AppState appState;
 
 
-  static const String _baseUrl = 'http://192.168.1.166:5000/api';
+  static String get _baseUrl => AppConfig.baseUrl;
   //'http://192.168.1.145:5000/api';
 
 

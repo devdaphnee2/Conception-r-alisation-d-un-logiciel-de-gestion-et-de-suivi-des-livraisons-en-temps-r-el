@@ -34,15 +34,22 @@ class TrackingService {
   static Future<bool> accepterCourse(String deliveryId) async {
     try {
       final response = await ApiService.dio.post('/drivers/courses/$deliveryId/accepter');
+      debugPrint('[TRACKING] accepterCourse OK, status=${response.statusCode}');
       return response.statusCode == 200;
-    } catch (_) { return false; }
+    } catch (e) {
+      debugPrint('[TRACKING] ERREUR accepterCourse: $e');
+      return false;
+    }
   }
 
   static Future<bool> refuserCourse(String deliveryId) async {
     try {
       final response = await ApiService.dio.post('/drivers/courses/$deliveryId/refuser');
       return response.statusCode == 200;
-    } catch (_) { return false; }
+    } catch (e) {
+      debugPrint('[TRACKING] ERREUR refuserCourse: $e');
+      return false;
+    }
   }
 
   /// Historique des livraisons terminees

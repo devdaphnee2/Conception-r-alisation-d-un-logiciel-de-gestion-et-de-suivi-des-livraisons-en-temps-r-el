@@ -4,7 +4,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { database, ref, onValue, off } from '../config/firebase';
 
-mapboxgl.accessToken = '';
+mapboxgl.accessToken = 'pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow';
 //pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
 const STATUS_INFO = {
     'En_attente': { label: 'En attente de livreur', color: '#c9952e', bg: '#ffdea9', icon: '⏳' },
@@ -86,7 +86,7 @@ function PageTracking({ livraisonId, onBack }) {
     const [panelOpen, setPanelOpen] = useState(false);
 
     useEffect(function() {
-        var apiUrl = (import.meta.env.VITE_API_URL || 'http://192.168.1.145:5000/api') + '/livraisons/public/' + livraisonId;
+        var apiUrl = (import.meta.env.VITE_API_URL || 'http://10.203.155.25:5000/api') + '/livraisons/public/' + livraisonId;
         fetch(apiUrl)
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -333,7 +333,7 @@ export default function TrackingPublic() {
     // Vérifie le statut de paiement avant de rediriger
     async function handleSearch(num) {
         try {
-            var apiUrl = (import.meta.env.VITE_API_URL || 'http://192.168.1.145:5000/api') + '/paiement/' + num;
+            var apiUrl = (import.meta.env.VITE_API_URL || 'http://10.203.155.25:5000/api') + '/paiement/' + num;
             var res = await fetch(apiUrl);
             var data = await res.json();
 

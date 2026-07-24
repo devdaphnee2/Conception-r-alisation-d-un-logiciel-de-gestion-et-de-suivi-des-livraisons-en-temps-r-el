@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.145:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://10.203.155.25:5000/api';
 
 const P = {
     navy   : '#0D1B2A',
