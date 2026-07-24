@@ -28,7 +28,6 @@ async function livraisonsEnCours(req, res) {
 
 async function detailLivraison(req, res) {
     try {
-        console.log('[DETAIL] id:', req.params.id);
         var livraison = await prisma.deliveryorders.findUnique({
             where: { id: parseInt(req.params.id) },
             include: {
@@ -37,11 +36,9 @@ async function detailLivraison(req, res) {
                 confirmations: true
             }
         });
-        console.log('[DETAIL] livraison trouvée:', livraison ? livraison.id : 'null');
         if (!livraison) return res.status(404).json({ message: 'Livraison introuvable.' });
         res.json(livraison);
     } catch (err) {
-        console.error('[DETAIL ERROR]', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });
     }
 }
@@ -70,15 +67,28 @@ async function creerLivraison(req, res) {
             customer = await prisma.customers.create({ data: { user_id: newUser.id } });
         }
 
+        // ── Calcul des montants ────────────────────────────────────────
+        // amount_to_collect = UNIQUEMENT le prix de la marchandise (payé en ligne par le client via OM/MoMo)
+        // frais_livraison   = payé en cash au livreur à la remise du colis
+        var totalArticles = 0;
+        if (body.articles && body.articles.length > 0) {
+            body.articles.forEach(function(a) {
+                totalArticles += (parseFloat(a.prix_unitaire) || 0) * (parseInt(a.quantite) || 1);
+            });
+        }
+        var fraisLivraison = parseFloat(body.montant_livraison || body.frais_livraison) || 0;
+
         var livraison = await prisma.deliveryorders.create({
             data: {
                 manager_id: manager.id,
                 customer_id: customer.id,
                 delivery_person_id: null,
+                pickup_address: body.pickup_address || null,
                 delivery_address: body.delivery_address,
                 zone_bloc: body.zone_bloc || null,
                 delivery_instructions: body.delivery_instructions || null,
-                amount_to_collect: parseFloat(body.amount_to_collect) || 0,
+                amount_to_collect: totalArticles, // ← uniquement la marchandise
+                frais_livraison: fraisLivraison, // ← payé cash au livreur
                 collected_amount: 0,
                 status: 'Commande',
                 delivery_date: body.delivery_date ? new Date(body.delivery_date) : null,
@@ -102,8 +112,6 @@ async function creerLivraison(req, res) {
             if (articlesData.length > 0) await prisma.delivery_items.createMany({ data: articlesData });
         }
 
-        // PAS de confirmation ici — elle sera créée lors de l'assignation du livreur
-
         res.status(201).json({ message: 'Commande enregistrée.', livraison });
     } catch (err) {
         console.error('[creerLivraison]', err.message);
@@ -121,9 +129,9 @@ async function commanderCourse(req, res) {
         if (!livraison) return res.status(404).json({ message: 'Commande introuvable.' });
         if (livraison.status !== 'Commande') return res.status(400).json({ message: 'Déjà envoyée.' });
 
-        await prisma.deliveryorders.update({ where: { id }, data: { status: 'En_attente' } });
+        // Le statut reste "Commande" — il ne passera à "En_attente" (visible au manager)
+        // qu'une fois le paiement confirmé (voir /api/paiement/:id/verifier)
 
-        // Récupérer le nom du commerçant
         var commercantUser = null;
         if (livraison.manager_id) {
             var commercantRecord = await prisma.managers.findFirst({
@@ -136,44 +144,29 @@ async function commanderCourse(req, res) {
             commercantUser.first_name + ' ' + commercantUser.last_name :
             'Un commerçant';
 
-        // ── Notifier tous les vrais managers (role = 'manager') ───────────
+        // ── Envoyer le lien de paiement au client par WhatsApp ────────────
+        var waLink = null;
         try {
-            var admins = await prisma.users.findMany({ where: { role: 'manager' } });
-            for (var admin of admins) {
-                await prisma.notifications.create({
-                    data: {
-                        recipient_id: admin.id,
-                        message: '🛒 Nouvelle commande #' + String(id).padStart(5, '0') +
-                            ' reçue de ' + commercantNom +
-                            (livraison.delivery_address ? ' · ' + livraison.delivery_address : '') +
-                            '. En attente d\'assignation.',
-                        type: 'Interne',
-                        is_read: false,
-                    }
-                });
-            }
-        } catch (e) { console.warn('[NOTIF COMMANDER COURSE] Echec:', e.message); }
+            var frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.145:5173';
+            var lienPaiement = frontendUrl + '/paiement/' + id;
+            var clientNom = livraison.client_nom || 'Client';
+            var clientWa = livraison.client_whatsapp || livraison.client_telephone || '';
 
-        // ── Notification FCM si token disponible ───────────────────────────
-        var managerUser = livraison.managers ? livraison.managers.users : null;
-        if (managerUser && managerUser.fcm_token) {
-            try {
-                var { getFirebaseDB } = require('../../config/firebaseAdmin');
-                var db = getFirebaseDB();
-                if (db) {
-                    await db.ref('notifications/' + Date.now()).set({
-                        token: managerUser.fcm_token,
-                        titre: '🛒 Nouvelle commande reçue',
-                        corps: 'Commande #' + String(id).padStart(5, '0') + ' de ' + commercantNom,
-                        lu: false,
-                        createdAt: Date.now()
-                    });
-                }
-            } catch (e) { console.warn('[FCM COMMANDER COURSE] Echec:', e.message); }
-        }
+            var message = 'Bonjour ' + clientNom + ' !\n\n' +
+                'Votre commande chez ' + commercantNom + ' est prête.\n' +
+                'Numero : #' + String(id).padStart(5, '0') + '\n\n' +
+                'Merci de finaliser le paiement de votre commande ici :\n' + lienPaiement + '\n\n' +
+                'Votre livraison sera prise en charge dès confirmation du paiement.';
 
-        console.log('[COMMANDER COURSE] Commande #' + id + ' → En_attente, managers notifiés.');
-        res.json({ message: "Course commandée ! L'admin va assigner un livreur." });
+            var waTel = clientWa.replace(/\s/g, '').replace(/\+/g, '');
+            if (waTel && !waTel.startsWith('237')) waTel = '237' + waTel;
+            waLink = waTel ? 'https://wa.me/' + waTel + '?text=' + encodeURIComponent(message) : null;
+        } catch (e) { console.warn('[LIEN PAIEMENT] Echec:', e.message); }
+        console.log('[LIEN GENERE]', waLink);
+        res.json({
+            message: "Lien de paiement envoyé au client. La course sera transmise au manager une fois le paiement confirmé.",
+            whatsapp_link: waLink,
+        });
     } catch (err) {
         console.error('[COMMANDER COURSE] Erreur:', err.message);
         res.status(500).json({ message: 'Erreur serveur', error: err.message });

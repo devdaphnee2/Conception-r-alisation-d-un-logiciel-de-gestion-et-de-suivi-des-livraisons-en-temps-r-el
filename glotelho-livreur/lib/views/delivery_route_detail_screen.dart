@@ -17,6 +17,8 @@ class DeliveryRouteDetailScreen extends StatefulWidget {
 
 class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
   late DeliveryModel d;
+  bool _demarrageLoading = false;
+  bool _acceptationLoading = false;
 
   @override
   void initState() {
@@ -68,6 +70,85 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
   void _voirCarte() {
     Navigator.push(context,
         MaterialPageRoute(builder: (_) => DeliveryMapRouteScreen(delivery: d)));
+  }
+
+  // ── ACCEPTER LA COURSE — Assign_ → Valide_ ────────────────────────
+  Future<void> _accepterCourse() async {
+    setState(() => _acceptationLoading = true);
+    try {
+      final ok = await TrackingService.accepterCourse(d.id);
+      if (!ok) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Erreur lors de l\'acceptation de la course.'),
+            backgroundColor: Colors.red,
+          ));
+        }
+        return;
+      }
+      setState(() => d.status = DeliveryStatus.validated);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('✅ Course acceptée ! Vous pouvez maintenant la démarrer.'),
+          backgroundColor: Color(0xFF1B5E20),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erreur : $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _acceptationLoading = false);
+    }
+  }
+
+  // ── DÉMARRER LA COURSE — Valide_ → En_cours ──────────────────────
+  Future<void> _demarrerCourse() async {
+    setState(() => _demarrageLoading = true);
+    try {
+      final result = await TrackingService.demarrerCourse(d.id);
+      if (result == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Erreur lors du démarrage de la course.'),
+            backgroundColor: Colors.red,
+          ));
+        }
+        return;
+      }
+
+      setState(() => d.status = DeliveryStatus.inProgress);
+
+      // Ouvrir automatiquement WhatsApp pour notifier le client
+      final waLink = result['whatsapp_link'] as String?;
+      if (waLink != null && waLink.isNotEmpty) {
+        final uri = Uri.parse(waLink);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('🚀 Course démarrée ! Le client a été notifié.'),
+          backgroundColor: Color(0xFF1B5E20),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erreur : $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _demarrageLoading = false);
+    }
   }
 
   Future<void> _saisirCode() async {
@@ -157,7 +238,9 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final color = _statusColor(d.status);
-    final estCloturable = d.status == DeliveryStatus.inProgress || d.status == DeliveryStatus.pending;
+    final estCloturable = d.status == DeliveryStatus.inProgress;
+    final estAcceptable = d.status == DeliveryStatus.assigned;
+    final estDemarrable = d.status == DeliveryStatus.validated;
 
     return Scaffold(
       backgroundColor: AppColors.navy,
@@ -205,6 +288,46 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
+
+          // ── Bouton ACCEPTER — visible si Assignée (pas encore confirmée) ──
+          if (estAcceptable)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _acceptationLoading ? null : _accepterCourse,
+                icon: _acceptationLoading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.check_circle_outline, color: Colors.white),
+                label: Text(_acceptationLoading ? 'Acceptation...' : 'Accepter la course',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+
+          // ── Bouton DÉMARRER — visible uniquement après acceptation ────
+          if (estDemarrable)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _demarrageLoading ? null : _demarrerCourse,
+                icon: _demarrageLoading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.play_arrow, color: Colors.white),
+                label: Text(_demarrageLoading ? 'Démarrage...' : 'Démarrer la course',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+
+          // ── Bouton CLÔTURER — visible si En cours ─────────────────────
           if (estCloturable)
             SizedBox(
               width: double.infinity,

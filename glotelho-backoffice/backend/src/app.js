@@ -39,6 +39,9 @@ app.use('/api/recouvrements', authMiddleware, managerOnly, require('./modules/ad
 app.use('/api/profils', authMiddleware, managerOnly, require('./modules/administration/profilAdminRoutes'));
 app.use('/api/bordereaux', authMiddleware, managerOnly, require('./modules/administration/bordereauAdminRoutes'));
 app.use('/api/notifications', authMiddleware, require('./modules/notifications/notificationRoutes'));
+app.use('/api/paiement', require('./modules/paiement/paiementRoutes'));
+app.use('/api/distance', require('./modules/distance/distanceRoutes'));
+app.use('/api/distance', require('./modules/distance/distanceRoutes'));
 
 // 404
 app.use((req, res) => {
