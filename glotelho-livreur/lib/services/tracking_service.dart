@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../models/delivery_model.dart';
 
@@ -16,28 +17,38 @@ class TrackingService {
       return false;
     }
   }
-  static Future<bool> accepterCourse(String deliveryId) async {
-    try {
-      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/accepter');
-      return response.statusCode == 200;
-    } catch (_) { return false; }
-  }
-
-  static Future<bool> refuserCourse(String deliveryId) async {
-    try {
-      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/refuser');
-      return response.statusCode == 200;
-    } catch (_) { return false; }
-  }
 
   /// Liste les livraisons du jour du livreur connecte
   static Future<List<DeliveryModel>> getTodayDeliveries() async {
     try {
       final response = await ApiService.dio.get('/drivers/courses');
       final List data = response.data ?? [];
+      debugPrint('[TRACKING] ${data.length} livraisons reçues');
       return data.map((json) => DeliveryModel.fromJson(json)).toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[TRACKING] ERREUR getTodayDeliveries: $e');
       return [];
+    }
+  }
+
+  static Future<bool> accepterCourse(String deliveryId) async {
+    try {
+      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/accepter');
+      debugPrint('[TRACKING] accepterCourse OK, status=${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[TRACKING] ERREUR accepterCourse: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> refuserCourse(String deliveryId) async {
+    try {
+      final response = await ApiService.dio.post('/drivers/courses/$deliveryId/refuser');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[TRACKING] ERREUR refuserCourse: $e');
+      return false;
     }
   }
 

@@ -1,12 +1,16 @@
 import 'package:dio/dio.dart';
 import '../config/app_state.dart';
+import '../config/app_config.dart';
 
 class ApiService {
   final Dio dio;
   final AppState appState;
 
-  // ⚠️ Pense à vérifier que 192.168.1.152 est bien l'IP actuelle de ton PC Debian
-  static const String _baseUrl = 'http://10.229.165.203:5000/api';
+
+  static String get _baseUrl => AppConfig.baseUrl;
+  //'http://192.168.1.145:5000/api';
+
+
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(
