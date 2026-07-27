@@ -7,7 +7,7 @@
 ///   Mac/Linux : ifconfig ou ip addr
 class AppConfig {
   // ── SEULE LIGNE À MODIFIER À CHAQUE CHANGEMENT DE RÉSEAU ──────
-  static const String _ip = '10.203.155.25';
+  static const String _ip = ' 192.168.1.145';
 
   static const int backendPort  = 5000;
   static const int frontendPort = 5173;
