@@ -61,45 +61,68 @@ class DeliveryModel {
     final clientNom = json['client_nom']?.toString().trim().isNotEmpty == true
         ? json['client_nom'].toString().trim()
         : json['clientNom']?.toString().trim().isNotEmpty == true
-            ? json['clientNom'].toString().trim()
-            : 'Client';
+        ? json['clientNom'].toString().trim()
+        : 'Client';
 
     // Téléphone client
     final clientTel = json['client_telephone']?.toString() ??
-        json['clientTelephone']?.toString() ?? '';
+        json['clientTelephone']?.toString() ??
+        json['client_phone']?.toString() ??
+        '';
 
     // Adresse
     final adresse = json['delivery_address']?.toString() ??
-        json['adresseLivraison']?.toString() ?? '';
+        json['adresseLivraison']?.toString() ??
+        json['adresse_livraison']?.toString() ??
+        '';
 
-    // Montant
-    final montant = (json['amount_to_collect'] ?? json['montant'] ?? 0).toDouble();
+    // Montant total (Collecte)
+    final montant = (json['amount_to_collect'] ??
+        json['montant'] ??
+        json['total_amount'] ??
+        json['totalAmount'] ??
+        0)
+        .toDouble();
 
-    // Frais livraison
-    final frais = (json['frais_livraison'] ?? json['fraisLivraison'] ?? 0).toDouble();
+    // Frais de livraison (Commission du livreur)
+    // Recherche multi-clés pour éviter le fallback à 0 si le backend utilise delivery_fee, shipping_fee, etc.
+    final frais = (json['frais_livraison'] ??
+        json['fraisLivraison'] ??
+        json['delivery_fee'] ??
+        json['deliveryFee'] ??
+        json['shipping_fee'] ??
+        json['shippingFee'] ??
+        json['commission'] ??
+        json['frais_de_livraison'] ??
+        0)
+        .toDouble();
 
     // Dates
     final dateCreation = DateTime.tryParse(
-          json['creation_date']?.toString() ??
-          json['dateCreation']?.toString() ?? '') ??
+        json['creation_date']?.toString() ??
+            json['dateCreation']?.toString() ??
+            json['created_at']?.toString() ??
+            '') ??
         DateTime.now();
 
     final dateLivraison = json['delivery_date'] != null
         ? DateTime.tryParse(json['delivery_date'].toString())
         : json['dateLivraison'] != null
-            ? DateTime.tryParse(json['dateLivraison'].toString())
-            : null;
+        ? DateTime.tryParse(json['dateLivraison'].toString())
+        : json['delivered_at'] != null
+        ? DateTime.tryParse(json['delivered_at'].toString())
+        : null;
 
     return DeliveryModel(
       id                 : json['_id']?.toString() ?? json['id']?.toString() ?? '',
-      deliveryPersonId   : json['delivery_person_id']?.toString(),
+      deliveryPersonId   : json['delivery_person_id']?.toString() ?? json['deliveryPersonId']?.toString(),
       clientNom          : clientNom,
       clientTelephone    : clientTel,
       adresseLivraison   : adresse,
-      latitude           : (json['latitude']  ?? 0).toDouble(),
-      longitude          : (json['longitude'] ?? 0).toDouble(),
+      latitude           : (json['latitude'] ?? json['lat'] ?? 0).toDouble(),
+      longitude          : (json['longitude'] ?? json['lng'] ?? json['lon'] ?? 0).toDouble(),
       montant            : montant,
-      fraisLivraison     : frais,
+      fraisLivraison     : frais, // Récupère désormais correctement le frais/commission
       status             : _statusFromString(json['status']),
       dateCreation       : dateCreation,
       dateLivraison      : dateLivraison,
@@ -108,9 +131,9 @@ class DeliveryModel {
       otpCode            : otp,
       zoneBloc           : json['zone_bloc']?.toString() ?? json['zoneBloc']?.toString(),
       instructions       : json['delivery_instructions']?.toString() ?? json['instructions']?.toString(),
-      commercantNom      : json['commercant_nom']?.toString(),
-      commercantTelephone: json['commercant_telephone']?.toString(),
-      commercantAdresse  : json['commercant_adresse']?.toString(),
+      commercantNom      : json['commercant_nom']?.toString() ?? json['merchant_name']?.toString(),
+      commercantTelephone: json['commercant_telephone']?.toString() ?? json['merchant_phone']?.toString(),
+      commercantAdresse  : json['commercant_adresse']?.toString() ?? json['merchant_address']?.toString(),
     );
   }
 
