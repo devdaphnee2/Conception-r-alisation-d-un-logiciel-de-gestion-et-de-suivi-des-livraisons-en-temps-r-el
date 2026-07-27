@@ -51,7 +51,7 @@ class _LivraisonsScreenState extends State<LivraisonsScreen> {
   }
 
   Future<void> _ouvrirSuivi(int id) async {
-    final url = Uri.parse('http://192.168.1.145:5173/suivi/$id');
+    final url = Uri.parse('http://10.229.165.203:5173/suivi/$id');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
