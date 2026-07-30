@@ -6,7 +6,7 @@ import { database, ref, onValue, off } from '../config/firebase';
 import api from '../services/api';
 
 mapboxgl.accessToken = "pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow";
-//pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
+
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
     primaryFixed: '#ffdea9', onPrimaryContainer: '#483100',
@@ -88,35 +88,6 @@ export default function TrackingLivraison() {
         };
     }, [loading, error]);
 
-    // Mettre a jour marqueur livreur
-    useEffect(function() {
-        if (!mapLoaded || !map.current || !position) return;
-        var coords = [position.longitude, position.latitude];
-
-        if (markerRef.current) {
-            markerRef.current.setLngLat(coords);
-        } else {
-            var el = document.createElement('div');
-            el.innerHTML = '<div style="text-align:center;">' +
-                '<div style="background:#c9952e;color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;margin-bottom:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' +
-                (livraison && livraison.delivery_persons && livraison.delivery_persons.users
-                    ? livraison.delivery_persons.users.first_name
-                    : 'Livreur') + ' • ' + Math.round(position.speed || 0) + ' km/h</div>' +
-                '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c9952e,#7d5700);border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.3);margin:0 auto;font-size:20px;">🛵</div>' +
-                '</div>';
-            markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
-                .setLngLat(coords)
-                .addTo(map.current);
-        }
-
-        map.current.flyTo({ center: coords, zoom: 15, duration: 800 });
-
-        // Tracer route vers destination si adresse dispo
-        if (livraison && livraison.delivery_address && mapLoaded) {
-            drawRoute(coords, livraison.delivery_address);
-        }
-    }, [position, mapLoaded]);
-
     async function drawRoute(origin, destinationText) {
         try {
             var geoRes = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' +
@@ -156,8 +127,38 @@ export default function TrackingLivraison() {
                     paint: { 'line-color': '#c9952e', 'line-width': 4, 'line-opacity': 0.8, 'line-dasharray': [2, 1] }
                 });
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn('Route non calculee:', e.message);
+        }
     }
+
+    // Mettre a jour marqueur livreur
+    useEffect(function() {
+        if (!mapLoaded || !map.current || !position) return;
+        var coords = [position.longitude, position.latitude];
+        if (markerRef.current) {
+            markerRef.current.setLngLat(coords);
+        } else {
+            var el = document.createElement('div');
+            el.innerHTML = '<div style="text-align:center;">' +
+                '<div style="background:#c9952e;color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;margin-bottom:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' +
+                (livraison && livraison.delivery_persons && livraison.delivery_persons.users
+                    ? livraison.delivery_persons.users.first_name
+                    : 'Livreur') + ' • ' + Math.round(position.speed || 0) + ' km/h</div>' +
+                '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c9952e,#7d5700);border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,0.3);margin:0 auto;font-size:20px;">🛵</div>' +
+                '</div>';
+            markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+                .setLngLat(coords)
+                .addTo(map.current);
+        }
+
+        map.current.flyTo({ center: coords, zoom: 15, duration: 800 });
+
+        // Tracer route vers destination si adresse dispo
+        if (livraison && livraison.delivery_address && mapLoaded) {
+            drawRoute(coords, livraison.delivery_address);
+        }
+    }, [position, mapLoaded]);
 
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', fontFamily: 'Poppins, sans-serif' }}>

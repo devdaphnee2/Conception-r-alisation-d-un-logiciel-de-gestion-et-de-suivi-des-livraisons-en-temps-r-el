@@ -119,7 +119,7 @@ class _CommandeDetailScreenState extends State<CommandeDetailScreen> {
   }
 
   Future<void> _ouvrirSuivi() async {
-    final url = Uri.parse('http://192.168.1.145:5173/suivi/${widget.id}');
+    final url = Uri.parse('http://10.203.155.25:5173/suivi/${widget.id}');
     if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
