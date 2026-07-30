@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../config/app_state.dart';
 import '../services/api_service.dart';
 import '../views/dashboard/dashboard_screen.dart';
@@ -55,56 +56,62 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Teinte sombre de fond
+    const Color backgroundColor = Color(0xFF0D1B2A);
+    const Color goldColor = Color(0xFFC9952E);
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) {
+      backgroundColor: backgroundColor,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: CurvedNavigationBar(
+        index: _currentIndex,
+        height: 60.0,
+        items: <Widget>[
+          Icon(
+            Icons.home_outlined,
+            size: 26,
+            color: _currentIndex == 0 ? Colors.white : Colors.black87,
+          ),
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 26,
+            color: _currentIndex == 1 ? Colors.white : Colors.black87,
+          ),
+          Icon(
+            Icons.gavel_outlined,
+            size: 26,
+            color: _currentIndex == 2 ? Colors.white : Colors.black87,
+          ),
+          Badge(
+            isLabelVisible: _nbNonLues > 0,
+            label: Text('$_nbNonLues', style: const TextStyle(fontSize: 10)),
+            backgroundColor: Colors.red,
+            child: Icon(
+              Icons.notifications_outlined,
+              size: 26,
+              color: _currentIndex == 3 ? Colors.white : Colors.black87,
+            ),
+          ),
+          Icon(
+            Icons.settings_outlined,
+            size: 26,
+            color: _currentIndex == 4 ? Colors.white : Colors.black87,
+          ),
+        ],
+        color: Colors.white,
+        buttonBackgroundColor: goldColor, // Cercle flottant doré
+        backgroundColor: backgroundColor, // Reçoit le bleu sombre du Scaffold pour l'effet de creux
+        animationCurve: Curves.easeInOut,
+        animationDuration: const Duration(milliseconds: 350),
+        onTap: (i) {
           setState(() => _currentIndex = i);
           if (i == 3) {
             Future.delayed(const Duration(milliseconds: 500), _chargerBadge);
           }
         },
-        backgroundColor: const Color(0xFF0D1B2A),
-        indicatorColor: const Color(0xFFC9952E).withOpacity(0.2),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined, color: Colors.white54),
-            selectedIcon: Icon(Icons.home, color: Color(0xFFC9952E)),
-            label: 'Accueil',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: Colors.white54),
-            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFFC9952E)),
-            label: 'Commandes',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.gavel_outlined, color: Colors.white54),
-            selectedIcon: Icon(Icons.gavel, color: Color(0xFFC9952E)),
-            label: 'Litiges',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: _nbNonLues > 0,
-              label: Text('$_nbNonLues', style: const TextStyle(fontSize: 10)),
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.notifications_outlined, color: Colors.white54),
-            ),
-            selectedIcon: Badge(
-              isLabelVisible: _nbNonLues > 0,
-              label: Text('$_nbNonLues', style: const TextStyle(fontSize: 10)),
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.notifications, color: Color(0xFFC9952E)),
-            ),
-            label: 'Notifs',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.settings_outlined, color: Colors.white54),
-            selectedIcon: Icon(Icons.settings, color: Color(0xFFC9952E)),
-            label: 'Paramètres',
-          ),
-        ],
       ),
     );
   }

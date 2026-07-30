@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 
-/// En-tête navy plein écran de l'Accueil : pas de carte flottante, il
-/// occupe toute la largeur et se fond avec la status bar, comme dans
-/// une vraie app pro (fintech / admin). Un arrondi bas + une légère
-/// ombre créent la transition avec le contenu blanc en dessous.
 class DashboardHeader extends StatelessWidget {
   final String firstName;
   final VoidCallback onNotificationTap;
@@ -17,8 +13,6 @@ class DashboardHeader extends StatelessWidget {
     this.hasUnreadNotifications = false,
   });
 
-  /// Salutation adaptée à l'heure : Bonjour (00h-11h), Bonne après-midi (12h-17h),
-  /// Bonsoir (18h-00h).
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour >= 0 && hour < 12) return 'Bonjour';
@@ -65,28 +59,37 @@ class DashboardHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_greeting(),
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(0.6), fontSize: 12.5)),
+                Text(
+                  _greeting(),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 12.5,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Flexible(
-                      child: Text(firstName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.2)),
+                    Expanded(
+                      child: Text(
+                        firstName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     const Text('👋', style: TextStyle(fontSize: 16)),
                   ],
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -101,8 +104,7 @@ class DashboardHeader extends StatelessWidget {
                     color: Colors.white.withOpacity(0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.notifications_outlined,
-                      color: Colors.white, size: 20),
+                  child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
                 ),
               ),
               if (hasUnreadNotifications)

@@ -293,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 18),
-                /*Center(
+                Center(
                   child: TextButton.icon(
                     onPressed: () {
                       // ⚠️ Mode démo : contourne l'API tant que le backend
@@ -312,7 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: Text('Accès test (sans backend)',
                         style: TextStyle(color: Colors.white38, fontSize: 12)),
                   ),
-                ),*/
+                ),
               ],
             ),
           ),

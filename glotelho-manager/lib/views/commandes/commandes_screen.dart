@@ -19,16 +19,22 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   List _all = [];
   String _search = '';
 
+  // Couleurs du thème Navy & Gold
+  static const Color navyBackground = Color(0xFF0D1B2A);
+  static const Color cardNavy = Color(0xFF1B2A4A);
+  static const Color goldAccent = Color(0xFFC9952E);
+
   static const _statusColors = <String, Color>{
     'Commande'  : Color(0xFF9E9E9E),
-    'En_attente': Color(0xFFE65100),
-    'Assign_'   : Color(0xFF3E5682),
-    'Valide_'   : Color(0xFF2E7D32),
-    'En_cours'  : Color(0xFF20619E),
-    'Livr_'     : Color(0xFF1B5E20),
-    'Suspendu'  : Color(0xFFBA1A1A),
-    'Annul_'    : Color(0xFF817564),
+    'En_attente': Color(0xFFFF9800),
+    'Assign_'   : Color(0xFF64B5F6),
+    'Valide_'   : Color(0xFF81C784),
+    'En_cours'  : Color(0xFF4FC3F7),
+    'Livr_'     : Color(0xFF66BB6A),
+    'Suspendu'  : Color(0xFFE57373),
+    'Annul_'    : Color(0xFFB0BEC5),
   };
+
   static const _statusLabels = <String, String>{
     'Commande'  : 'Brouillon',
     'En_attente': 'En attente assignation',
@@ -48,7 +54,10 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   }
 
   @override
-  void dispose() { _tabController.dispose(); super.dispose(); }
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _load() async {
     setState(() => _loading = true);
@@ -70,7 +79,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   List _filter(List list) {
     if (_search.isEmpty) return list;
     return list.where((l) =>
-        (l['client_nom'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) ||
+    (l['client_nom'] ?? '').toString().toLowerCase().contains(_search.toLowerCase()) ||
         '#${l['id'].toString().padLeft(5,'0')}'.contains(_search) ||
         (l['delivery_address'] ?? '').toString().toLowerCase().contains(_search.toLowerCase())
     ).toList();
@@ -79,26 +88,27 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
+      backgroundColor: navyBackground,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const NouvelleLivraisonScreen()))
+            MaterialPageRoute(builder: (_) => const NouvelleCommandeScreen()))
             .then((_) => _load()),
-        backgroundColor: const Color(0xFF0D1B2A),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Nouvelle commande'),
+        backgroundColor: goldAccent,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add, fontWeight: FontWeight.bold),
+        label: const Text('Nouvelle commande', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D1B2A),
+        backgroundColor: navyBackground,
+        elevation: 0,
         foregroundColor: Colors.white,
-        title: const Text('Mes commandes'),
+        title: const Text('Mes commandes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(90),
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(
                   onChanged: (v) => setState(() => _search = v),
                   style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -107,18 +117,29 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                     hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
                     prefixIcon: const Icon(Icons.search, color: Colors.white54, size: 18),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    fillColor: cardNavy,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: goldAccent),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
               ),
               TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFFC9952E),
-                labelColor: const Color(0xFFC9952E),
+                indicatorColor: goldAccent,
+                labelColor: goldAccent,
                 unselectedLabelColor: Colors.white54,
-                labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 isScrollable: true,
                 tabs: [
                   Tab(text: 'Brouillons (${_brouillons.length})'),
@@ -132,16 +153,16 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: goldAccent))
           : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildList(_filter(_brouillons), showCourseBtn: true),
-                _buildList(_filter(_assignees)),            // Assignées — sans bouton suivre
-                _buildList(_filter(_enCours), showSuivreBtn: true), // En cours — avec bouton suivre
-                _buildList(_filter(_historique)),
-              ],
-            ),
+        controller: _tabController,
+        children: [
+          _buildList(_filter(_brouillons), showCourseBtn: true),
+          _buildList(_filter(_assignees)),
+          _buildList(_filter(_enCours), showSuivreBtn: true),
+          _buildList(_filter(_historique)),
+        ],
+      ),
     );
   }
 
@@ -151,21 +172,34 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 56, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(_search.isNotEmpty ? 'Aucun résultat' : 'Aucune commande',
-                style: const TextStyle(color: Colors.grey, fontSize: 15)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardNavy.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.inbox_outlined, size: 48, color: Colors.white38),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              _search.isNotEmpty ? 'Aucun résultat' : 'Aucune commande',
+              style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
     }
     return RefreshIndicator(
       onRefresh: _load,
+      color: goldAccent,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         itemCount: items.length,
-        itemBuilder: (_, i) => _commandeCard(items[i],
-            showCourseBtn: showCourseBtn, showSuivreBtn: showSuivreBtn),
+        itemBuilder: (_, i) => _commandeCard(
+          items[i],
+          showCourseBtn: showCourseBtn,
+          showSuivreBtn: showSuivreBtn,
+        ),
       ),
     );
   }
@@ -193,19 +227,19 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+          color: cardNavy,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white12),
         ),
         child: Column(
           children: [
-            // Header
+            // Header Card
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.06),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                border: Border(bottom: BorderSide(color: color.withOpacity(0.15))),
+                color: Colors.white.withOpacity(0.03),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                border: const Border(bottom: BorderSide(color: Colors.white10)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -213,27 +247,36 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                   Row(children: [
                     Text(id, style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 15)),
                     const SizedBox(width: 8),
-                    // ── Badge statut de paiement ────────────────────
+                    // Badge statut de paiement
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: estPaye ? const Color(0xFFC8E6C9) : const Color(0xFFFFDAD6),
+                        color: estPaye ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: estPaye ? Colors.green : Colors.redAccent),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Icon(estPaye ? Icons.check_circle : Icons.hourglass_empty,
-                            size: 11, color: estPaye ? const Color(0xFF1B5E20) : const Color(0xFFBA1A1A)),
+                            size: 11, color: estPaye ? Colors.greenAccent : Colors.redAccent),
                         const SizedBox(width: 3),
-                        Text(estPaye ? 'Payé' : 'Non payé',
-                            style: TextStyle(
-                                fontSize: 9, fontWeight: FontWeight.bold,
-                                color: estPaye ? const Color(0xFF1B5E20) : const Color(0xFFBA1A1A))),
+                        Text(
+                          estPaye ? 'Payé' : 'Non payé',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: estPaye ? Colors.greenAccent : Colors.redAccent,
+                          ),
+                        ),
                       ]),
                     ),
                   ]),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: color.withOpacity(0.4)),
+                    ),
                     child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -257,37 +300,39 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
                     const SizedBox(height: 6),
                     _infoRow(Icons.delivery_dining, 'Livreur : $livreurNom'),
                   ],
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(montant, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0D1B2A))),
+                      Text(
+                        montant,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                      ),
                       Row(
                         children: [
                           if (showCourseBtn && status == 'Commande')
                             ElevatedButton.icon(
                               onPressed: () => _commanderCourse(l['id'] as int),
                               icon: const Icon(Icons.send, size: 14),
-                              label: const Text('Commander', style: TextStyle(fontSize: 11)),
+                              label: const Text('Commander', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0D1B2A),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                backgroundColor: goldAccent,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
                           if (showCourseBtn && ['Commande', 'En_attente'].contains(status))
                             IconButton(
                               onPressed: () => _supprimerCommande(l['id'] as int),
-                              icon: const Icon(Icons.delete_outline, color: Color(0xFFBA1A1A), size: 20),
+                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
                               tooltip: 'Annuler',
                             ),
-                          // Bouton Suivre uniquement sur En cours
                           if (showSuivreBtn && status == 'En_cours')
                             ElevatedButton.icon(
                               onPressed: () => _ouvrirSuivi(l['id'] as int),
                               icon: const Icon(Icons.location_on, size: 14),
-                              label: const Text('Suivre', style: TextStyle(fontSize: 11)),
+                              label: const Text('Suivre', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF20619E),
                                 foregroundColor: Colors.white,
@@ -312,14 +357,18 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Commander une course ?'),
-        content: const Text('Un lien de paiement sera envoyé au client par WhatsApp. La course sera transmise à l\'administration une fois le paiement confirmé.'),
+        backgroundColor: cardNavy,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Commander une course ?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Un lien de paiement sera envoyé au client par WhatsApp. La course sera transmise à l\'administration une fois le paiement confirmé.',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler', style: TextStyle(color: Colors.white54))),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0D1B2A), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: goldAccent, foregroundColor: Colors.black),
             child: const Text('Confirmer'),
           ),
         ],
@@ -331,7 +380,6 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       final res = await api.commanderCourse(id);
       if (!mounted) return;
 
-      // Ouvrir automatiquement WhatsApp avec le lien de paiement
       final waLink = res.data['whatsapp_link'] as String?;
       if (waLink != null && waLink.isNotEmpty) {
         final uri = Uri.parse(waLink);
@@ -342,7 +390,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('💳 Lien de paiement envoyé au client par WhatsApp.'),
-        backgroundColor: Color(0xFF1B5E20),
+        backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ));
       _load();
@@ -360,14 +408,15 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Annuler la commande ?'),
-        content: const Text('Cette action est irréversible.'),
+        backgroundColor: cardNavy,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Annuler la commande ?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('Cette action est irréversible.', style: TextStyle(color: Colors.white70)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Non')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Non', style: TextStyle(color: Colors.white54))),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
             child: const Text('Oui, annuler'),
           ),
         ],
@@ -380,7 +429,7 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Commande annulée.'),
-        backgroundColor: Color(0xFF1B5E20),
+        backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ));
       _load();
@@ -396,8 +445,8 @@ class _CommandesScreenState extends State<CommandesScreen> with SingleTickerProv
 
   Future<void> _ouvrirSuivi(int id) async {
     final url = Uri.parse('${AppConfig.trackingUrl}/$id');
-if (await canLaunchUrl(url)) {
-  await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -405,11 +454,15 @@ if (await canLaunchUrl(url)) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14, color: Colors.grey),
-        const SizedBox(width: 6),
-        Expanded(child: Text(text,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-            overflow: TextOverflow.ellipsis)),
+        Icon(icon, size: 14, color: Colors.white54),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

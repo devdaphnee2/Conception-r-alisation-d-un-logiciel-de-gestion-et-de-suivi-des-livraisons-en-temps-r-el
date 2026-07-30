@@ -6,12 +6,14 @@ class AppState extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
   bool      _biometricEnabled = false;
   String?   _authToken;
+  bool _isDarkTheme = true;
   Map<String, dynamic>? _currentManager;
 
   String    get locale           => _locale;
   ThemeMode get themeMode        => _themeMode;
   bool      get biometricEnabled => _biometricEnabled;
   bool      get isAuthenticated  => _authToken != null;
+  bool      get isDarkTheme      => _isDarkTheme;
   Map<String, dynamic>? get currentManager => _currentManager;
   String?   get authToken        => _authToken;
 
