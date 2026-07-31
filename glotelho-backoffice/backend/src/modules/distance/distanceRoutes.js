@@ -10,7 +10,7 @@ const TARIF_PAR_KM = 150; // T_km — tarif au kilomètre
 const SURCHARGE_COLIS_GROS = 700; // colis volumineux
 const SURCHARGE_EXPRESS = 700; // livraison express
 
-// ── POST /api/distance/calculer-frais ──────────────────────────
+// ── calculer-frais ──────────────────────────
 // body: { adresse_depart, adresse_arrivee, format_colis, express }
 router.post('/calculer-frais', async(req, res) => {
     try {

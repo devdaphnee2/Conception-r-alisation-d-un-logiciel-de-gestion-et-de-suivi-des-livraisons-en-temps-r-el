@@ -226,26 +226,26 @@ export default function Statistiques() {
 
             {/* KPIs principaux */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
-                <KpiCard label="Total commandes" value={totalLivraisons} icon="📦"
+                <KpiCard label="Total commandes" value={totalLivraisons} icon=""
                     gradient={'linear-gradient(135deg, ' + P.inverseS + ', #1a1c1c)'} />
-                <KpiCard label="Livrées" value={livrees.length} sub={tauxReussite + '% de réussite'} icon="✅" />
-                <KpiCard label="En cours" value={enCours.length} icon="🛵" />
-                <KpiCard label="Annulées" value={annulees.length} icon="✕" />
+                <KpiCard label="Livrées" value={livrees.length} sub={tauxReussite + '% de réussite'} icon="" />
+                <KpiCard label="En cours" value={enCours.length} icon="" />
+                <KpiCard label="Annulées" value={annulees.length} icon="" />
             </div>
 
             {/* KPIs financiers */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 <KpiCard label="Chiffre d'affaires marchandise" value={caTotal.toLocaleString('fr-FR') + ' FCFA'}
-                    sub="Sur commandes livrées" icon="💰"
+                    sub="Sur commandes livrées" icon=""
                     gradient={'linear-gradient(135deg, ' + P.primary + ', ' + P.primaryContainer + ')'} />
                 <KpiCard label="Frais de livraison collectés" value={fraisTotal.toLocaleString('fr-FR') + ' FCFA'}
-                    sub="Sur commandes livrées" icon="🛵"
+                    sub="Sur commandes livrées" icon=""
                     gradient={'linear-gradient(135deg, ' + P.blue + ', #4a90d9)'} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '16px', marginBottom: '4px' }}>
                 {/* Répartition en donut */}
-                <Section title="Répartition des statuts" icon="🥧">
+                <Section title="Répartition des statuts" icon="">
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
                         <DonutChart segments={repartition} size={140} thickness={20} />
                         <div style={{ width: '100%', display: 'grid', gap: '8px' }}>
@@ -265,7 +265,7 @@ export default function Statistiques() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     {/* Zones */}
-                    <Section title="Zones les plus livrées" icon="📍">
+                    <Section title="Zones les plus livrées" icon="">
                         {zonesTriees.length === 0 ? (
                             <p style={{ fontSize: '12px', color: P.outline, fontStyle: 'italic', margin: 0, textAlign: 'center', padding: '20px 0' }}>Aucune donnée pour cette période.</p>
                         ) : (
@@ -277,7 +277,7 @@ export default function Statistiques() {
                     </Section>
 
                     {/* Livreurs */}
-                    <Section title="Livreurs les plus actifs" icon="🏆">
+                    <Section title="Livreurs les plus actifs" icon="">
                         {livreursAvecStats.length === 0 ? (
                             <p style={{ fontSize: '12px', color: P.outline, fontStyle: 'italic', margin: 0, textAlign: 'center', padding: '20px 0' }}>Aucune donnée pour cette période.</p>
                         ) : (

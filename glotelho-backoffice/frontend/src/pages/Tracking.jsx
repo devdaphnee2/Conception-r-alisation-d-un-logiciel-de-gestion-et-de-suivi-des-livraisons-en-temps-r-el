@@ -5,8 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { database, ref, onValue, off } from '../config/firebase';
 import api from '../services/api';
 
-mapboxgl.accessToken = "pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow";
-
+mapboxgl.accessToken = "";
+//pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
     surface: '#ffffff', background: '#f5f5f5',
@@ -30,32 +30,40 @@ export default function Tracking() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        api.get('/livraisons?status=En_cours')
-            .then(res => {
-                const data = res.data || [];
-                const livreurMap = {};
-                data.forEach(l => {
-                    if (l.delivery_persons && !livreurMap[l.delivery_person_id]) {
-                        livreurMap[l.delivery_person_id] = {
-                            id: l.delivery_person_id,
-                            nom: (l.delivery_persons.users?.first_name || '') + ' ' + (l.delivery_persons.users?.last_name || ''),
-                            vehicule: l.delivery_persons.vehicules?.type || 'moto',
-                            zone: l.delivery_persons.zone_affectee || '',
-                            livraison_id: l.id,
-                            livraison_ref: 'LIV-' + String(l.id).padStart(5, '0'),
-                            client: (l.customers?.users?.first_name || '') + ' ' + (l.customers?.users?.last_name || ''),
-                            client_phone: l.customers?.users?.phone || '',
-                            adresse: l.delivery_address || '',
-                            montant: l.amount_to_collect || 0,
-                        };
-                    }
-                });
-                const list = Object.values(livreurMap);
-                setLivreurs(list);
-                if (list.length > 0) setSelected(list[0].id);
-            })
-            .catch(() => {})
-            .finally(() => setLoading(false));
+        function charger() {
+            api.get('/livraisons?status=En_cours')
+                .then(res => {
+                    const data = res.data || [];
+                    const livreurMap = {};
+                    data.forEach(l => {
+                        if (l.delivery_persons && !livreurMap[l.delivery_person_id]) {
+                            livreurMap[l.delivery_person_id] = {
+                                id: l.delivery_person_id,
+                                nom: (l.delivery_persons.users?.first_name || '') + ' ' + (l.delivery_persons.users?.last_name || ''),
+                                vehicule: l.delivery_persons.vehicules?.type || 'moto',
+                                zone: l.delivery_persons.zone_affectee || '',
+                                livraison_id: l.id,
+                                livraison_ref: 'LIV-' + String(l.id).padStart(5, '0'),
+                                client: (l.customers?.users?.first_name || '') + ' ' + (l.customers?.users?.last_name || ''),
+                                client_phone: l.customers?.users?.phone || '',
+                                adresse: l.delivery_address || '',
+                                montant: l.amount_to_collect || 0,
+                            };
+                        }
+                    });
+                    const list = Object.values(livreurMap);
+                    setLivreurs(list);
+                    setSelected(prev => (prev && list.some(l => l.id === prev)) ? prev : (list[0]?.id ?? null));
+                })
+                .catch(() => {})
+                .finally(() => setLoading(false));
+        }
+        charger();
+        // Rafraîchit la liste des livreurs actifs régulièrement, pour que
+        // les positions Firebase orphelines (livreur plus en course) soient
+        // filtrées dès que possible côté affichage.
+        var interval = setInterval(charger, 8000);
+        return () => clearInterval(interval);
     }, []);
 
     useEffect(() => {
@@ -204,8 +212,18 @@ export default function Tracking() {
     // ── useEffect utilise maintenant des fonctions déjà déclarées ──
     useEffect(() => {
         if (!mapLoaded || !map.current) return;
+
+        // IMPORTANT — ne traiter que les positions Firebase correspondant à un
+        // livreur ayant réellement une livraison active en base (`livreurs`).
+        // Sans ce filtre, toute position résiduelle jamais effacée dans
+        // Firebase (livreur suspendu, ancienne course, bug de nettoyage côté
+        // backend) continue d'afficher un marqueur moto fantôme sur la carte.
+        const livreurIds = new Set(livreurs.map(l => l.id));
+
         Object.entries(positions).forEach(([livreurId, pos]) => {
             const id = parseInt(livreurId);
+            if (!livreurIds.has(id)) return; // position orpheline — on l'ignore
+
             const livreurIdx = livreurs.findIndex(l => l.id === id);
             const color = COLORS[livreurIdx >= 0 ? livreurIdx % COLORS.length : 0];
             const isSelected = selected === id;
@@ -234,8 +252,11 @@ export default function Tracking() {
             }
         });
 
-        Object.keys(markersRef.current).forEach(id => {
-            if (!positions[id]) {
+        // Retire tout marqueur dont le livreur n'est plus actif OU dont la
+        // position a disparu de Firebase.
+        Object.keys(markersRef.current).forEach(idStr => {
+            const id = parseInt(idStr);
+            if (!positions[id] || !livreurIds.has(id)) {
                 markersRef.current[id].marker.remove();
                 delete markersRef.current[id];
             }
@@ -245,6 +266,13 @@ export default function Tracking() {
     const selectedLivreur = livreurs.find(l => l.id === selected);
     const selectedColor = selectedLivreur ? COLORS[livreurs.findIndex(l => l.id === selected) % COLORS.length] : P.primaryContainer;
     const selectedPos = selected ? positions[selected] : null;
+
+    // N'affiche/compte que les positions correspondant à un livreur actif —
+    // le badge "Livreurs actifs (N)" et le message "Aucun livreur en
+    // mouvement" doivent refléter la vraie liste, pas Firebase brut.
+    const positionsActives = Object.fromEntries(
+        Object.entries(positions).filter(([id]) => livreurs.some(l => l.id === parseInt(id)))
+    );
 
     const cardStyle = { backgroundColor: P.surface, borderRadius: '12px', border: '1px solid ' + P.outlineVariant, padding: '14px 16px', marginBottom: '10px' };
     const labelStyle = { margin: '0 0 2px 0', fontSize: '10px', fontWeight: 600, color: P.outline, textTransform: 'uppercase', letterSpacing: '0.07em' };
@@ -272,7 +300,7 @@ export default function Tracking() {
                 </div>
 
                 <div style={{ marginBottom: '14px' }}>
-                    <p style={{ ...labelStyle, marginBottom: '8px' }}>Livreurs actifs ({Object.keys(positions).length})</p>
+                    <p style={{ ...labelStyle, marginBottom: '8px' }}>Livreurs actifs ({Object.keys(positionsActives).length})</p>
                     {loading && <p style={{ color: P.outline, fontSize: '12px' }}>Chargement...</p>}
                     {!loading && livreurs.length === 0 && (
                         <div style={{ padding: '20px', textAlign: 'center', backgroundColor: P.surfaceContainerLow, borderRadius: '10px' }}>
@@ -358,7 +386,7 @@ export default function Tracking() {
 
             <div style={{ flex: 1, position: 'relative' }}>
                 <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
-                {Object.keys(positions).length === 0 && !loading && (
+                {Object.keys(positionsActives).length === 0 && !loading && (
                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: '14px', padding: '20px 28px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', border: '1px solid ' + P.outlineVariant }}>
                         <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: P.onSurface }}>Aucun livreur en mouvement</p>
                         <p style={{ margin: 0, fontSize: '12px', color: P.outline }}>Les positions GPS apparaitront ici en temps reel des que les livreurs seront en cours de livraison.</p>

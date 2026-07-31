@@ -51,7 +51,7 @@ async function envoyerNotificationFCM(fcmToken, titre, corps) {
 async function index(req, res) {
     try {
         var where = {};
-        var validStatuses = ['En_attente', 'Assign_', 'En_cours', 'Livr_', 'Suspendu', 'Annul_'];
+        var validStatuses = ['En_attente', 'Assign_', 'Valide_', 'En_cours', 'Livr_', 'Suspendu', 'Annul_'];
         if (req.query.status && validStatuses.includes(req.query.status.trim())) {
             where.status = req.query.status.trim();
         } else {
@@ -261,6 +261,102 @@ async function assigner(req, res) {
     }
 }
 
+// ── Acceptation d'une course par le livreur lui-même ──────────────────────
+// Contrairement à `assigner` (réservé au manager), cette route est appelée
+// par le livreur depuis son app pour accepter une course qui lui a été
+// proposée. Elle met à jour le statut en base pour que la livraison
+// apparaisse enfin côté admin/manager et dans le tracking GPS.
+async function accepter(req, res) {
+    try {
+        var livraisonId = parseInt(req.params.id);
+        var livreur = await prisma.delivery_persons.findFirst({ where: { user_id: req.user.id }, include: { users: true } });
+        if (!livreur) return res.status(404).json({ message: 'Livreur introuvable.' });
+
+        var existante = await prisma.deliveryorders.findUnique({ where: { id: livraisonId } });
+        if (!existante) return res.status(404).json({ message: 'Livraison introuvable.' });
+        if (existante.delivery_person_id && existante.delivery_person_id !== livreur.id) {
+            return res.status(409).json({ message: 'Cette livraison a déjà été acceptée par un autre livreur.' });
+        }
+
+        var livraison = await prisma.deliveryorders.update({
+            where: { id: livraisonId },
+            data: { delivery_person_id: livreur.id, status: 'Assign_' },
+            include: {
+                customers: { include: { users: true } },
+                delivery_persons: { include: { vehicules: true } },
+                managers: { include: { users: true } },
+                delivery_items: true,
+                confirmations: true
+            }
+        });
+
+        await enrichirLivreur(livraison);
+
+        // Créer OTP si pas encore de confirmation
+        if (!livraison.confirmations || livraison.confirmations.length === 0) {
+            try {
+                await prisma.confirmations.create({
+                    data: {
+                        deliveryorder_id: livraison.id,
+                        customer_id: livraison.customer_id,
+                        delivery_person_id: livreur.id,
+                        otp_code: genererOTP(),
+                        methode: 'OTP'
+                    }
+                });
+            } catch (e) { console.warn('[CONFIRMATION] Echec création OTP:', e.message); }
+        } else {
+            try {
+                await prisma.confirmations.updateMany({
+                    where: { deliveryorder_id: livraison.id },
+                    data: { delivery_person_id: livreur.id }
+                });
+            } catch (e) { console.warn('[CONFIRMATION] Echec update:', e.message); }
+        }
+
+        var clientNom = livraison.client_nom || 'Client';
+        var livreurNom = livreur.users ? (livreur.users.first_name + ' ' + livreur.users.last_name) : 'Livreur';
+        var livreurTel = livreur.users ? livreur.users.phone : '';
+
+        // Notification in-app pour le manager
+        if (livraison.manager_id) {
+            var managerRecord = await prisma.managers.findFirst({
+                where: { id: livraison.manager_id },
+                include: { users: true }
+            });
+            if (managerRecord && managerRecord.user_id) {
+                try {
+                    await prisma.notifications.create({
+                        data: {
+                            recipient_id: managerRecord.user_id,
+                            message: '✅ Commande #' + String(livraisonId).padStart(5, '0') +
+                                ' acceptée par ' + livreurNom +
+                                (livreurTel ? ' (' + livreurTel + ')' : '') +
+                                ' pour le client ' + clientNom + '.',
+                            type: 'Interne',
+                            is_read: false,
+                        }
+                    });
+                } catch (e) { console.warn('[NOTIF MANAGER] Echec:', e.message); }
+            }
+            var managerUser = livraison.managers ? livraison.managers.users : null;
+            if (managerUser && managerUser.fcm_token) {
+                await envoyerNotificationFCM(
+                    managerUser.fcm_token,
+                    '✅ Commande acceptée',
+                    'Commande #' + String(livraisonId).padStart(5, '0') + ' acceptée par ' + livreurNom + '.'
+                );
+            }
+        }
+
+        console.log('[ACCEPTER] Livraison #' + livraisonId + ' acceptée par ' + livreurNom);
+        res.json({ message: 'Livraison acceptée.', livraison });
+    } catch (error) {
+        console.error('ERREUR ACCEPTER:', error.message);
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
+    }
+}
+
 async function annuler(req, res) {
     try {
         var livraison = await prisma.deliveryorders.update({ where: { id: parseInt(req.params.id) }, data: { status: 'Annul_', tracking_blocked: true } });
@@ -320,4 +416,4 @@ async function publicShow(req, res) {
     }
 }
 
-module.exports = { index, create, show, update, assigner, annuler, demarrerCourse, publicShow };
+module.exports = { index, create, show, update, assigner, accepter, annuler, demarrerCourse, publicShow };
