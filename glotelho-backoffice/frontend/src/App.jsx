@@ -30,7 +30,7 @@ import Parametres from './pages/Parametres';
 import CommandesList from './pages/livraisons/CommandesList';
 import TrackingCommercant from './pages/TrackingCommercant';
 import PaiementClient from './pages/PaiementClient';
-
+import Statistiques from './pages/Statistiques';
 
 
 
@@ -76,6 +76,7 @@ export default function App() {
                         <Route path="/litiges/create" element={<LitigeCreate />} />
                         <Route path="/litiges/:id" element={<LitigeShow />} />
                         <Route path="/recouvrements" element={<Recouvrements />} />
+                        <Route path="/statistiques" element={<Statistiques />} />
                         <Route path="/parametres" element={<Parametres />} />
                     </Route>
 

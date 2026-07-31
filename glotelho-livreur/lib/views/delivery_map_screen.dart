@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/delivery_model.dart';
 import '../services/tracking_service.dart';
 import '../services/directions_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
-  import 'package:firebase_database/firebase_database.dart';
 
 class DeliveryMapScreen extends StatefulWidget {
   final DeliveryModel? activeLivraison;
@@ -144,22 +144,32 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     ));
   }
 
-
-
-Future<void> _envoyerPosition() async {
+  Future<void> _envoyerPosition() async {
     try {
       final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       final latLng = LatLng(pos.latitude, pos.longitude);
 
-      // Écrire directement sur Firebase
-      final dbRef = FirebaseDatabase.instance.ref('positions/22');
+      // Mettre à jour Firebase directement
+      final livreurId = _selected?.id ?? 'livreur';
+      final dbRef = FirebaseDatabase.instance.ref('positions/$livreurId');
       await dbRef.set({
         'latitude' : pos.latitude,
         'longitude': pos.longitude,
         'speed'    : pos.speed,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
+
+      // Envoyer aussi via API si une course est active
+      if (_selected != null &&
+          _selected!.status == DeliveryStatus.inProgress) {
+        await TrackingService.updatePosition(
+          deliveryId: _selected!.id,
+          latitude  : pos.latitude,
+          longitude : pos.longitude,
+          speed     : pos.speed,
+        );
+      }
 
       if (!mounted) return;
       setState(() => _myPosition = latLng);
@@ -290,31 +300,6 @@ Future<void> _envoyerPosition() async {
                 c.animateCamera(CameraUpdate.newLatLngZoom(_myPosition!, 14));
               }
             },
-          ),
-
-          // ── Légende ──────────────────────────────────────────
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [BoxShadow(
-                      color: Colors.black.withOpacity(0.12), blurRadius: 8)],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _legend(AppColors.statusDelivered, 'Livrée'),
-                    _legend(AppColors.statusCancelled, 'Annulée'),
-                    _legend(AppColors.statusInProgress, 'En cours'),
-                    _legend(AppColors.blue, 'Assignée'),
-                  ],
-                ),
-              ),
-            ),
           ),
 
           // ── Boutons GPS (droite) ──────────────────────────────

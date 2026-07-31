@@ -7,7 +7,6 @@ import api from '../services/api';
 
 mapboxgl.accessToken = "pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow";
 
-//pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
     surface: '#ffffff', background: '#f5f5f5',
@@ -30,7 +29,6 @@ export default function Tracking() {
     const [mapLoaded, setMapLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // Charger livreurs en cours
     useEffect(() => {
         api.get('/livraisons?status=En_cours')
             .then(res => {
@@ -60,7 +58,6 @@ export default function Tracking() {
             .finally(() => setLoading(false));
     }, []);
 
-    // Écouter Firebase positions
     useEffect(() => {
         const posRef = ref(database, 'positions');
         onValue(posRef, snapshot => {
@@ -70,26 +67,19 @@ export default function Tracking() {
         return () => off(posRef);
     }, []);
 
-    // Init Mapbox
     useEffect(() => {
         if (map.current) return;
-
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/streets-v12',
             center: [9.7400, 4.0580],
             zoom: 13,
         });
-
-        // Tous les contrôles DANS le callback load
         map.current.on('load', () => {
-            // Zoom +
             map.current.addControl(
                 new mapboxgl.NavigationControl({ showCompass: false }),
                 'bottom-right'
             );
-
-            // Bouton géolocalisation — me montrer sur la carte
             map.current.addControl(
                 new mapboxgl.GeolocateControl({
                     positionOptions: { enableHighAccuracy: true },
@@ -99,19 +89,121 @@ export default function Tracking() {
                 }),
                 'bottom-right'
             );
-
             setMapLoaded(true);
         });
-
         return () => {
             if (map.current) { map.current.remove(); map.current = null; }
         };
     }, []);
 
-    // Mettre à jour marqueurs quand positions Firebase changent
+    // ── Déclarées AVANT le useEffect qui les utilise ─────────────
+    function updateMarkerEl(el, pos, color, isSelected, livreur) {
+        const speed = pos.speed || 0;
+        const vehicule = pos.vehicule || (livreur ? livreur.vehicule : 'moto');
+        const isMoto = vehicule === 'moto' || vehicule === 'Moto';
+        el.innerHTML = `
+            <div style="text-align:center;pointer-events:none;">
+                <div style="background:${color};color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap;font-family:Poppins,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.2);margin-bottom:4px;">${Math.round(speed)} km/h</div>
+                <div style="width:34px;height:34px;border-radius:50%;background:${color};border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.3);margin:0 auto;${isSelected ? 'outline:3px solid ' + color + ';outline-offset:3px;' : ''}">
+                    <svg width="18" height="13" viewBox="0 0 20 14" fill="none">
+                        ${isMoto
+                            ? '<circle cx="3" cy="11" r="2.5" stroke="white" stroke-width="1.5"/><circle cx="17" cy="11" r="2.5" stroke="white" stroke-width="1.5"/><path d="M5.5 11 L7 7 L13 7 L15.5 9 L14 11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+                            : '<rect x="1" y="5" width="18" height="7" rx="1.5" fill="white" fill-opacity="0.9"/><path d="M3 5 L5 1.5 L15 1.5 L17 5" fill="white" fill-opacity="0.9"/><circle cx="5" cy="12" r="2" fill="' + color + '" stroke="white" stroke-width="1"/><circle cx="15" cy="12" r="2" fill="' + color + '" stroke="white" stroke-width="1"/>'
+                        }
+                    </svg>
+                </div>
+            </div>
+        `;
+    }
+
+    async function fetchAndDrawRoute(livreur, currentCoords, color) {
+        if (!map.current || !livreur.adresse) return;
+        try {
+            const geocodeUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
+                encodeURIComponent(livreur.adresse + ', Douala, Cameroun') +
+                '.json?access_token=' + mapboxgl.accessToken + '&limit=1';
+            const geoRes = await fetch(geocodeUrl);
+            const geoData = await geoRes.json();
+            if (!geoData.features || geoData.features.length === 0) return;
+
+            const dest = geoData.features[0].center;
+            const dirUrl = 'https://api.mapbox.com/directions/v5/mapbox/driving/' +
+                currentCoords[0] + ',' + currentCoords[1] + ';' + dest[0] + ',' + dest[1] +
+                '?geometries=geojson&access_token=' + mapboxgl.accessToken;
+            const dirRes = await fetch(dirUrl);
+            const dirData = await dirRes.json();
+            if (!dirData.routes || dirData.routes.length === 0) return;
+
+            const routeCoords = dirData.routes[0].geometry;
+            const sourceId = 'route-' + livreur.id;
+            const layerId = 'route-layer-' + livreur.id;
+
+            if (map.current.getSource(sourceId)) {
+                map.current.getSource(sourceId).setData({ type: 'Feature', geometry: routeCoords });
+            } else {
+                map.current.addSource(sourceId, { type: 'geojson', lineMetrics: true, data: { type: 'Feature', geometry: routeCoords } });
+                map.current.addLayer({
+                    id: layerId + '-bg', type: 'line', source: sourceId,
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 }
+                });
+                map.current.addLayer({
+                    id: layerId, type: 'line', source: sourceId,
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-width': 5, 'line-opacity': 0.95,
+                        'line-gradient': [
+                            'interpolate', ['linear'], ['line-progress'],
+                            0, '#EF4444',
+                            0.45, '#F59E0B',
+                            1, '#22C55E'
+                        ]
+                    }
+                });
+
+                // Marqueur destination — icône moto
+                const destEl = document.createElement('div');
+                destEl.innerHTML = `<div style="width:34px;height:34px;border-radius:50%;background:${color};border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.35);">
+                    <svg width="19" height="14" viewBox="0 0 20 14" fill="none">
+                        <circle cx="3" cy="11" r="2.5" stroke="white" stroke-width="1.5"/>
+                        <circle cx="17" cy="11" r="2.5" stroke="white" stroke-width="1.5"/>
+                        <path d="M5.5 11 L7 7 L13 7 L15.5 9 L14 11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </div>`;
+                new mapboxgl.Marker({ element: destEl, anchor: 'center' }).setLngLat(dest).addTo(map.current);
+            }
+
+            // Si la destination n'est pas exactement sur la route, relier en pointillés
+            const routePoints = routeCoords.coordinates;
+            const routeEnd = routePoints[routePoints.length - 1];
+            const distDegres = Math.sqrt(Math.pow(routeEnd[0] - dest[0], 2) + Math.pow(routeEnd[1] - dest[1], 2));
+            if (distDegres > 0.00008) {
+                const dashedId = 'route-dashed-' + livreur.id;
+                const dashedGeojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: [routeEnd, dest] } };
+                if (map.current.getSource(dashedId)) {
+                    map.current.getSource(dashedId).setData(dashedGeojson);
+                } else {
+                    map.current.addSource(dashedId, { type: 'geojson', data: dashedGeojson });
+                    map.current.addLayer({
+                        id: dashedId + '-bg', type: 'line', source: dashedId,
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#ffffff', 'line-width': 6, 'line-opacity': 0.9 }
+                    });
+                    map.current.addLayer({
+                        id: dashedId, type: 'line', source: dashedId,
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#1a1c1c', 'line-width': 3.5, 'line-dasharray': [0.01, 1.8] }
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Route non calculee:', err.message);
+        }
+    }
+
+    // ── useEffect utilise maintenant des fonctions déjà déclarées ──
     useEffect(() => {
         if (!mapLoaded || !map.current) return;
-
         Object.entries(positions).forEach(([livreurId, pos]) => {
             const id = parseInt(livreurId);
             const livreurIdx = livreurs.findIndex(l => l.id === id);
@@ -150,71 +242,6 @@ export default function Tracking() {
         });
     }, [positions, mapLoaded, selected, livreurs]);
 
-    async function fetchAndDrawRoute(livreur, currentCoords, color) {
-        if (!map.current || !livreur.adresse) return;
-        try {
-            const geocodeUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
-                encodeURIComponent(livreur.adresse + ', Douala, Cameroun') +
-                '.json?access_token=' + mapboxgl.accessToken + '&limit=1';
-            const geoRes = await fetch(geocodeUrl);
-            const geoData = await geoRes.json();
-            if (!geoData.features || geoData.features.length === 0) return;
-
-            const dest = geoData.features[0].center;
-            const dirUrl = 'https://api.mapbox.com/directions/v5/mapbox/driving/' +
-                currentCoords[0] + ',' + currentCoords[1] + ';' + dest[0] + ',' + dest[1] +
-                '?geometries=geojson&access_token=' + mapboxgl.accessToken;
-            const dirRes = await fetch(dirUrl);
-            const dirData = await dirRes.json();
-            if (!dirData.routes || dirData.routes.length === 0) return;
-
-            const routeCoords = dirData.routes[0].geometry;
-            const sourceId = 'route-' + livreur.id;
-            const layerId = 'route-layer-' + livreur.id;
-
-            if (map.current.getSource(sourceId)) {
-                map.current.getSource(sourceId).setData({ type: 'Feature', geometry: routeCoords });
-            } else {
-                map.current.addSource(sourceId, { type: 'geojson', data: { type: 'Feature', geometry: routeCoords } });
-                map.current.addLayer({
-                    id: layerId + '-bg', type: 'line', source: sourceId,
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': '#e0e0e0', 'line-width': 6, 'line-dasharray': [2, 3] }
-                });
-                map.current.addLayer({
-                    id: layerId, type: 'line', source: sourceId,
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': color, 'line-width': 5, 'line-opacity': 0.9 }
-                });
-
-                const destEl = document.createElement('div');
-                destEl.innerHTML = `<div style="background:${color};color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:10px;font-family:Poppins,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">📍 Arrivee</div>`;
-                new mapboxgl.Marker({ element: destEl, anchor: 'bottom' }).setLngLat(dest).addTo(map.current);
-            }
-        } catch (err) {
-            console.warn('Route non calculee:', err.message);
-        }
-    }
-
-    function updateMarkerEl(el, pos, color, isSelected, livreur) {
-        const speed = pos.speed || 0;
-        const vehicule = pos.vehicule || (livreur ? livreur.vehicule : 'moto');
-        const isMoto = vehicule === 'moto' || vehicule === 'Moto';
-        el.innerHTML = `
-            <div style="text-align:center;pointer-events:none;">
-                <div style="background:${color};color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px;white-space:nowrap;font-family:Poppins,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.2);margin-bottom:4px;">${Math.round(speed)} km/h</div>
-                <div style="width:34px;height:34px;border-radius:50%;background:${color};border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.3);margin:0 auto;${isSelected ? 'outline:3px solid ' + color + ';outline-offset:3px;' : ''}">
-                    <svg width="18" height="13" viewBox="0 0 20 14" fill="none">
-                        ${isMoto
-                            ? '<circle cx="3" cy="11" r="2.5" stroke="white" stroke-width="1.5"/><circle cx="17" cy="11" r="2.5" stroke="white" stroke-width="1.5"/><path d="M5.5 11 L7 7 L13 7 L15.5 9 L14 11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
-                            : '<rect x="1" y="5" width="18" height="7" rx="1.5" fill="white" fill-opacity="0.9"/><path d="M3 5 L5 1.5 L15 1.5 L17 5" fill="white" fill-opacity="0.9"/><circle cx="5" cy="12" r="2" fill="' + color + '" stroke="white" stroke-width="1"/><circle cx="15" cy="12" r="2" fill="' + color + '" stroke="white" stroke-width="1"/>'
-                        }
-                    </svg>
-                </div>
-            </div>
-        `;
-    }
-
     const selectedLivreur = livreurs.find(l => l.id === selected);
     const selectedColor = selectedLivreur ? COLORS[livreurs.findIndex(l => l.id === selected) % COLORS.length] : P.primaryContainer;
     const selectedPos = selected ? positions[selected] : null;
@@ -224,7 +251,6 @@ export default function Tracking() {
 
     return (
         <div style={{ fontFamily: 'Poppins, sans-serif', display: 'flex', height: 'calc(100vh - 56px)', backgroundColor: P.background, overflow: 'hidden' }}>
-
             <style>{`
                 .mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo { display: none !important; }
                 .mapboxgl-ctrl-group { border: 1px solid ${P.outlineVariant} !important; border-radius: 10px !important; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important; }
@@ -232,9 +258,7 @@ export default function Tracking() {
                 .mapboxgl-ctrl-geolocate .mapboxgl-ctrl-icon { filter: brightness(0) invert(1); }
             `}</style>
 
-            {/* ── PANNEAU GAUCHE ─────────────────────────────── */}
             <div style={{ width: '320px', flexShrink: 0, overflowY: 'auto', padding: '16px', borderRight: '1px solid ' + P.outlineVariant, backgroundColor: P.surface }}>
-
                 <div style={{ marginBottom: '14px' }}>
                     <p style={{ margin: '0 0 4px 0', fontSize: '11px', color: P.outline }}>
                         <Link to="/livraisons" style={{ color: P.outline, textDecoration: 'none' }}>Livraisons</Link>
@@ -249,15 +273,12 @@ export default function Tracking() {
 
                 <div style={{ marginBottom: '14px' }}>
                     <p style={{ ...labelStyle, marginBottom: '8px' }}>Livreurs actifs ({Object.keys(positions).length})</p>
-
                     {loading && <p style={{ color: P.outline, fontSize: '12px' }}>Chargement...</p>}
-
                     {!loading && livreurs.length === 0 && (
                         <div style={{ padding: '20px', textAlign: 'center', backgroundColor: P.surfaceContainerLow, borderRadius: '10px' }}>
                             <p style={{ margin: 0, fontSize: '12px', color: P.outline }}>Aucune livraison en cours.</p>
                         </div>
                     )}
-
                     {livreurs.map((l, i) => {
                         const color = COLORS[i % COLORS.length];
                         const isSelected = selected === l.id;
@@ -335,10 +356,8 @@ export default function Tracking() {
                 )}
             </div>
 
-            {/* ── CARTE ─────────────────────────────────────── */}
             <div style={{ flex: 1, position: 'relative' }}>
                 <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
-
                 {Object.keys(positions).length === 0 && !loading && (
                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: '14px', padding: '20px 28px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', border: '1px solid ' + P.outlineVariant }}>
                         <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: P.onSurface }}>Aucun livreur en mouvement</p>

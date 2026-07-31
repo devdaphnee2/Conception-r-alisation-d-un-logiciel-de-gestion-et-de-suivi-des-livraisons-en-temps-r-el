@@ -7,6 +7,8 @@ import 'utils/driver_state.dart';
 import 'views/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'services/delivery_request_manager.dart';
+import 'package:flutter/foundation.dart';
+import 'package:device_preview/device_preview.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,13 @@ Future<void> main() async {
   await NotificationService.init();
   await NotificationService.requestPermission();
   DeliveryRequestManager.init();
-  runApp(const GlotelhoDeliveryApp());
+
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode, // désactivé automatiquement en production
+      builder: (context) => const GlotelhoDeliveryApp(),
+    ),
+  );
 }
 
 class GlotelhoDeliveryApp extends StatelessWidget {
@@ -36,6 +44,9 @@ class GlotelhoDeliveryApp extends StatelessWidget {
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         navigatorKey: DeliveryRequestManager.navigatorKey,
+        useInheritedMediaQuery: true,
+        locale: DevicePreview.locale(context),
+        builder: DevicePreview.appBuilder,
         theme: ThemeData(
           primaryColor: AppColors.navy,
           scaffoldBackgroundColor: AppColors.background,
