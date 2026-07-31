@@ -22,6 +22,9 @@ function IconMoney({ style }) {
 function IconSettings({ style }) {
     return (<svg style={style} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>);
 }
+function IconChart({ style }) {
+    return (<svg style={style} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M9 17V9m5 8V5m5 12v-6"/></svg>);
+}
 
 const pageTitles = {
     '/dashboard':        'Tableau de bord',
@@ -31,6 +34,7 @@ const pageTitles = {
     '/livreurs':         'Livreurs',
     '/livreurs/profils': 'Validation des profils',
     '/litiges':          'Litiges',
+    '/statistiques':     'Statistiques',
     '/parametres':       'Parametres',
 };
 
@@ -68,7 +72,6 @@ export default function DashboardLayout() {
             ]).then(([litiges, profils, livraisons, recouvrements, notifsBDD]) => {
                 const notifs = [];
 
-                // Notifications BDD (commandes commerçants + assignations)
                 (notifsBDD.data || []).filter(n => !n.is_read).slice(0, 5).forEach(n => {
                     notifs.push({
                         id: 'notif-' + n.id,
@@ -127,6 +130,7 @@ export default function DashboardLayout() {
         { to: '/livreurs',         label: 'Livreurs',          icon: IconTruck },
         { to: '/litiges',          label: 'Litiges',           icon: IconAlert },
         { to: '/recouvrements',    label: 'Recouvrements',     icon: IconMoney },
+        { to: '/statistiques',     label: 'Statistiques',      icon: IconChart },
     ];
 
     function isActive(link) {
@@ -141,7 +145,6 @@ export default function DashboardLayout() {
 
     async function handleNotifClick(n) {
         setShowNotifs(false);
-        // Marquer comme lue si c'est une notif BDD
         if (n.notifId) {
             try { await api.patch('/notifications/' + n.notifId + '/lire'); } catch (_) {}
             setNotifications(prev => prev.filter(x => x.id !== n.id));
