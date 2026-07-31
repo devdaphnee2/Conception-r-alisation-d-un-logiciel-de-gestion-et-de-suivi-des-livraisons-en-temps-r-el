@@ -8,9 +8,7 @@ class ApiService {
 
 
   static String get _baseUrl => AppConfig.baseUrl;
-  //'http://192.168.1.145:5000/api';
-
-
+  
 
   ApiService(this.appState)
       : dio = Dio(BaseOptions(

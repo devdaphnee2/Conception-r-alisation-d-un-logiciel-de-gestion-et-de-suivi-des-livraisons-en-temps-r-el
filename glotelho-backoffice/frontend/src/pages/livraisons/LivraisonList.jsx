@@ -24,7 +24,6 @@ const statusConfig = {
     'Annul_':     { bg: P.surfaceContainerHigh, color: P.onSurfaceVariant,     label: 'Annule' },
 };
 
-// Statut acceptation livreur
 const acceptConfig = {
     'accepte':    { bg: '#c8e6c9', color: '#1b5e20', label: 'Accepté',    dot: '#4caf50' },
     'refuse':     { bg: P.errorContainer, color: P.error, label: 'Refusé', dot: P.error },
@@ -39,6 +38,22 @@ function getAcceptStatus(livraison) {
     if (livraison.status === 'Assign_') return 'en_attente';
     if (livraison.status === 'En_attente') return 'non_assigne';
     return 'en_attente';
+}
+
+// Récupère le nom du livreur, quelle que soit la forme retournée par l'API
+// (users peut être un objet OU un tableau selon la route/l'inclusion Prisma)
+function getLivreurNom(l) {
+    if (!l.delivery_persons) return '';
+    var dp = l.delivery_persons;
+    var u = null;
+    if (Array.isArray(dp.users)) {
+        u = dp.users.find(function(x) { return x.id === dp.user_id; }) || dp.users[0] || null;
+    } else if (dp.users && typeof dp.users === 'object') {
+        u = dp.users;
+    } else if (dp.user) {
+        u = dp.user;
+    }
+    return u ? (u.first_name + ' ' + u.last_name) : '';
 }
 
 function KpiCard({ icon: Icon, label, value, iconColor, iconBg }) {
@@ -62,7 +77,7 @@ export default function LivraisonList() {
     const [filterStatus, setFilterStatus]   = useState('');
     const [filterAccept, setFilterAccept]   = useState('');
     const [error, setError]           = useState('');
-    const [vue, setVue]               = useState('actives'); // 'actives' | 'archivees'
+    const [vue, setVue]               = useState('actives');
 
     useEffect(function() {
         api.get('/livraisons')
@@ -79,16 +94,30 @@ export default function LivraisonList() {
             : !STATUTS_ARCHIVES.includes(l.status);
     });
 
+    var searchLower = search.trim().toLowerCase();
+
     var filtered = livraisonsVue.filter(function(l) {
         var matchStatus = !filterStatus || l.status === filterStatus;
         var matchAccept = !filterAccept || getAcceptStatus(l) === filterAccept;
+
+        if (!searchLower) return matchStatus && matchAccept;
+
         var clientNom = l.client_nom || ((l.customers && l.customers.users) ? l.customers.users.first_name + ' ' + l.customers.users.last_name : '');
-        var matchSearch = !search || [
+        var livreurNom = getLivreurNom(l);
+
+        var champs = [
             clientNom,
-            l.delivery_persons && l.delivery_persons.users ? l.delivery_persons.users.first_name : '',
+            livreurNom,
             l.delivery_address,
-            '#' + l.id,
-        ].some(function(v) { return v && v.toLowerCase().includes(search.toLowerCase()); });
+            l.client_telephone,
+            '#' + String(l.id).padStart(5, '0'),
+            String(l.id),
+        ];
+
+        var matchSearch = champs.some(function(v) {
+            return v && String(v).toLowerCase().includes(searchLower);
+        });
+
         return matchStatus && matchAccept && matchSearch;
     });
 
@@ -106,7 +135,6 @@ export default function LivraisonList() {
     return (
         <div style={{ fontFamily: 'Poppins, sans-serif' }}>
 
-            {/* KPIs */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '18px' }}>
                 <KpiCard icon={IconPackage} label="Total"      value={stats.total}      iconColor={P.primaryContainer} iconBg="rgba(201,149,46,0.15)" />
                 <KpiCard icon={IconClock}   label="En attente" value={stats.en_attente} iconColor={P.primaryContainer} iconBg="rgba(201,149,46,0.1)" />
@@ -117,7 +145,6 @@ export default function LivraisonList() {
 
             {error && <div style={{ backgroundColor: P.errorContainer, color: P.error, padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>{error}</div>}
 
-            {/* Onglets Actives / Archivées */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
                 <button onClick={function() { setVue('actives'); }}
                     style={{
@@ -141,11 +168,10 @@ export default function LivraisonList() {
 
             <div style={{ backgroundColor: P.surface, borderRadius: '14px', border: '1px solid ' + P.outlineVariant, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
 
-                {/* Filtres */}
                 <div style={{ padding: '13px 16px', borderBottom: '1px solid ' + P.surfaceContainerLow, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
                         <IconSearch style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', width: '13px', height: '13px', color: P.outline }} />
-                        <input type="text" placeholder="Rechercher client, livreur, adresse..." value={search}
+                        <input type="text" placeholder="Rechercher client, livreur, adresse, numero..." value={search}
                             onChange={function(e) { setSearch(e.target.value); }}
                             style={{ width: '100%', padding: '8px 12px 8px 28px', borderRadius: '8px', border: '1px solid ' + P.outlineVariant, fontSize: '12px', backgroundColor: P.surfaceContainerLow, boxSizing: 'border-box', fontFamily: 'Poppins, sans-serif', color: P.onSurface, outline: 'none' }} />
                     </div>
@@ -174,7 +200,6 @@ export default function LivraisonList() {
                     </Link>
                 </div>
 
-                {/* Tableau */}
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr>
@@ -204,17 +229,7 @@ export default function LivraisonList() {
                             var clientNom = l.client_nom || ((l.customers && l.customers.users) ? l.customers.users.first_name + ' ' + l.customers.users.last_name : '—');
                             var clientTel = l.client_telephone || ((l.customers && l.customers.users) ? l.customers.users.phone : '');
                             var clientInit = clientNom[0] || '?';
-                            // users est un tableau — trouver le user dont l'id = user_id du livreur
-                            var livreurUser = null;
-                            if (l.delivery_persons) {
-                                var dp = l.delivery_persons;
-                                if (Array.isArray(dp.users)) {
-                                    livreurUser = dp.users.find(function(u) { return u.id === dp.user_id; }) || null;
-                                } else if (dp.users && typeof dp.users === 'object') {
-                                    livreurUser = dp.users;
-                                }
-                            }
-                            var livreurNom   = livreurUser ? livreurUser.first_name + ' ' + livreurUser.last_name : null;
+                            var livreurNom   = getLivreurNom(l) || null;
                             var livreurPhoto = l.delivery_persons ? l.delivery_persons.photo_profil_url : null;
 
                             return (
@@ -224,12 +239,10 @@ export default function LivraisonList() {
                                     style={{ transition: 'background 0.1s', cursor: 'pointer' }}
                                     onClick={function() { window.location.href = '/livraisons/' + l.id; }}
                                 >
-                                    {/* ID */}
                                     <td style={{ ...tdStyle, fontWeight: 700, color: P.primary }}>
                                         #{String(l.id).padStart(5,'0')}
                                     </td>
 
-                                    {/* Client */}
                                     <td style={tdStyle}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: P.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
@@ -242,7 +255,6 @@ export default function LivraisonList() {
                                         </div>
                                     </td>
 
-                                    {/* Livreur */}
                                     <td style={tdStyle}>
                                         {livreurNom ? (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -257,24 +269,20 @@ export default function LivraisonList() {
                                         ) : <span style={{ color: P.outlineVariant, fontStyle: 'italic', fontSize: '12px' }}>Non assigne</span>}
                                     </td>
 
-                                    {/* Adresse */}
                                     <td style={{ ...tdStyle, color: P.onSurfaceVariant, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }}>
                                         {l.delivery_address}
                                     </td>
 
-                                    {/* Montant */}
                                     <td style={{ ...tdStyle, fontWeight: 700, color: P.primary, whiteSpace: 'nowrap', fontSize: '12px' }}>
                                         {l.amount_to_collect ? Number(l.amount_to_collect).toLocaleString('fr-FR') + ' F' : '—'}
                                     </td>
 
-                                    {/* Statut livraison */}
                                     <td style={tdStyle}>
                                         <span style={{ backgroundColor: sc.bg, color: sc.color, padding: '3px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: 600 }}>
                                             {sc.label}
                                         </span>
                                     </td>
 
-                                    {/* Réponse livreur */}
                                     <td style={{ ...tdStyle, borderLeft: '2px solid ' + P.primaryFixed }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                             <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: ac.dot, flexShrink: 0 }}></div>
@@ -284,12 +292,10 @@ export default function LivraisonList() {
                                         </div>
                                     </td>
 
-                                    {/* Date */}
                                     <td style={{ ...tdStyle, color: P.outline, fontSize: '11px', whiteSpace: 'nowrap' }}>
                                         {l.creation_date ? new Date(l.creation_date).toLocaleDateString('fr-FR') : '—'}
                                     </td>
 
-                                    {/* Actions */}
                                     <td style={tdStyle} onClick={function(e) { e.stopPropagation(); }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <Link to={'/livraisons/' + l.id}

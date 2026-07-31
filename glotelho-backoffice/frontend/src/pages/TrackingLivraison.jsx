@@ -6,7 +6,7 @@ import { database, ref, onValue, off } from '../config/firebase';
 import api from '../services/api';
 
 mapboxgl.accessToken = "pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow";
-//pk.eyJ1IjoiYW1hbmRpbmVraWx5IiwiYSI6ImNtcjRyZzd2NzBjc3UzMHIwdHkxZmdnZWIifQ.CrM5ELxBNEXlP4rQzxsxow
+
 const P = {
     primary: '#7d5700', primaryContainer: '#c9952e',
     primaryFixed: '#ffdea9', onPrimaryContainer: '#483100',
@@ -88,11 +88,96 @@ export default function TrackingLivraison() {
         };
     }, [loading, error]);
 
+    async function drawRoute(origin, destinationText) {
+        try {
+            var geoRes = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' +
+                encodeURIComponent(destinationText + ', Douala, Cameroun') +
+                '.json?access_token=' + mapboxgl.accessToken + '&limit=1');
+            var geoData = await geoRes.json();
+            if (!geoData.features || geoData.features.length === 0) return;
+
+            var dest = geoData.features[0].center;
+
+            // Marqueur destination — icône moto
+            if (!routeRef.current) {
+                var destEl = document.createElement('div');
+                destEl.innerHTML = '<div style="width:34px;height:34px;border-radius:50%;background:#ba1a1a;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,0.35);">' +
+                    '<svg width="19" height="14" viewBox="0 0 20 14" fill="none">' +
+                    '<circle cx="3" cy="11" r="2.5" stroke="white" stroke-width="1.5"/>' +
+                    '<circle cx="17" cy="11" r="2.5" stroke="white" stroke-width="1.5"/>' +
+                    '<path d="M5.5 11 L7 7 L13 7 L15.5 9 L14 11" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+                    '</svg></div>';
+                routeRef.current = new mapboxgl.Marker({ element: destEl, anchor: 'center' }).setLngLat(dest).addTo(map.current);
+            } else {
+                routeRef.current.setLngLat(dest);
+            }
+
+            // Tracer route
+            var routeRes = await fetch(
+                'https://api.mapbox.com/directions/v5/mapbox/driving/' +
+                origin[0] + ',' + origin[1] + ';' + dest[0] + ',' + dest[1] +
+                '?geometries=geojson&access_token=' + mapboxgl.accessToken
+            );
+            var routeData = await routeRes.json();
+            if (!routeData.routes || routeData.routes.length === 0) return;
+
+            var geojson = { type: 'Feature', geometry: routeData.routes[0].geometry };
+
+            if (map.current.getSource('route')) {
+                map.current.getSource('route').setData(geojson);
+            } else {
+                map.current.addSource('route', { type: 'geojson', lineMetrics: true, data: geojson });
+                map.current.addLayer({
+                    id: 'route-bg', type: 'line', source: 'route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 }
+                });
+                map.current.addLayer({
+                    id: 'route', type: 'line', source: 'route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: {
+                        'line-width': 5, 'line-opacity': 0.95,
+                        'line-gradient': [
+                            'interpolate', ['linear'], ['line-progress'],
+                            0, '#EF4444',
+                            0.45, '#F59E0B',
+                            1, '#22C55E'
+                        ]
+                    }
+                });
+            }
+
+            // Si la destination n'est pas exactement sur la route, relier en pointillés
+            var routeCoords = routeData.routes[0].geometry.coordinates;
+            var routeEnd = routeCoords[routeCoords.length - 1];
+            var distDegres = Math.sqrt(Math.pow(routeEnd[0] - dest[0], 2) + Math.pow(routeEnd[1] - dest[1], 2));
+            if (distDegres > 0.00008) {
+                var dashedGeojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: [routeEnd, dest] } };
+                if (map.current.getSource('route-dashed')) {
+                    map.current.getSource('route-dashed').setData(dashedGeojson);
+                } else {
+                    map.current.addSource('route-dashed', { type: 'geojson', data: dashedGeojson });
+                    map.current.addLayer({
+                        id: 'route-dashed-bg', type: 'line', source: 'route-dashed',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#ffffff', 'line-width': 6, 'line-opacity': 0.9 }
+                    });
+                    map.current.addLayer({
+                        id: 'route-dashed', type: 'line', source: 'route-dashed',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#1a1c1c', 'line-width': 3.5, 'line-dasharray': [0.01, 1.8] }
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Route non calculee:', e.message);
+        }
+    }
+
     // Mettre a jour marqueur livreur
     useEffect(function() {
         if (!mapLoaded || !map.current || !position) return;
         var coords = [position.longitude, position.latitude];
-
         if (markerRef.current) {
             markerRef.current.setLngLat(coords);
         } else {
@@ -116,48 +201,6 @@ export default function TrackingLivraison() {
             drawRoute(coords, livraison.delivery_address);
         }
     }, [position, mapLoaded]);
-
-    async function drawRoute(origin, destinationText) {
-        try {
-            var geoRes = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' +
-                encodeURIComponent(destinationText + ', Douala, Cameroun') +
-                '.json?access_token=' + mapboxgl.accessToken + '&limit=1');
-            var geoData = await geoRes.json();
-            if (!geoData.features || geoData.features.length === 0) return;
-
-            var dest = geoData.features[0].center;
-
-            // Marqueur destination
-            if (!routeRef.current) {
-                routeRef.current = new mapboxgl.Marker({ color: '#ba1a1a' })
-                    .setLngLat(dest)
-                    .setPopup(new mapboxgl.Popup().setText(destinationText))
-                    .addTo(map.current);
-            }
-
-            // Tracer route
-            var routeRes = await fetch(
-                'https://api.mapbox.com/directions/v5/mapbox/driving/' +
-                origin[0] + ',' + origin[1] + ';' + dest[0] + ',' + dest[1] +
-                '?geometries=geojson&access_token=' + mapboxgl.accessToken
-            );
-            var routeData = await routeRes.json();
-            if (!routeData.routes || routeData.routes.length === 0) return;
-
-            var geojson = { type: 'Feature', geometry: routeData.routes[0].geometry };
-
-            if (map.current.getSource('route')) {
-                map.current.getSource('route').setData(geojson);
-            } else {
-                map.current.addSource('route', { type: 'geojson', data: geojson });
-                map.current.addLayer({
-                    id: 'route', type: 'line', source: 'route',
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': '#c9952e', 'line-width': 4, 'line-opacity': 0.8, 'line-dasharray': [2, 1] }
-                });
-            }
-        } catch (e) {}
-    }
 
     if (loading) return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', fontFamily: 'Poppins, sans-serif' }}>

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 
 class AppColors {
   static const Color navy       = Color(0xFF0D1B2A);
@@ -25,8 +26,10 @@ class AppColors {
 class AppStrings {
   static const String appName = 'Glotelho Delivery';
 
-  static const String baseUrl = 'http://10.203.155.25:5000/api/v1';
-
+  // ── Piloté par AppConfig — ne plus coder d'IP en dur ici ──────
+  // Note : ce projet utilise le préfixe /v1/drivers côté backend,
+  // donc on ajoute /v1 après la base de AppConfig.
+  static String get baseUrl => '${AppConfig.baseUrl}/v1';
 
   static String getGreeting() {
     final hour = DateTime.now().hour;
