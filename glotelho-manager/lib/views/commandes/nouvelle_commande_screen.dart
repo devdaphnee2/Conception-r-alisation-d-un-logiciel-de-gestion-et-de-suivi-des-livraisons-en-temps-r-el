@@ -574,7 +574,7 @@ class _NouvelleCommandeScreenState extends State<NouvelleCommandeScreen> {
                           style: TextStyle(fontSize: 11, color: hintColor)),
                     ),
 
-                  if (_surchargesDetails != null) ...[
+                  /*if (_surchargesDetails != null) ...[
                     Container(
                       padding: const EdgeInsets.all(10),
                       margin: const EdgeInsets.only(bottom: 10),
@@ -591,10 +591,20 @@ class _NouvelleCommandeScreenState extends State<NouvelleCommandeScreen> {
                           ),
                       ]),
                     ),
+                  ],*/
+
+                  // --- NOUVEAU RENDU ÉPURÉ ---
+                  if (_surchargesDetails != null && _distanceKm != null) ...[
+                    _detailRow(
+                      'Distance estimée (${_distanceKm!.toStringAsFixed(1)} km)',
+                      _surchargesDetails!['cout_distance'],
+                      hintColor,
+                    ),
+                    const SizedBox(height: 10),
                   ],
 
                   Row(children: [
-                    Expanded(child: Text('Frais de livraison (calculés)',
+                    Expanded(child: Text('Frais de livraison',
                         style: TextStyle(fontSize: 12, color: txtColor, fontWeight: FontWeight.w600))),
                     Text(_fraisLivraison.text.isNotEmpty && _fraisLivraison.text != '0'
                         ? '${_formatMontant(_frais)} XAF'
