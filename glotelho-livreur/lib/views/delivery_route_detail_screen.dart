@@ -68,8 +68,12 @@ class _DeliveryRouteDetailScreenState extends State<DeliveryRouteDetailScreen> {
   }
 
   void _voirCarte() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (_) => DeliveryMapRouteScreen(delivery: d)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DeliveryMapRouteScreen(delivery: d),
+      ),
+    );
   }
 
   // ── ACCEPTER LA COURSE — Assign_ → Valide_ ────────────────────────
