@@ -147,7 +147,7 @@ async function commanderCourse(req, res) {
         // ── Envoyer le lien de paiement au client par WhatsApp ────────────
         var waLink = null;
         try {
-            var frontendUrl = process.env.FRONTEND_URL || 'http://192.168.1.166:5173';
+            var frontendUrl = process.env.FRONTEND_URL || 'http://10.203.155.25:5000';
             var lienPaiement = frontendUrl + '/paiement/' + id;
             var clientNom = livraison.client_nom || 'Client';
             var clientWa = livraison.client_whatsapp || livraison.client_telephone || '';

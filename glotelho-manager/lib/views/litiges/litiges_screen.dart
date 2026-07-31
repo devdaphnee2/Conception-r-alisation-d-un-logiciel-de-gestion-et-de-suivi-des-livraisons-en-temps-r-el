@@ -3,205 +3,329 @@ import 'package:provider/provider.dart';
 import '../../config/app_state.dart';
 import '../../services/api_service.dart';
 
+class LitigeModel {
+  final int id;
+  final String referenceCommande;
+  final String motif;
+  final String statut; // 'OUVERT', 'RESOLU', etc.
+  final DateTime dateCreation;
+
+  LitigeModel({
+    required this.id,
+    required this.referenceCommande,
+    required this.motif,
+    required this.statut,
+    required this.dateCreation,
+  });
+
+  factory LitigeModel.fromJson(Map<String, dynamic> json) {
+    return LitigeModel(
+      id: json['id'] ?? 0,
+      referenceCommande: json['commande_ref'] ?? json['commande_id']?.toString() ?? 'N/A',
+      motif: json['motif'] ?? json['description'] ?? 'Aucun motif précisé',
+      statut: (json['statut'] ?? 'OUVERT').toString().toUpperCase(),
+      dateCreation: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
 class LitigesScreen extends StatefulWidget {
   const LitigesScreen({super.key});
+
   @override
   State<LitigesScreen> createState() => _LitigesScreenState();
 }
 
 class _LitigesScreenState extends State<LitigesScreen> {
+  List<LitigeModel> _litiges = [];
   bool _loading = true;
-  List _litiges = [];
+  String _filtreStatut = 'TOUS'; // 'TOUS', 'OUVERT', 'RESOLU'
 
-  static const _statusColors = <String, Color>{
-    'Ouvert'  : Color(0xFFC9952E),
-    'En_cours': Color(0xFF20619E),
-    'Resolu'  : Color(0xFF1B5E20),
-    'Ferme'   : Color(0xFF817564),
-  };
-  static const _statusLabels = <String, String>{
-    'Ouvert'  : 'Ouvert',
-    'En_cours': 'En traitement',
-    'Resolu'  : 'Résolu ✓',
-    'Ferme'   : 'Fermé',
-  };
+  // Couleurs du thème Navy & Gold
+  static const Color navyBackground = Color(0xFF0D1B2A);
+  static const Color cardNavy = Color(0xFF1B2A4A);
+  static const Color goldAccent = Color(0xFFC9952E);
+  static const Color greenSuccess = Color(0xFF2E7D32);
+  static const Color orangeWarning = Color(0xFFE65100);
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() {
+    super.initState();
+    _chargerLitiges();
+  }
 
-  Future<void> _load() async {
+  Future<void> _chargerLitiges() async {
     setState(() => _loading = true);
     try {
-      final api = ApiService(context.read<AppState>());
-      final res = await api.getMesLitiges();
-      setState(() => _litiges = res.data ?? []);
+      final appState = context.read<AppState>();
+      final api = ApiService(appState);
+      final res = await api.dio.get('/litiges');
+      final List data = res.data ?? [];
+      setState(() {
+        _litiges = data.map((j) => LitigeModel.fromJson(j)).toList();
+        _loading = false;
+      });
     } catch (_) {
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() => _loading = false);
     }
+  }
+
+  List<LitigeModel> get _litigesFitres {
+    if (_filtreStatut == 'OUVERT') {
+      return _litiges.where((l) => l.statut == 'OUVERT' || l.statut == 'EN_COURS').toList();
+    } else if (_filtreStatut == 'RESOLU') {
+      return _litiges.where((l) => l.statut == 'RESOLU' || l.statut == 'FERME').toList();
+    }
+    return _litiges;
   }
 
   @override
   Widget build(BuildContext context) {
-    final resolus = _litiges.where((l) => l['statut'] == 'Resolu').length;
-    final ouverts = _litiges.where((l) => l['statut'] == 'Ouvert').length;
+    final total = _litiges.length;
+    final ouverts = _litiges.where((l) => l.statut == 'OUVERT' || l.statut == 'EN_COURS').length;
+    final resolus = _litiges.where((l) => l.statut == 'RESOLU' || l.statut == 'FERME').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D1B2A),
-        foregroundColor: Colors.white,
-        title: const Text('Litiges'),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-        onRefresh: _load,
-        child: CustomScrollView(
-          slivers: [
-            // Stats
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
-              sliver: SliverToBoxAdapter(
-                child: Row(
-                  children: [
-                    Expanded(child: _statCard('Total', '${_litiges.length}', const Color(0xFF0D1B2A))),
-                    const SizedBox(width: 10),
-                    Expanded(child: _statCard('Ouverts', '$ouverts', const Color(0xFFC9952E))),
-                    const SizedBox(width: 10),
-                    Expanded(child: _statCard('Résolus', '$resolus', const Color(0xFF1B5E20))),
-                  ],
-                ),
+      backgroundColor: navyBackground,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- EN-TÊTE ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Gestion des Litiges',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white70),
+                    onPressed: _chargerLitiges,
+                  ),
+                ],
               ),
             ),
 
-            if (_litiges.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.gavel_outlined, size: 64, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      const Text('Aucun litige', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (_, i) => _litigeCard(_litiges[i]),
-                    childCount: _litiges.length,
-                  ),
+            // --- CARTES KPI DE STATISTIQUES ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  Expanded(child: _buildKpiCard('Total', '$total', Icons.gavel_rounded, Colors.blueAccent)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildKpiCard('Ouverts', '$ouverts', Icons.error_outline_rounded, goldAccent)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _buildKpiCard('Résolus', '$resolus', Icons.check_circle_outline_rounded, Colors.greenAccent)),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- FILTRES PAR PUCE (CHIPS) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  _buildFilterChip('Tous', 'TOUS'),
+                  const SizedBox(width: 10),
+                  _buildFilterChip('En cours', 'OUVERT'),
+                  const SizedBox(width: 10),
+                  _buildFilterChip('Résolus', 'RESOLU'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // --- LISTE DES LITIGES OU ÉTAT VIDE ---
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: goldAccent))
+                  : _litigesFitres.isEmpty
+                  ? _buildEmptyState()
+                  : RefreshIndicator(
+                onRefresh: _chargerLitiges,
+                color: goldAccent,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: _litigesFitres.length,
+                  itemBuilder: (context, index) {
+                    final litige = _litigesFitres[index];
+                    return _buildLitigeCard(litige);
+                  },
                 ),
               ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _statCard(String label, String value, Color color) {
+  // Widget KPI
+  Widget _buildKpiCard(String title, String value, IconData icon, Color accentColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+        color: cardNavy,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w500),
+              ),
+              Icon(icon, size: 18, color: accentColor),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
         ],
       ),
     );
   }
 
-  Widget _litigeCard(Map l) {
-    final statut  = l['statut'] as String? ?? 'Ouvert';
-    final color   = _statusColors[statut] ?? Colors.grey;
-    final label   = _statusLabels[statut] ?? statut;
-    final livraisonId = l['deliveryorder_id'];
-    final description = l['description'] as String? ?? '—';
-    final motif   = l['motif'] as String? ?? '';
-    final date    = l['created_at'] != null
-        ? DateTime.tryParse(l['created_at'].toString()) : null;
+  // Widget Filtre Chip
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _filtreStatut == value;
+    return GestureDetector(
+      onTap: () => setState(() => _filtreStatut = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? goldAccent : cardNavy,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? goldAccent : Colors.white12),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white70,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget État Vide Moderne
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: cardNavy.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.gavel_rounded,
+              size: 64,
+              color: Colors.white24,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Aucun litige trouvé',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Les contestations ou réclamations apparaîtront ici.',
+            style: TextStyle(fontSize: 13, color: Colors.white54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget Carte Litige
+  Widget _buildLitigeCard(LitigeModel litige) {
+    final isOuvert = litige.statut == 'OUVERT' || litige.statut == 'EN_COURS';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
-        border: statut == 'Resolu'
-            ? Border.all(color: const Color(0xFF1B5E20).withOpacity(0.3))
-            : null,
+        color: cardNavy,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.07),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-              border: Border(bottom: BorderSide(color: color.withOpacity(0.15))),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(livraisonId != null ? 'Livraison #${livraisonId.toString().padLeft(5,'0')}' : 'Litige',
-                    style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 14)),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
-                  child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Commande #${litige.referenceCommande}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 15,
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (motif.isNotEmpty) ...[
-                  Text('Motif : $motif', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  const SizedBox(height: 6),
-                ],
-                Text(description, style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.4)),
-                if (date != null) ...[
-                  const SizedBox(height: 8),
-                  Text('${date.day}/${date.month}/${date.year}',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-                // Note de resolution
-                if (statut == 'Resolu' && l['note_resolution'] != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B5E20).withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF1B5E20).withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.check_circle_outline, color: Color(0xFF1B5E20), size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text('Résolution : ${l['note_resolution']}',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF1B5E20)))),
-                      ],
-                    ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isOuvert ? orangeWarning.withOpacity(0.2) : greenSuccess.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isOuvert ? orangeWarning : greenSuccess),
+                ),
+                child: Text(
+                  isOuvert ? 'En cours' : 'Résolu',
+                  style: TextStyle(
+                    color: isOuvert ? Colors.orangeAccent : Colors.greenAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-              ],
-            ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            litige.motif,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 12, color: Colors.white38),
+              const SizedBox(width: 4),
+              Text(
+                '${litige.dateCreation.day}/${litige.dateCreation.month}/${litige.dateCreation.year}',
+                style: const TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
           ),
         ],
       ),

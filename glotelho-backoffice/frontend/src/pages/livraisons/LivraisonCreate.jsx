@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
