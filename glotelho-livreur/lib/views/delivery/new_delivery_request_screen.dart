@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
 import '../../models/delivery_request_model.dart';
+import '../../services/api_service.dart';
 
-class NewDeliveryRequestScreen extends StatelessWidget {
+class NewDeliveryRequestScreen extends StatefulWidget {
   final DeliveryRequestModel request;
   const NewDeliveryRequestScreen({super.key, required this.request});
 
+  @override
+  State<NewDeliveryRequestScreen> createState() => _NewDeliveryRequestScreenState();
+}
+
+class _NewDeliveryRequestScreenState extends State<NewDeliveryRequestScreen> {
+  bool _isLoading = false;
+
+  DeliveryRequestModel get request => widget.request;
+
   String _fmt(double v) =>
       '${v.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} XAF';
+
+  Future<void> _accepter() async {
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.dio.post('/livraisons/${request.id}/accepter');
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Livraison acceptée ✓'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erreur : impossible d\'accepter la course ($e)'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,11 +89,13 @@ class NewDeliveryRequestScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Livraison refusée'), behavior: SnackBarBehavior.floating));
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                  content: Text('Livraison refusée'), behavior: SnackBarBehavior.floating));
+                            },
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 54),
                         side: const BorderSide(color: Colors.redAccent),
@@ -76,20 +108,19 @@ class NewDeliveryRequestScreen extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Livraison acceptée ✓'),
-                            backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating));
-                      },
+                      onPressed: _isLoading ? null : _accepter,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.gold,
                         minimumSize: const Size(0, 54),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text('Accepter',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22, height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
+                            )
+                          : const Text('Accepter',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],

@@ -18,6 +18,7 @@ const P = {
 const statusConfig = {
     'En_attente': { bg: P.primaryFixed,        color: P.onPrimaryContainer,   label: 'En attente' },
     'Assign_':    { bg: P.secondaryContainer,   color: P.onSecondaryContainer, label: 'Assigne' },
+    'Valide_':    { bg: '#c8e6c9',              color: '#1b5e20',              label: 'Validee' },
     'En_cours':   { bg: P.tertiaryContainer,    color: P.onTertiaryContainer,  label: 'En cours' },
     'Livr_':      { bg: '#c8e6c9',              color: '#1b5e20',              label: 'Livre' },
     'Suspendu':   { bg: P.errorContainer,       color: P.onErrorContainer,     label: 'Suspendu' },
@@ -33,7 +34,7 @@ const acceptConfig = {
 
 function getAcceptStatus(livraison) {
     if (!livraison.delivery_person_id) return 'non_assigne';
-    if (livraison.status === 'En_cours' || livraison.status === 'Livr_') return 'accepte';
+    if (['Valide_', 'En_cours', 'Livr_'].includes(livraison.status)) return 'accepte';
     if (livraison.status === 'Annul_') return 'refuse';
     if (livraison.status === 'Assign_') return 'en_attente';
     if (livraison.status === 'En_attente') return 'non_assigne';
@@ -80,10 +81,18 @@ export default function LivraisonList() {
     const [vue, setVue]               = useState('actives');
 
     useEffect(function() {
-        api.get('/livraisons')
-            .then(function(res) { setLivraisons(res.data); })
-            .catch(function() { setError('Impossible de charger les livraisons.'); })
-            .finally(function() { setLoading(false); });
+        function charger() {
+            api.get('/livraisons')
+                .then(function(res) { setLivraisons(res.data); })
+                .catch(function() { setError('Impossible de charger les livraisons.'); })
+                .finally(function() { setLoading(false); });
+        }
+        charger();
+        // Rafraîchit automatiquement toutes les 8s pour refléter les
+        // changements faits côté livreur (acceptation, démarrage, etc.)
+        // sans que le manager ait besoin de recharger la page manuellement.
+        var interval = setInterval(charger, 8000);
+        return function() { clearInterval(interval); };
     }, []);
 
     var STATUTS_ARCHIVES = ['Livr_', 'Annul_'];
@@ -180,6 +189,7 @@ export default function LivraisonList() {
                         <option value="">Tous statuts</option>
                         <option value="En_attente">En attente</option>
                         <option value="Assign_">Assigne</option>
+                        <option value="Valide_">Validee</option>
                         <option value="En_cours">En cours</option>
                         <option value="Livr_">Livre</option>
                         <option value="Suspendu">Suspendu</option>
@@ -302,11 +312,11 @@ export default function LivraisonList() {
                                                 style={{ color: P.primary, fontWeight: 600, textDecoration: 'none', fontSize: '12px' }}>
                                                 Voir
                                             </Link>
-                                            {['Assign_', 'En_cours'].includes(l.status) && (
-                                                <a href={'/suivi/' + l.id} target="_blank" rel="noreferrer"
+                                            {['Assign_', 'Valide_', 'En_cours'].includes(l.status) && (
+                                                <Link to={'/tracking'}
                                                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '5px', backgroundColor: '#2f3131', color: '#fff', textDecoration: 'none', fontSize: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                                     📍 Tracking
-                                                </a>
+                                                </Link>
                                             )}
                                         </div>
                                     </td>
