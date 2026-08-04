@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_database/firebase_database.dart';
+
 import '../models/delivery_model.dart';
 import '../services/tracking_service.dart';
 import '../services/directions_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 
 class DeliveryMapScreen extends StatefulWidget {
@@ -19,11 +20,13 @@ class DeliveryMapScreen extends StatefulWidget {
 
 class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
   GoogleMapController? _mapController;
+  PageController? _pageController;
+
   List<DeliveryModel> _deliveries = [];
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   bool _loadingRoutes = true;
-  DeliveryModel? _selected;
+  int _selectedIndex = 0;
 
   // Position GPS réelle du livreur
   LatLng? _myPosition;
@@ -31,7 +34,9 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
   Timer? _gpsTimer;
 
   static const CameraPosition _douala = CameraPosition(
-    target: LatLng(4.0611, 9.7550), zoom: 12);
+    target: LatLng(4.0611, 9.7550),
+    zoom: 12,
+  );
 
   Color _statusColor(DeliveryStatus s) {
     switch (s) {
@@ -72,7 +77,6 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
   @override
   void initState() {
     super.initState();
-    _selected = widget.activeLivraison;
     _load();
     _initPosition();
   }
@@ -81,6 +85,7 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
   void dispose() {
     _gpsTimer?.cancel();
     _mapController?.dispose();
+    _pageController?.dispose();
     super.dispose();
   }
 
@@ -101,7 +106,7 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
       perm = await Geolocator.requestPermission();
     }
     return perm == LocationPermission.whileInUse ||
-           perm == LocationPermission.always;
+        perm == LocationPermission.always;
   }
 
   // ── Bouton : Partager / Arrêter la position ───────────────────
@@ -128,11 +133,8 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     }
 
     setState(() => _positionSharing = true);
-
-    // Envoyer immédiatement
     await _envoyerPosition();
 
-    // Puis toutes les 5 secondes
     _gpsTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       await _envoyerPosition();
     });
@@ -150,26 +152,13 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
           desiredAccuracy: LocationAccuracy.high);
       final latLng = LatLng(pos.latitude, pos.longitude);
 
-      // Mettre à jour Firebase directement
-      final livreurId = _selected?.id ?? 'livreur';
-      final dbRef = FirebaseDatabase.instance.ref('positions/$livreurId');
+      final dbRef = FirebaseDatabase.instance.ref('positions/22');
       await dbRef.set({
         'latitude' : pos.latitude,
         'longitude': pos.longitude,
         'speed'    : pos.speed,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
-
-      // Envoyer aussi via API si une course est active
-      if (_selected != null &&
-          _selected!.status == DeliveryStatus.inProgress) {
-        await TrackingService.updatePosition(
-          deliveryId: _selected!.id,
-          latitude  : pos.latitude,
-          longitude : pos.longitude,
-          speed     : pos.speed,
-        );
-      }
 
       if (!mounted) return;
       setState(() => _myPosition = latLng);
@@ -179,7 +168,6 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     }
   }
 
-  // ── Bouton : Me centrer ───────────────────────────────────────
   Future<void> _centrerSurMoi() async {
     final ok = await _demanderPermission();
     if (!ok) return;
@@ -212,14 +200,25 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     });
   }
 
+  void _onSelectDelivery(int index) {
+    if (index < 0 || index >= _deliveries.length) return;
+    setState(() => _selectedIndex = index);
+
+    final d = _deliveries[index];
+    if (d.latitude != 0.0 && d.longitude != 0.0) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(d.latitude, d.longitude), 15),
+      );
+    }
+  }
+
   Future<void> _load() async {
     final data = await TrackingService.getTodayDeliveries();
     if (!mounted) return;
 
     final markers = <Marker>{};
-
-    // Marqueur livreur (position réelle si disponible)
     final livreurPos = _myPosition ?? const LatLng(4.0611, 9.7550);
+
     markers.add(Marker(
       markerId: const MarkerId('livreur'),
       position: livreurPos,
@@ -227,33 +226,47 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
       infoWindow: const InfoWindow(title: 'Vous 📍'),
     ));
 
-    for (final d in data) {
+    for (int i = 0; i < data.length; i++) {
+      final d = data[i];
+      if (d.latitude == 0.0 && d.longitude == 0.0) continue;
+
       markers.add(Marker(
         markerId: MarkerId(d.id),
         position: LatLng(d.latitude, d.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(_hueForStatus(d.status)),
         infoWindow: InfoWindow(title: d.clientNom, snippet: d.adresseLivraison),
-        onTap: () => setState(() => _selected = d),
+        onTap: () {
+          _pageController?.animateToPage(
+            i,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        },
       ));
     }
+
+    int initialIdx = 0;
+    if (widget.activeLivraison != null) {
+      final idx = data.indexWhere((element) => element.id == widget.activeLivraison!.id);
+      if (idx != -1) initialIdx = idx;
+    }
+
+    _pageController = PageController(initialPage: initialIdx);
 
     setState(() {
       _deliveries = data;
       _markers = markers;
-      if (_selected == null && data.isNotEmpty) {
-        _selected = data.firstWhere(
-          (d) => d.status == DeliveryStatus.inProgress ||
-                 d.status == DeliveryStatus.assigned,
-          orElse: () => data.first,
-        );
-      }
+      _selectedIndex = initialIdx;
     });
 
+    // Chargement des tracés d'itinéraires routiers OSRM
     final polylines = <Polyline>{};
     for (final d in data) {
+      if (d.latitude == 0.0 && d.longitude == 0.0) continue;
       final from = _myPosition ?? const LatLng(4.0611, 9.7550);
       final points = await DirectionsService.getRoute(
           from, LatLng(d.latitude, d.longitude));
+
       if (points.isNotEmpty) {
         polylines.add(Polyline(
           polylineId: PolylineId('route_${d.id}'),
@@ -265,7 +278,10 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     }
 
     if (!mounted) return;
-    setState(() { _polylines = polylines; _loadingRoutes = false; });
+    setState(() {
+      _polylines = polylines;
+      _loadingRoutes = false;
+    });
   }
 
   Future<void> _appelerClient(String tel) async {
@@ -274,8 +290,7 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
       await launchUrl(uri);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Appel vers $tel'),
-            backgroundColor: AppColors.navy),
+        SnackBar(content: Text('Appel vers $tel'), backgroundColor: AppColors.navy),
       );
     }
   }
@@ -302,13 +317,38 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
             },
           ),
 
+          // ── Légende ──────────────────────────────────────────
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _legend(AppColors.statusDelivered, 'Livrée'),
+                    _legend(AppColors.statusCancelled, 'Annulée'),
+                    _legend(AppColors.statusInProgress, 'En cours'),
+                    _legend(AppColors.blue, 'Assignée'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // ── Boutons GPS (droite) ──────────────────────────────
           Positioned(
             right: 12,
-            bottom: _selected != null ? 220 : 30,
+            bottom: _deliveries.isNotEmpty ? 220 : 30,
             child: Column(
               children: [
-                // Bouton Me centrer
                 FloatingActionButton.small(
                   heroTag: 'centrer',
                   onPressed: _centrerSurMoi,
@@ -316,17 +356,12 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
                   child: const Icon(Icons.my_location, color: Colors.black87),
                 ),
                 const SizedBox(height: 10),
-                // Bouton Partager position
                 FloatingActionButton(
                   heroTag: 'partager',
                   onPressed: _togglePartagerPosition,
-                  backgroundColor: _positionSharing
-                      ? Colors.green
-                      : AppColors.gold,
+                  backgroundColor: _positionSharing ? Colors.green : AppColors.gold,
                   child: Icon(
-                    _positionSharing
-                        ? Icons.location_on
-                        : Icons.location_off,
+                    _positionSharing ? Icons.location_on : Icons.location_off,
                     color: Colors.white,
                   ),
                 ),
@@ -342,13 +377,13 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.green.shade700,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(
-                        color: Colors.black.withOpacity(0.2), blurRadius: 8)],
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)
+                    ],
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -366,98 +401,113 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
               ),
             ),
 
-          // ── Carte livraison sélectionnée ──────────────────────
-          if (_selected != null)
+          // ── Carrousel des Livraisons ─────────────────────────
+          if (_deliveries.isNotEmpty && _pageController != null)
             Positioned(
-              bottom: 30, left: 16, right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(
-                      color: Colors.black.withOpacity(0.25), blurRadius: 12)],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              bottom: 24,
+              left: 0,
+              right: 0,
+              height: 170,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _deliveries.length,
+                onPageChanged: _onSelectDelivery,
+                itemBuilder: (context, index) {
+                  final item = _deliveries[index];
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.25), blurRadius: 12)
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Livraison #${_selected!.id}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _statusColor(_selected!.status)
-                                .withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Livraison #${item.id}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _statusColor(item.status).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(_statusLabel(item.status),
+                                  style: TextStyle(
+                                      color: _statusColor(item.status),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          const Icon(Icons.person_outline,
+                              color: Colors.white54, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                              child: Text(item.clientNom,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 13))),
+                        ]),
+                        const SizedBox(height: 4),
+                        Row(children: [
+                          const Icon(Icons.location_on_outlined,
+                              color: Colors.white54, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                              child: Text(item.adresseLivraison,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 12))),
+                        ]),
+                        const Spacer(),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _appelerClient(item.clientTelephone),
+                            icon: const Icon(Icons.phone, size: 16),
+                            label: Text('Appeler ${item.clientTelephone}'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
                           ),
-                          child: Text(_statusLabel(_selected!.status),
-                              style: TextStyle(
-                                  color: _statusColor(_selected!.status),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      const Icon(Icons.person_outline,
-                          color: Colors.white54, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(child: Text(_selected!.clientNom,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13))),
-                    ]),
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      const Icon(Icons.location_on_outlined,
-                          color: Colors.white54, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(child: Text(_selected!.adresseLivraison,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12))),
-                    ]),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            _appelerClient(_selected!.clientTelephone),
-                        icon: const Icon(Icons.phone, size: 16),
-                        label: Text('Appeler ${_selected!.clientTelephone}'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
 
           // ── Chargement itinéraires ────────────────────────────
           if (_loadingRoutes)
             Positioned(
-              top: 80, left: 0, right: 0,
+              top: 80,
+              left: 0,
+              right: 0,
               child: Center(
                 child: Card(
                   color: Colors.white,
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -466,7 +516,7 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2)),
                         SizedBox(width: 10),
-                        Text('Calcul des itinéraires…',
+                        Text('Calcul des itinéraires routiers…',
                             style: TextStyle(color: Colors.black87)),
                       ],
                     ),
@@ -483,7 +533,9 @@ class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 9, height: 9,
+        Container(
+            width: 9,
+            height: 9,
             decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
         const SizedBox(width: 5),
         Text(label,
