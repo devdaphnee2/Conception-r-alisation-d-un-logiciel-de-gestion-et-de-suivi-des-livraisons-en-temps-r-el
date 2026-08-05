@@ -1,6 +1,6 @@
-/// Configuration centralisée — CHANGE L'IP ICI UNIQUEMENT.
+/// Configuration centralisée — CHANGE L'IP ET LA CLÉ GOOGLE MAPS ICI.
 /// Tous les autres fichiers du projet importent cette classe
-/// au lieu de coder l'adresse IP en dur.
+/// au lieu de coder ces informations en dur.
 ///
 /// Pour trouver ton IP locale :
 ///   Windows : ipconfig  → cherche "Adresse IPv4"
@@ -8,6 +8,9 @@
 class AppConfig {
   // ── SEULE LIGNE À MODIFIER À CHAQUE CHANGEMENT DE RÉSEAU ──────
   static const String _ip = '172.20.10.4';
+
+  // ── CLÉ D'API GOOGLE MAPS ─────────────────────────────────────
+  static const String googleMapsApiKey = 'AIzaSyB0tqd53ed5Ek7omU0ty9Cdj6vED39z0z4';
 
   static const int backendPort  = 5000;
   static const int frontendPort = 5173;
